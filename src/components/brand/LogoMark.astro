@@ -15,7 +15,7 @@ const dimension = typeof size === 'number' ? `${size}px` : size;
 const t = useStrings(Astro.currentLocale);
 const a11y = decorative
   ? { 'aria-hidden': 'true' as const }
-  : { role: 'img', 'aria-label': t.brand.markLabel };
+  : { role: 'img' as const, 'aria-label': t.brand.markLabel };
 ---
 
 <svg
