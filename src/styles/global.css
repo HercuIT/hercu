@@ -1,6 +1,9 @@
 @import "tailwindcss";
 
-/* Hércuit brand tokens: see specs/brand-identity/01-theme-tokens.md */
+/*
+ * HércuIT brand tokens. Values come from the approved primary-logo mockup.
+ * Contrast: brand-300/400 are decorative only (white on them is < 4.5:1).
+ */
 @theme {
   --color-ink: #14233A;
   --color-steel: #3B5675;

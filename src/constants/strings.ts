@@ -13,7 +13,8 @@ export const strings = {
   hero: {
     title: "Engineering Excellence with a Focus on Quality",
     subtitle: "We build custom software, mobile applications, and e-commerce solutions that don't just work—they excel.",
-    cta: "Get a Quality Audit"
+    cta: "Share your idea",
+    ctaSupport: "We want to hear your idea and help make it happen."
   },
   services: {
     title: "Our Specialized Services",
@@ -58,10 +59,13 @@ export const strings = {
   },
   contact: {
     title: "Start Your Quality Journey",
-    formName: "Full Name",
-    formEmail: "Corporate Email",
-    formMessage: "How can we help?",
-    submit: "Request Consultation"
+    formName: "Full name",
+    formEmail: "Email",
+    formMessage: "Your idea",
+    placeholders: {
+      message: "What would you like to build or improve?"
+    },
+    submit: "Send my idea"
   },
   footer: {
     rights: "All rights reserved."

@@ -40,7 +40,7 @@ import { strings } from '../constants/strings';
             </div>
             <div>
               <label for="message" class="block text-sm font-medium text-mist/80 mb-1">{strings.contact.formMessage}</label>
-              <textarea id="message" name="message" rows="4" class="w-full px-4 py-3 bg-white/5 border border-mist/15 rounded-lg focus:ring-2 focus:ring-brand-400 focus:border-transparent outline-none transition-all text-white" placeholder="Tell us about your project or quality needs..." required></textarea>
+              <textarea id="message" name="message" rows="4" class="w-full px-4 py-3 bg-white/5 border border-mist/15 rounded-lg focus:ring-2 focus:ring-brand-400 focus:border-transparent outline-none transition-all text-white" placeholder={strings.contact.placeholders.message} required></textarea>
             </div>
             <button type="submit" class="w-full py-4 bg-brand-500 hover:bg-brand-600 text-white font-bold rounded-lg transition-colors shadow-lg shadow-ink/20">
               {strings.contact.submit}

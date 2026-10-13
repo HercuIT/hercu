@@ -1,6 +1,7 @@
 {
-  "name": "Hércuit",
-  "short_name": "Hércuit",
+  "name": "HércuIT",
+  "short_name": "HércuIT",
+  "start_url": "/",
   "icons": [
     { "src": "/icon-192.png", "type": "image/png", "sizes": "192x192" },
     { "src": "/icon-512.png", "type": "image/png", "sizes": "512x512", "purpose": "any maskable" }

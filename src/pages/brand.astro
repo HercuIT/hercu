@@ -9,24 +9,35 @@ import { strings } from '../constants/strings';
 
 <Layout title={strings.brand.qaPageTitle}>
   <meta slot="head" name="robots" content="noindex" />
-  <main class="flex flex-col items-center gap-16 py-16">
+  <!--
+    Artboards keep their fixed comparison widths. Each row scrolls horizontally on its own;
+    mx-auto centers it when it fits and resolves to 0 (start-aligned) when it doesn't, so the
+    left edge is never clipped.
+  -->
+  <main class="flex flex-col gap-16 py-16">
     <!-- Mockup artboard: 1200×640, mist background, full lockup at 132px -->
-    <div class="flex h-[640px] w-[1200px] shrink-0 items-center justify-center bg-mist">
-      <Logo variant="full" class="text-[132px]" />
+    <div class="w-full overflow-x-auto">
+      <div class="mx-auto flex h-[640px] w-[1200px] items-center justify-center bg-mist">
+        <Logo variant="full" class="text-[132px]" />
+      </div>
     </div>
 
-    <div class="flex w-[1200px] items-center justify-around rounded-2xl bg-ink p-12">
-      <Logo variant="full" class="text-6xl text-mist" taglineClass="text-mist/80" />
-      <Logo variant="compact" class="text-2xl text-mist" />
+    <div class="w-full overflow-x-auto">
+      <div class="mx-auto flex w-[1200px] items-center justify-around rounded-2xl bg-ink p-12">
+        <Logo variant="full" class="text-6xl text-mist" taglineClass="text-mist/80" />
+        <Logo variant="compact" class="text-2xl text-mist" />
+      </div>
     </div>
 
-    <div class="flex items-end gap-8 bg-white p-8">
-      <LogoMark size={24} />
-      <LogoMark size={32} />
-      <LogoMark size={48} />
-      <LogoMark size={96} />
-      <Logo variant="compact" class="text-xl" />
-      <Logo variant="compact" class="text-2xl" />
+    <div class="w-full overflow-x-auto">
+      <div class="mx-auto flex w-max items-end gap-8 bg-white p-8">
+        <LogoMark size={24} />
+        <LogoMark size={32} />
+        <LogoMark size={48} />
+        <LogoMark size={96} />
+        <Logo variant="compact" class="text-xl" />
+        <Logo variant="compact" class="text-2xl" />
+      </div>
     </div>
   </main>
 </Layout>
