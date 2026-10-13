@@ -8,7 +8,7 @@ Planning a professional, informative website for **Hércuit**, a technology solu
 - **Location:** Torreón, Coahuila, México.
 - **Leadership:** 
   - Gloria Jeniffer Ramirez Garcia (Gerente Presidente - Software Engineer)
-  - Ariana Jose Soto Fernandez (Gerente Vicepresidente)
+  - Ariana Jose Soto Fernandez (Gerente Vicepresidente - Software Engineer)
 - **Core Value Proposition:** High-tech, multi-disciplinary engineering and consultancy focusing on digital transformation, custom software, and infrastructure, with a **rigorous focus on software quality and reliability.**
 
 ## 3. Proposed Sitemap

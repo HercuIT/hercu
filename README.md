@@ -15,7 +15,8 @@ Hércuit positions itself as a **Quality-First Software House**. Our engineering
 - **Styling:** [Tailwind CSS v4](https://tailwindcss.com/) - Modern, utility-first CSS.
 - **TypeScript:** Strict mode enabled for type-safety and reliability.
 - **Architecture:** 
-    - **Centralized String Management:** All UI text is managed in `src/constants/strings.ts`.
+    - **Centralized String Management:** All UI text is managed in `src/constants/strings.ts`, with one dictionary per locale.
+    - **Bilingual:** Spanish (default) at `/`, English at `/en/`, via Astro i18n routing.
     - **Component-Driven Development:** Reusable UI components in `src/components/`.
 
 ## 📂 Project Structure

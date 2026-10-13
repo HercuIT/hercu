@@ -1,0 +1,44 @@
+---
+import { getRelativeLocaleUrl } from 'astro:i18n';
+import { getLocale, locales, localeMeta, useStrings } from '../i18n/utils';
+
+interface Props {
+  class?: string;
+}
+
+// Rendered as a labelled group, not a <nav>: on desktop it sits inside the header's primary nav,
+// and nested navigation landmarks are an accessibility violation.
+const { class: className } = Astro.props;
+const current = getLocale(Astro.currentLocale);
+const t = useStrings(current);
+---
+
+<div
+  role="group"
+  aria-label={t.languageSwitcher.label}
+  class:list={['flex items-center gap-1 font-mono text-sm font-medium uppercase tracking-tagline', className]}
+>
+  {locales.map((locale, i) => (
+    <>
+      {i > 0 && <span aria-hidden="true" class="text-steel/50">/</span>}
+      {locale === current ? (
+        <span
+          aria-current="true"
+          lang={localeMeta[locale].htmlLang}
+          class="inline-flex min-h-6 min-w-6 items-center justify-center px-1 font-semibold text-ink"
+        >
+          {localeMeta[locale].short}<span class="sr-only"> {localeMeta[locale].name}</span>
+        </span>
+      ) : (
+        <a
+          href={getRelativeLocaleUrl(locale, '/')}
+          hreflang={localeMeta[locale].htmlLang}
+          lang={localeMeta[locale].htmlLang}
+          class="inline-flex min-h-6 min-w-6 items-center justify-center px-1 text-steel transition-colors hover:text-brand-500"
+        >
+          {localeMeta[locale].short}<span class="sr-only"> {localeMeta[locale].name}</span>
+        </a>
+      )}
+    </>
+  ))}
+</div>
