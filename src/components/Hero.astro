@@ -1,0 +1,24 @@
+---
+import { strings } from '../constants/strings';
+---
+
+<section class="relative py-20 overflow-hidden bg-white">
+  <div class="container mx-auto px-4 relative">
+    <div class="max-w-3xl">
+      <h1 class="text-5xl md:text-6xl font-bold tracking-tight text-gray-900 mb-6">
+        {strings.hero.title}
+      </h1>
+      <p class="text-xl text-gray-600 mb-10 leading-relaxed">
+        {strings.hero.subtitle}
+      </p>
+      <div class="flex flex-wrap gap-4">
+        <a href="#contact" class="px-8 py-4 bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700 transition-colors shadow-lg shadow-blue-200">
+          {strings.hero.cta}
+        </a>
+      </div>
+    </div>
+  </div>
+  
+  <!-- Subtle decorative element -->
+  <div class="absolute top-0 right-0 -translate-y-1/2 translate-x-1/2 w-96 h-96 bg-blue-50 rounded-full blur-3xl opacity-50"></div>
+</section>

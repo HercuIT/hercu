@@ -1,0 +1,10 @@
+{
+  "mcpServers": {
+    "hercuit-specs": {
+      "command": "node",
+      "args": [
+        "C:/Users/J3st3r87/WebstormProjects/hercuit/mcp-specs-server/dist/index.js"
+      ]
+    }
+  }
+}

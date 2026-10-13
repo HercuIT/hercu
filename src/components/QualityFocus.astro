@@ -1,0 +1,26 @@
+---
+import { strings } from '../constants/strings';
+---
+
+<section class="py-24 bg-blue-600 text-white">
+  <div class="container mx-auto px-4">
+    <div class="text-center mb-16">
+      <h2 class="text-3xl md:text-4xl font-bold mb-4">{strings.qualityMandate.title}</h2>
+      <p class="text-blue-100 text-lg max-w-2xl mx-auto">{strings.qualityMandate.subtitle}</p>
+    </div>
+    
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-12">
+      {strings.qualityMandate.points.map((point) => (
+        <div class="text-center p-6 rounded-2xl bg-white/5 border border-white/10 backdrop-blur-sm">
+          <div class="w-12 h-12 bg-white/10 rounded-full flex items-center justify-center mx-auto mb-6">
+            <svg xmlns="http://www.w3.org/2000/svg" class="w-6 h-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+          </div>
+          <h3 class="text-xl font-bold mb-4">{point.title}</h3>
+          <p class="text-blue-100 leading-relaxed">{point.description}</p>
+        </div>
+      ))}
+    </div>
+  </div>
+</section>
