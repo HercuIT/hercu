@@ -1,5 +1,8 @@
 ---
-import { strings } from '../constants/strings';
+import { shared } from '../constants/strings';
+import { useStrings } from '../i18n/utils';
+
+const t = useStrings(Astro.currentLocale);
 import Logo from './brand/Logo.astro';
 const currentYear = new Date().getFullYear();
 ---
@@ -10,11 +13,11 @@ const currentYear = new Date().getFullYear();
       <Logo variant="compact" class="text-xl" />
       
       <p class="text-sm text-steel">
-        &copy; {currentYear} {strings.companyName}. {strings.footer.rights}
+        &copy; {currentYear} {shared.companyName} {t.footer.rights}
       </p>
       
       <div class="text-sm text-steel">
-        {strings.location}
+        {shared.location}
       </div>
     </div>
   </div>

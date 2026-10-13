@@ -1,29 +1,29 @@
 ---
-import { strings } from '../constants/strings';
+import { useStrings } from '../i18n/utils';
+
+const t = useStrings(Astro.currentLocale);
 ---
 
-<section id="about" class="py-24 bg-white">
+<section id={t.nav.about.id} class="py-24 bg-white">
   <div class="container mx-auto px-4">
     <div class="flex flex-col lg:flex-row items-center gap-16">
       <div class="lg:w-1/2">
         <div class="inline-block px-4 py-1.5 mb-6 text-sm font-semibold tracking-wide text-brand-500 uppercase bg-brand-500/10 rounded-full">
-          Our Story
+          {t.about.eyebrow}
         </div>
         <h2 class="text-3xl md:text-4xl font-display font-bold tracking-wordmark text-ink mb-6">
-          {strings.about.title}
+          {t.about.title}
         </h2>
         <p class="text-lg text-steel mb-8 leading-relaxed">
-          {strings.about.description}
+          {t.about.description}
         </p>
         <div class="grid grid-cols-2 gap-8 py-8 border-t border-ink/10">
-          <div>
-            <div class="text-3xl font-bold text-brand-500 mb-1">100%</div>
-            <div class="text-sm text-steel uppercase tracking-wider font-semibold">Quality Committed</div>
-          </div>
-          <div>
-            <div class="text-3xl font-bold text-brand-500 mb-1">Torreón</div>
-            <div class="text-sm text-steel uppercase tracking-wider font-semibold">Base of Operations</div>
-          </div>
+          {t.about.stats.map((stat) => (
+            <div>
+              <div class="text-3xl font-bold text-brand-500 mb-1">{stat.value}</div>
+              <div class="text-sm text-steel uppercase tracking-wider font-semibold">{stat.label}</div>
+            </div>
+          ))}
         </div>
       </div>
       <div class="lg:w-1/2 relative">
