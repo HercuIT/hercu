@@ -73,7 +73,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
 ${purpose}
 
 ## Hércuit Quality Standards Compliance
-- **String Management:** All UI text must be defined in \`src/constants/strings.ts\`.
+- **String Management:** All UI text must be defined in both locale dictionaries (\`src/constants/strings/es.ts\` and \`en.ts\`) and read via \`useStrings(Astro.currentLocale)\`.
 - **Astro Integration:** Use .astro components with minimal client-side JS.
 - **Styling:** Utilize Tailwind CSS v4 directives.
 
@@ -81,7 +81,7 @@ ${purpose}
 ${props.length > 0 ? props.map(p => `- \`${p}\``).join('\n') : "No external props defined."}
 
 ## Implementation Checklist
-- [ ] Add strings to \`strings.ts\`.
+- [ ] Add strings to both \`es.ts\` and \`en.ts\` (\`npm run check\` must pass).
 - [ ] Create \`src/components/${compName}.astro\`.
 - [ ] Implement responsive design.
 - [ ] Verify accessibility (ARIA labels).

@@ -2,7 +2,8 @@
 
 ## Core Mandates
 - **Quality-First:** Every component and script must prioritize performance, accessibility, and clean code.
-- **Centralized String Management:** All UI text must be defined in `src/constants/strings.ts`. Direct hardcoding of strings in components is prohibited.
+- **Centralized String Management:** All UI text must be defined through `src/constants/strings.ts`, in **both** locale dictionaries (`src/constants/strings/es.ts` and `en.ts`). Components read it with `useStrings(Astro.currentLocale)` from `src/i18n/utils.ts`. Direct hardcoding of strings in components is prohibited.
+- **Bilingual (Spanish default):** Spanish is served at `/`, English at `/en/`. `en.ts` must satisfy the `Dictionary` type derived from `es.ts`; run `npm run check` to catch missing translations.
 
 ## Architecture
 - **Framework:** Astro (Static Site Generator).
