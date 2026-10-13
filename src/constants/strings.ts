@@ -7,7 +7,8 @@ export const strings = {
     markLabel: "Hércuit logo: a blue pitbull head with a circuit trace on its forehead",
     homeLinkLabel: "Hércuit, go to home page",
     tagline: ["SOFTWARE", "CALIDAD", "TI"],
-    taglineLang: "es"
+    taglineLang: "es",
+    qaPageTitle: "Hércuit brand QA"
   },
   hero: {
     title: "Engineering Excellence with a Focus on Quality",
