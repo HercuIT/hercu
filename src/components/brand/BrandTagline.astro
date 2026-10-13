@@ -1,0 +1,33 @@
+---
+import { strings } from '../../constants/strings';
+
+interface Props {
+  class?: string;
+}
+
+const { class: className } = Astro.props;
+const words = strings.brand.tagline;
+---
+
+<span
+  lang={strings.brand.taglineLang}
+  class:list={[
+    'inline-flex items-center gap-[0.7em] font-mono font-medium uppercase tracking-tagline whitespace-nowrap',
+    className ?? 'text-steel',
+  ]}
+>
+  {words.map((word, i) => (
+    <>
+      {i > 0 && (
+        <>
+          <span class="sr-only">, </span>
+          <span
+            aria-hidden="true"
+            class="box-border size-[0.5em] flex-none rounded-full border-[0.15em] border-brand-500"
+          ></span>
+        </>
+      )}
+      <span>{word}</span>
+    </>
+  ))}
+</span>

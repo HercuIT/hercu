@@ -1,0 +1,38 @@
+---
+import { strings } from '../../constants/strings';
+import LogoMark from './LogoMark.astro';
+import BrandTagline from './BrandTagline.astro';
+
+interface Props {
+  /** `full` adds the tagline; use `compact` when the wordmark is under 48px. */
+  variant?: 'full' | 'compact';
+  href?: string;
+  /** Size the lockup with a font-size utility (e.g. `text-2xl`); color with `text-*`. */
+  class?: string;
+  /** Tagline color override, e.g. `text-mist/80` on dark surfaces. */
+  taglineClass?: string;
+}
+
+const { variant = 'compact', href, class: className, taglineClass } = Astro.props;
+const isFull = variant === 'full';
+const Tag = href ? 'a' : 'div';
+const linkAttrs = href ? { href, 'aria-label': strings.brand.homeLinkLabel } : {};
+---
+
+<!-- Proportions in em of the wordmark size: specs/brand-identity/02-logo-components.md -->
+<Tag
+  class:list={[
+    'inline-flex items-center font-display text-ink no-underline',
+    isFull ? 'gap-[0.303em]' : 'gap-[0.3em]',
+    className,
+  ]}
+  {...linkAttrs}
+>
+  <LogoMark decorative size={isFull ? '1.97em' : '1.35em'} />
+  <span class="flex flex-col gap-[0.106em]">
+    <span class="font-bold leading-[0.9] tracking-wordmark">{strings.brand.name}</span>
+    {isFull && (
+      <BrandTagline class:list={['text-[0.1515em] pl-[0.045em]', taglineClass ?? 'text-steel']} />
+    )}
+  </span>
+</Tag>

@@ -1,1 +1,46 @@
 @import "tailwindcss";
+
+/* Hércuit brand tokens: see specs/brand-identity/01-theme-tokens.md */
+@theme {
+  --color-ink: #14233A;
+  --color-steel: #3B5675;
+  --color-mist: #F3F6FA;
+  --color-brand-300: #6A8BA8;
+  --color-brand-400: #5E86B0;
+  --color-brand-500: #4F6F94;
+  --color-brand-600: #3E5A7A;
+
+  /* --font-sora / --font-jetbrains-mono are injected by Astro's <Font /> (astro.config.mjs) */
+  --font-sans: var(--font-sora), ui-sans-serif, system-ui, sans-serif;
+  --font-display: var(--font-sora), ui-sans-serif, system-ui, sans-serif;
+  --font-mono: var(--font-jetbrains-mono), ui-monospace, monospace;
+
+  --tracking-wordmark: -0.04em;
+  --tracking-tagline: 0.22em;
+}
+
+@layer base {
+  html {
+    color-scheme: light;
+  }
+
+  body {
+    @apply bg-mist text-ink font-sans antialiased;
+  }
+
+  ::selection {
+    @apply bg-brand-500/20 text-ink;
+  }
+
+  a {
+    color: var(--color-steel);
+  }
+
+  a:hover {
+    color: var(--color-ink);
+  }
+
+  :focus-visible {
+    @apply outline-2 outline-offset-2 outline-brand-500;
+  }
+}

@@ -2,6 +2,13 @@ export const strings = {
   companyName: "Hércuit, S. de R.L. de C.V.",
   tagline: "Quality-First Software House",
   location: "Torreón, Coahuila, México",
+  brand: {
+    name: "Hércuit",
+    markLabel: "Hércuit logo: a blue pitbull head with a circuit trace on its forehead",
+    homeLinkLabel: "Hércuit, go to home page",
+    tagline: ["SOFTWARE", "CALIDAD", "TI"],
+    taglineLang: "es"
+  },
   hero: {
     title: "Engineering Excellence with a Focus on Quality",
     subtitle: "We build custom software, mobile applications, and e-commerce solutions that don't just work—they excel.",
