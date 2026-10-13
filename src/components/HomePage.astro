@@ -1,0 +1,24 @@
+---
+// Shared home page body; rendered by src/pages/index.astro (es) and src/pages/en/index.astro (en).
+// Components read the locale from Astro.currentLocale, so nothing is passed down.
+import Layout from '../layouts/Layout.astro';
+import Header from './Header.astro';
+import Hero from './Hero.astro';
+import Services from './Services.astro';
+import QualityFocus from './QualityFocus.astro';
+import About from './About.astro';
+import Contact from './Contact.astro';
+import Footer from './Footer.astro';
+---
+
+<Layout>
+	<Header />
+	<main>
+		<Hero />
+		<Services />
+		<QualityFocus />
+		<About />
+		<Contact />
+	</main>
+	<Footer />
+</Layout>
