@@ -1,5 +1,6 @@
 ---
-import { strings } from '../../constants/strings';
+import { shared } from '../../constants/strings';
+import { useStrings } from '../../i18n/utils';
 import LogoMark from './LogoMark.astro';
 import BrandTagline from './BrandTagline.astro';
 
@@ -17,7 +18,8 @@ interface Props {
 const { variant = 'compact', href, class: className, taglineClass } = Astro.props;
 const isFull = variant === 'full';
 const Tag = href ? 'a' : 'div';
-const linkAttrs = href ? { href, 'aria-label': strings.brand.homeLinkLabel } : {};
+const t = useStrings(Astro.currentLocale);
+const linkAttrs = href ? { href, 'aria-label': t.brand.homeLinkLabel } : {};
 ---
 
 <Tag
@@ -30,7 +32,7 @@ const linkAttrs = href ? { href, 'aria-label': strings.brand.homeLinkLabel } : {
 >
   <LogoMark decorative size={isFull ? '1.97em' : '1.35em'} />
   <span class="flex flex-col gap-[0.106em]">
-    <span class="font-bold leading-[0.9] tracking-wordmark">{strings.brand.name}</span>
+    <span class="font-bold leading-[0.9] tracking-wordmark">{shared.brand.name}</span>
     {isFull && (
       <BrandTagline class:list={['text-[0.1515em] pl-[0.045em]', taglineClass ?? 'text-steel']} />
     )}

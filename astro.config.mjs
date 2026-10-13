@@ -5,6 +5,14 @@ import tailwindcss from '@tailwindcss/vite';
 
 // https://astro.build/config
 export default defineConfig({
+  site: 'https://hercuit.com', // TODO: confirm the production domain (specs/i18n README, decision 2)
+  i18n: {
+    locales: ['es', 'en'],
+    defaultLocale: 'es',
+    routing: {
+      prefixDefaultLocale: false, // Spanish at "/", English at "/en/"
+    },
+  },
   fonts: [
     {
       provider: fontProviders.google(),

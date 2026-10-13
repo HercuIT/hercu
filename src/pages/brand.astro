@@ -4,10 +4,10 @@
 import Layout from '../layouts/Layout.astro';
 import Logo from '../components/brand/Logo.astro';
 import LogoMark from '../components/brand/LogoMark.astro';
-import { strings } from '../constants/strings';
+import { shared } from '../constants/strings';
 ---
 
-<Layout title={strings.brand.qaPageTitle}>
+<Layout title={shared.brand.qaPageTitle} alternates={false}>
   <meta slot="head" name="robots" content="noindex" />
   <!--
     Artboards keep their fixed comparison widths. Each row scrolls horizontally on its own;

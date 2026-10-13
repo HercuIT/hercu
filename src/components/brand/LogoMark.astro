@@ -1,6 +1,6 @@
 ---
 // Geometry is copied verbatim from the approved primary-logo mockup; do not alter coordinates or strokes.
-import { strings } from '../../constants/strings';
+import { useStrings } from '../../i18n/utils';
 
 interface Props {
   /** Width and height of the (square) mark box. Numbers are px. */
@@ -12,9 +12,10 @@ interface Props {
 
 const { size = 40, decorative = false, class: className } = Astro.props;
 const dimension = typeof size === 'number' ? `${size}px` : size;
+const t = useStrings(Astro.currentLocale);
 const a11y = decorative
   ? { 'aria-hidden': 'true' as const }
-  : { role: 'img', 'aria-label': strings.brand.markLabel };
+  : { role: 'img', 'aria-label': t.brand.markLabel };
 ---
 
 <svg

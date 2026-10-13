@@ -1,17 +1,23 @@
 ---
 import { Font } from 'astro:assets';
+import { getAbsoluteLocaleUrl } from 'astro:i18n';
 import '../styles/global.css';
-import { strings } from '../constants/strings';
+import { getLocale, locales, localeMeta, useStrings } from '../i18n/utils';
 
 interface Props {
 	title?: string;
+	/** Emit canonical + hreflang alternates. Turn off for pages that exist in one locale only. */
+	alternates?: boolean;
 }
 
-const { title = strings.companyName } = Astro.props;
+const locale = getLocale(Astro.currentLocale);
+const t = useStrings(locale);
+const { title = t.meta.title, alternates = true } = Astro.props;
+const otherLocales = locales.filter((l) => l !== locale);
 ---
 
 <!doctype html>
-<html lang="en">
+<html lang={localeMeta[locale].htmlLang}>
 	<head>
 		<meta charset="utf-8" />
 		<meta name="viewport" content="width=device-width" />
@@ -24,6 +30,16 @@ const { title = strings.companyName } = Astro.props;
 		<Font cssVariable="--font-jetbrains-mono" />
 		<meta name="generator" content={Astro.generator} />
 		<title>{title}</title>
+		<meta name="description" content={t.meta.description} />
+		<meta property="og:locale" content={localeMeta[locale].ogLocale} />
+		{otherLocales.map((l) => <meta property="og:locale:alternate" content={localeMeta[l].ogLocale} />)}
+		{alternates && (
+			<>
+				<link rel="canonical" href={getAbsoluteLocaleUrl(locale, '/')} />
+				{locales.map((l) => <link rel="alternate" hreflang={localeMeta[l].htmlLang} href={getAbsoluteLocaleUrl(l, '/')} />)}
+				<link rel="alternate" hreflang="x-default" href={getAbsoluteLocaleUrl('es', '/')} />
+			</>
+		)}
 		<slot name="head" />
 	</head>
 	<body>
