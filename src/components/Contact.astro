@@ -2,19 +2,19 @@
 import { strings } from '../constants/strings';
 ---
 
-<section id="contact" class="py-24 bg-gray-900 text-white">
+<section id="contact" class="py-24 bg-ink text-white">
   <div class="container mx-auto px-4">
     <div class="max-w-5xl mx-auto">
       <div class="flex flex-col lg:flex-row gap-16">
         <div class="lg:w-1/2">
-          <h2 class="text-4xl font-bold mb-6">{strings.contact.title}</h2>
-          <p class="text-gray-400 text-lg mb-8 leading-relaxed">
+          <h2 class="text-4xl font-display font-bold tracking-wordmark mb-6">{strings.contact.title}</h2>
+          <p class="text-mist/80 text-lg mb-8 leading-relaxed">
             Ready to elevate your software quality or start a new engineering project? Let's discuss how Hércuit can help.
           </p>
           
           <div class="space-y-6">
             <div class="flex items-start gap-4">
-              <div class="p-3 bg-blue-600/10 rounded-lg text-blue-500">
+              <div class="p-3 bg-brand-500/20 rounded-lg text-brand-400">
                 <svg xmlns="http://www.w3.org/2000/svg" class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
@@ -22,7 +22,7 @@ import { strings } from '../constants/strings';
               </div>
               <div>
                 <h4 class="font-bold text-white">Location</h4>
-                <p class="text-gray-400">{strings.location}</p>
+                <p class="text-mist/80">{strings.location}</p>
               </div>
             </div>
           </div>
@@ -31,18 +31,18 @@ import { strings } from '../constants/strings';
         <div class="lg:w-1/2">
           <form class="space-y-4">
             <div>
-              <label for="name" class="block text-sm font-medium text-gray-400 mb-1">{strings.contact.formName}</label>
-              <input type="text" id="name" name="name" class="w-full px-4 py-3 bg-gray-800 border border-gray-700 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all text-white" placeholder="Jane Doe" required />
+              <label for="name" class="block text-sm font-medium text-mist/80 mb-1">{strings.contact.formName}</label>
+              <input type="text" id="name" name="name" class="w-full px-4 py-3 bg-white/5 border border-mist/15 rounded-lg focus:ring-2 focus:ring-brand-400 focus:border-transparent outline-none transition-all text-white" placeholder="Jane Doe" required />
             </div>
             <div>
-              <label for="email" class="block text-sm font-medium text-gray-400 mb-1">{strings.contact.formEmail}</label>
-              <input type="email" id="email" name="email" class="w-full px-4 py-3 bg-gray-800 border border-gray-700 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all text-white" placeholder="jane@company.com" required />
+              <label for="email" class="block text-sm font-medium text-mist/80 mb-1">{strings.contact.formEmail}</label>
+              <input type="email" id="email" name="email" class="w-full px-4 py-3 bg-white/5 border border-mist/15 rounded-lg focus:ring-2 focus:ring-brand-400 focus:border-transparent outline-none transition-all text-white" placeholder="jane@company.com" required />
             </div>
             <div>
-              <label for="message" class="block text-sm font-medium text-gray-400 mb-1">{strings.contact.formMessage}</label>
-              <textarea id="message" name="message" rows="4" class="w-full px-4 py-3 bg-gray-800 border border-gray-700 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all text-white" placeholder="Tell us about your project or quality needs..." required></textarea>
+              <label for="message" class="block text-sm font-medium text-mist/80 mb-1">{strings.contact.formMessage}</label>
+              <textarea id="message" name="message" rows="4" class="w-full px-4 py-3 bg-white/5 border border-mist/15 rounded-lg focus:ring-2 focus:ring-brand-400 focus:border-transparent outline-none transition-all text-white" placeholder="Tell us about your project or quality needs..." required></textarea>
             </div>
-            <button type="submit" class="w-full py-4 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-lg transition-colors shadow-lg shadow-blue-900/20">
+            <button type="submit" class="w-full py-4 bg-brand-500 hover:bg-brand-600 text-white font-bold rounded-lg transition-colors shadow-lg shadow-ink/20">
               {strings.contact.submit}
             </button>
           </form>

@@ -20,10 +20,11 @@ const { title = strings.companyName } = Astro.props;
 		<link rel="apple-touch-icon" href="/apple-touch-icon.png" />
 		<link rel="manifest" href="/site.webmanifest" />
 		<meta name="theme-color" content="#F3F6FA" />
-		<Font cssVariable="--font-sora" preload={[{ weight: 700 }]} />
+		<Font cssVariable="--font-sora" preload />
 		<Font cssVariable="--font-jetbrains-mono" />
 		<meta name="generator" content={Astro.generator} />
 		<title>{title}</title>
+		<slot name="head" />
 	</head>
 	<body>
 		<slot />

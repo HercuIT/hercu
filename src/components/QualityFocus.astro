@@ -2,11 +2,11 @@
 import { strings } from '../constants/strings';
 ---
 
-<section class="py-24 bg-blue-600 text-white">
+<section class="py-24 bg-brand-500 text-white">
   <div class="container mx-auto px-4">
     <div class="text-center mb-16">
-      <h2 class="text-3xl md:text-4xl font-bold mb-4">{strings.qualityMandate.title}</h2>
-      <p class="text-blue-100 text-lg max-w-2xl mx-auto">{strings.qualityMandate.subtitle}</p>
+      <h2 class="text-3xl md:text-4xl font-display font-bold tracking-wordmark mb-4">{strings.qualityMandate.title}</h2>
+      <p class="text-mist text-lg max-w-2xl mx-auto">{strings.qualityMandate.subtitle}</p>
     </div>
     
     <div class="grid grid-cols-1 md:grid-cols-3 gap-12">
@@ -18,7 +18,7 @@ import { strings } from '../constants/strings';
             </svg>
           </div>
           <h3 class="text-xl font-bold mb-4">{point.title}</h3>
-          <p class="text-blue-100 leading-relaxed">{point.description}</p>
+          <p class="text-mist leading-relaxed">{point.description}</p>
         </div>
       ))}
     </div>

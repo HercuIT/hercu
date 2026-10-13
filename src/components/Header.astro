@@ -1,25 +1,23 @@
 ---
 import { strings } from '../constants/strings';
+import Logo from './brand/Logo.astro';
 ---
 
-<header class="sticky top-0 z-50 bg-white/80 backdrop-blur-md border-b border-gray-100">
+<header class="sticky top-0 z-50 bg-mist/80 backdrop-blur-md border-b border-ink/10">
   <div class="container mx-auto px-4">
     <div class="flex items-center justify-between h-20">
-      <div class="flex items-center gap-2">
-        <div class="w-8 h-8 bg-blue-600 rounded flex items-center justify-center text-white font-bold text-xl">H</div>
-        <span class="text-xl font-bold tracking-tight text-gray-900">HÉRCUIT</span>
-      </div>
+      <Logo variant="compact" href="/" class="text-2xl" />
       
       <nav class="hidden md:flex items-center gap-8">
-        <a href="#services" class="text-sm font-medium text-gray-600 hover:text-blue-600 transition-colors">Services</a>
-        <a href="#about" class="text-sm font-medium text-gray-600 hover:text-blue-600 transition-colors">About</a>
-        <a href="#contact" class="px-5 py-2.5 bg-gray-900 text-white text-sm font-bold rounded-lg hover:bg-gray-800 transition-colors">
+        <a href="#services" class="text-sm font-medium text-steel hover:text-brand-500 transition-colors">Services</a>
+        <a href="#about" class="text-sm font-medium text-steel hover:text-brand-500 transition-colors">About</a>
+        <a href="#contact" class="px-5 py-2.5 bg-ink text-white hover:text-white text-sm font-bold rounded-lg hover:bg-ink/90 transition-colors">
           Contact Us
         </a>
       </nav>
       
       <!-- Mobile menu button placeholder -->
-      <button class="md:hidden p-2 text-gray-600">
+      <button class="md:hidden p-2 text-steel">
         <svg xmlns="http://www.w3.org/2000/svg" class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16m-7 6h7" />
         </svg>
