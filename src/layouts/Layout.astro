@@ -2,11 +2,11 @@
 import { Font } from 'astro:assets';
 import { getAbsoluteLocaleUrl } from 'astro:i18n';
 import '../styles/global.css';
-import { getLocale, locales, localeMeta, useStrings } from '../i18n/utils';
+import { defaultLocale, getLocale, locales, localeMeta, useStrings } from '../i18n/utils';
 
 interface Props {
 	title?: string;
-	/** Emit canonical + hreflang alternates. Turn off for pages that exist in one locale only. */
+	/** Emit canonical, hreflang and og:locale:alternate tags. Turn off for pages that exist in one locale only. */
 	alternates?: boolean;
 }
 
@@ -32,12 +32,12 @@ const otherLocales = locales.filter((l) => l !== locale);
 		<title>{title}</title>
 		<meta name="description" content={t.meta.description} />
 		<meta property="og:locale" content={localeMeta[locale].ogLocale} />
-		{otherLocales.map((l) => <meta property="og:locale:alternate" content={localeMeta[l].ogLocale} />)}
 		{alternates && (
 			<>
+				{otherLocales.map((l) => <meta property="og:locale:alternate" content={localeMeta[l].ogLocale} />)}
 				<link rel="canonical" href={getAbsoluteLocaleUrl(locale, '/')} />
 				{locales.map((l) => <link rel="alternate" hreflang={localeMeta[l].htmlLang} href={getAbsoluteLocaleUrl(l, '/')} />)}
-				<link rel="alternate" hreflang="x-default" href={getAbsoluteLocaleUrl('es', '/')} />
+				<link rel="alternate" hreflang="x-default" href={getAbsoluteLocaleUrl(defaultLocale, '/')} />
 			</>
 		)}
 		<slot name="head" />

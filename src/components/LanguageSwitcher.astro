@@ -6,12 +6,15 @@ interface Props {
   class?: string;
 }
 
+// Rendered as a labelled group, not a <nav>: on desktop it sits inside the header's primary nav,
+// and nested navigation landmarks are an accessibility violation.
 const { class: className } = Astro.props;
 const current = getLocale(Astro.currentLocale);
 const t = useStrings(current);
 ---
 
-<nav
+<div
+  role="group"
   aria-label={t.languageSwitcher.label}
   class:list={['flex items-center gap-1 font-mono text-sm font-medium uppercase tracking-tagline', className]}
 >
@@ -38,4 +41,4 @@ const t = useStrings(current);
       )}
     </>
   ))}
-</nav>
+</div>

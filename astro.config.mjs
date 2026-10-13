@@ -2,13 +2,14 @@
 import { defineConfig, fontProviders } from 'astro/config';
 
 import tailwindcss from '@tailwindcss/vite';
+import { defaultLocale, locales } from './src/i18n/config';
 
 // https://astro.build/config
 export default defineConfig({
   site: 'https://hercuit.com', // TODO: confirm the production domain (specs/i18n README, decision 2)
   i18n: {
-    locales: ['es', 'en'],
-    defaultLocale: 'es',
+    locales: [...locales],
+    defaultLocale,
     routing: {
       prefixDefaultLocale: false, // Spanish at "/", English at "/en/"
     },

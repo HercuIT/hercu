@@ -1,8 +1,7 @@
 import { strings } from '../constants/strings';
+import { defaultLocale, locales, type Locale } from './config';
 
-export const locales = ['es', 'en'] as const;
-export type Locale = (typeof locales)[number];
-export const defaultLocale: Locale = 'es';
+export { defaultLocale, locales, type Locale };
 
 /** Locale configuration that is not UI copy. Language names are written in their own language. */
 export const localeMeta: Record<Locale, { htmlLang: string; ogLocale: string; short: string; name: string }> = {
