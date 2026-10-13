@@ -1,14 +1,14 @@
 export const strings = {
-  companyName: "Hércuit, S. de R.L. de C.V.",
+  companyName: "HércuIT, S. de R.L. de C.V.",
   tagline: "Quality-First Software House",
   location: "Torreón, Coahuila, México",
   brand: {
-    name: "Hércuit",
-    markLabel: "Hércuit logo: a blue pitbull head with a circuit trace on its forehead",
-    homeLinkLabel: "Hércuit, go to home page",
+    name: "HércuIT",
+    markLabel: "HércuIT logo: a blue pitbull head with a circuit trace on its forehead",
+    homeLinkLabel: "HércuIT, go to home page",
     tagline: ["SOFTWARE", "CALIDAD", "TI"],
     taglineLang: "es",
-    qaPageTitle: "Hércuit brand QA"
+    qaPageTitle: "HércuIT brand QA"
   },
   hero: {
     title: "Engineering Excellence with a Focus on Quality",
@@ -35,7 +35,7 @@ export const strings = {
     }
   },
   qualityMandate: {
-    title: "The Hércuit Quality Mandate",
+    title: "The HércuIT Quality Mandate",
     subtitle: "In software, quality isn't an afterthought—it's the foundation.",
     points: [
       {
@@ -53,8 +53,8 @@ export const strings = {
     ]
   },
   about: {
-    title: "About Hércuit",
-    description: "Based in Torreón, Coahuila, Hércuit is a technology firm dedicated to pushing the boundaries of software engineering through a rigorous focus on quality and innovation."
+    title: "About HércuIT",
+    description: "Based in Torreón, Coahuila, HércuIT is a technology firm dedicated to pushing the boundaries of software engineering through a rigorous focus on quality and innovation."
   },
   contact: {
     title: "Start Your Quality Journey",
