@@ -16,8 +16,7 @@ export const es = {
   nav: {
     services: { label: "Servicios", id: "servicios" } as NavLink,
     about: { label: "Nosotros", id: "nosotros" } as NavLink,
-    contact: { label: "Contáctenos", id: "contacto" } as NavLink,
-    menuLabel: "Abrir menú"
+    contact: { label: "Contáctenos", id: "contacto" } as NavLink
   },
   languageSwitcher: {
     label: "Idioma"

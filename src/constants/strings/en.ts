@@ -14,8 +14,7 @@ export const en = {
   nav: {
     services: { label: "Services", id: "services" },
     about: { label: "About", id: "about" },
-    contact: { label: "Contact Us", id: "contact" },
-    menuLabel: "Open menu"
+    contact: { label: "Contact Us", id: "contact" }
   },
   languageSwitcher: {
     label: "Language"

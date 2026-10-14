@@ -22,15 +22,7 @@ const t = useStrings(locale);
         </a>
       </nav>
 
-      <div class="flex items-center gap-2 md:hidden">
-        <LanguageSwitcher />
-        <!-- Mobile menu button placeholder -->
-        <button type="button" aria-label={t.nav.menuLabel} class="p-2 text-steel">
-          <svg xmlns="http://www.w3.org/2000/svg" class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16m-7 6h7" />
-          </svg>
-        </button>
-      </div>
+      <LanguageSwitcher class="md:hidden" />
     </div>
   </div>
 </header>

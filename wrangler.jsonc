@@ -1,0 +1,17 @@
+{
+  "$schema": "./node_modules/wrangler/config-schema.json",
+  // Must match the Worker name in the Cloudflare dashboard (defaults to the GitHub repo name).
+  "name": "hercu",
+  "compatibility_date": "2026-09-01",
+  // Wrangler runs the Astro build before deploy/preview, so deploys work even when the
+  // dashboard's "Build command" is empty.
+  "build": {
+    "command": "npm run build"
+  },
+  // Static site: serve Astro's build output directly; no Worker script.
+  "assets": {
+    "directory": "./dist"
+  },
+  // Required by `wrangler preview` (Cloudflare's preview-branch deploy command). Empty = defaults.
+  "previews": {}
+}
