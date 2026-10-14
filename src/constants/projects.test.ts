@@ -18,7 +18,10 @@ describe('isSafeHttpsUrl', () => {
     'https://bruno-gray-pi.vercel.app/',
     'https://example.com',
     'https://example.com/path?q=1#frag',
-    'https://bücher.de/', // internationalized domain
+    'https://bücher.de/', // internationalized domain (punycoded by URL)
+    'https://xn--bcher-kva.de/', // the same domain, already punycoded
+    'https://my-app.example.co.uk/', // hyphen inside a label, multi-part TLD
+    `https://${'a'.repeat(63)}.com/`, // label at the 63-character limit
   ])('accepts %s', (url) => {
     expect(isSafeHttpsUrl(url)).toBe(true);
   });
@@ -33,6 +36,17 @@ describe('isSafeHttpsUrl', () => {
     ['protocol-relative', '//example.com'],
     ['scheme only', 'https://'],
     ['host without a dot', 'https://localhost/'],
+    ['host that is only a dot', 'https://.'],
+    ['host that is only dots', 'https://..'],
+    ['empty leading label', 'https://.com'],
+    ['empty middle label', 'https://a..b'],
+    ['trailing dot (empty last label)', 'https://example.'],
+    ['label starting with a hyphen', 'https://-bad.com'],
+    ['label ending with a hyphen', 'https://bad-.com'],
+    ['label longer than 63 characters', `https://${'a'.repeat(64)}.com`],
+    ['hostname longer than 253 characters', `https://${Array(64).fill('abc').join('.')}.com`],
+    ['IPv4 address', 'https://192.168.1.1/'],
+    ['IPv6 address', 'https://[::1]/'],
     ['embedded credentials', 'https://user:pass@example.com/'],
     ['leading whitespace', ' https://example.com'],
     ['trailing whitespace', 'https://example.com '],
