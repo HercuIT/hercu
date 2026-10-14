@@ -1,0 +1,10 @@
+{
+  "$schema": "./node_modules/wrangler/config-schema.json",
+  // Must match the Worker name in the Cloudflare dashboard (defaults to the GitHub repo name).
+  "name": "hercu",
+  "compatibility_date": "2026-09-01",
+  // Static site: serve Astro's build output directly; no Worker script.
+  "assets": {
+    "directory": "./dist"
+  }
+}
