@@ -61,8 +61,8 @@ export const es = {
       "nopalito-limpio": {
         description: "Lavandería con recolección y entrega a domicilio.",
         highlights: [
-          "Agenda la recolección e indica cuántas bolsas",
-          "Ropa de vuelta en casa en hasta 2 días",
+          "Los clientes agendan la recolección e indican cuántas bolsas",
+          "Ropa de vuelta en casa en un máximo de 2 días",
           "Las reservas como invitado se vinculan a una cuenta"
         ],
         imageAlt: "Página de inicio de Nopalito Limpio"

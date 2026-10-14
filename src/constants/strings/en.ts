@@ -56,7 +56,7 @@ export const en = {
       "nopalito-limpio": {
         description: "Laundry with home pickup and delivery.",
         highlights: [
-          "Schedule a pickup and say how many bags",
+          "Customers schedule a pickup and say how many bags",
           "Clothes back home within 2 days",
           "Guest bookings can be linked to an account"
         ],
