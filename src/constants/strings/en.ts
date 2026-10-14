@@ -75,6 +75,8 @@ export const en = {
     title: "Start Your Quality Journey",
     description: "Ready to elevate your software quality or start a new engineering project? Let's discuss how HércuIT can help.",
     locationLabel: "Location",
+    phoneLabel: "Phone",
+    callPrefix: "Call us at",
     formName: "Full name",
     formEmail: "Email",
     formMessage: "Your idea",

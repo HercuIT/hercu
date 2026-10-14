@@ -77,6 +77,8 @@ export const es = {
     title: "Comience su camino hacia la calidad",
     description: "¿Listo para elevar la calidad de su software o iniciar un nuevo proyecto de ingeniería? Conversemos sobre cómo HércuIT puede ayudarle.",
     locationLabel: "Ubicación",
+    phoneLabel: "Teléfono",
+    callPrefix: "Llámmenos al",
     formName: "Nombre completo",
     formEmail: "Correo electrónico",
     formMessage: "Su idea",

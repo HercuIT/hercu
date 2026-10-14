@@ -7,6 +7,10 @@ export type { Dictionary } from './strings/es';
 export const shared = {
   companyName: "HércuIT, S. de R.L. de C.V.",
   location: "Torreón, Coahuila, México",
+  phone: {
+    display: "+52 33 1713 3469",
+    href: "tel:+523317133469"
+  },
   brand: {
     name: "HércuIT",
     tagline: ["SOFTWARE", "CALIDAD", "TI"],

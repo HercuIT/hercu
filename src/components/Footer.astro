@@ -1,9 +1,9 @@
 ---
 import { shared } from '../constants/strings';
 import { useStrings } from '../i18n/utils';
+import Logo from './brand/Logo.astro';
 
 const t = useStrings(Astro.currentLocale);
-import Logo from './brand/Logo.astro';
 const currentYear = new Date().getFullYear();
 ---
 
@@ -16,8 +16,15 @@ const currentYear = new Date().getFullYear();
         &copy; {currentYear} {shared.companyName} {t.footer.rights}
       </p>
       
-      <div class="text-sm text-steel">
-        {shared.location}
+      <div class="text-sm text-steel flex flex-col items-center md:items-end gap-1">
+        <span>{shared.location}</span>
+        <a
+          href={shared.phone.href}
+          aria-label={`${t.contact.callPrefix} ${shared.phone.display}`}
+          class="text-steel hover:text-ink whitespace-nowrap"
+        >
+          {shared.phone.display}
+        </a>
       </div>
     </div>
   </div>
