@@ -65,3 +65,44 @@ describe('Spanish copy fixes', () => {
     expect(strings.es.contact.callPrefix).toBe('Llámenos al');
   });
 });
+
+/**
+ * Heuristic guard for the formal "usted" register. Flags unambiguous informal (tú) markers:
+ * tú pronouns/possessives anywhere, -nos imperatives, and tú imperatives opening a string
+ * (e.g. "Agenda la recolección…"). Not exhaustive: native review is still required.
+ */
+const TU_MARKERS = /(?<![\p{L}])(tú|tu|tus|te|ti|contigo|cuéntanos|escríbenos|llámanos|contáctanos|platícanos)(?![\p{L}])/iu;
+const TU_IMPERATIVE_OPENING = /^(agenda|indica|reserva|visita|descubre|elige|solicita|escribe|cuenta|llama)\s/iu;
+const usesTu = (text: string) => TU_MARKERS.test(text) || TU_IMPERATIVE_OPENING.test(text);
+
+describe('usesTu heuristic', () => {
+  it.each([
+    'Agenda la recolección e indica cuántas bolsas',
+    'Tu ropa limpia, doblada y de vuelta en casa.',
+    'Cuéntanos qué necesitas',
+    'Te respondemos pronto',
+    'Indica cuántas bolsas',
+  ])('flags informal copy: %j', (text) => {
+    expect(usesTu(text)).toBe(true);
+  });
+
+  it.each([
+    'Los clientes agendan la recolección e indican cuántas bolsas',
+    'Cuéntenos qué necesita',
+    'Llámenos al',
+    'Reservas en línea sin crear cuenta', // plural noun, not an imperative
+    'Agende la recolección', // usted imperative
+    'Team building para equipos remotos', // "te" inside a word must not match
+    'Capacitación práctica en IA y QA',
+    '',
+  ])('accepts formal or neutral copy: %j', (text) => {
+    expect(usesTu(text)).toBe(false);
+  });
+});
+
+describe('Spanish register', () => {
+  it('uses formal "usted" or neutral phrasing everywhere (no informal tú markers)', () => {
+    const offenders = allStrings(strings.es).filter(usesTu);
+    expect(offenders).toEqual([]);
+  });
+});
