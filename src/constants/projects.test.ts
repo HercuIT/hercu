@@ -106,6 +106,21 @@ describe('buildProjectCards with broken input (negative cases)', () => {
     expect(() => buildProjectCards(copy)).toThrow('Missing highlight 2 for project "binkleaner"');
   });
 
+  it('throws on a sparse highlights array with a hole (length 3, slot missing)', () => {
+    const copy = validCopy();
+    // eslint-disable-next-line no-sparse-arrays
+    (copy.binkleaner as { highlights: string[] }).highlights = ['one', , 'three'] as string[];
+    expect(copy.binkleaner.highlights).toHaveLength(3);
+    expect(1 in copy.binkleaner.highlights).toBe(false);
+    expect(() => buildProjectCards(copy)).toThrow('Missing highlight 2 for project "binkleaner"');
+  });
+
+  it('throws on an all-holes highlights array (new Array(3))', () => {
+    const copy = validCopy();
+    (copy.binkleaner as { highlights: string[] }).highlights = new Array(3);
+    expect(() => buildProjectCards(copy)).toThrow('Missing highlight 1 for project "binkleaner"');
+  });
+
   it('throws when there are fewer than 3 highlights', () => {
     const copy = validCopy();
     (copy.binkleaner as { highlights: string[] }).highlights = ['one', 'two'];

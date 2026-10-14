@@ -61,7 +61,12 @@ export function buildProjectCards(
       name: requireText(project.name, 'name', project.id),
       url: project.url,
       description: requireText(entry.description, 'description', project.id),
-      highlights: entry.highlights.map((h, i) => requireText(h, `highlight ${i + 1}`, project.id)) as [string, string, string],
+      // Array.from (not .map) visits every index, so holes in a sparse array are validated too.
+      highlights: Array.from(entry.highlights, (h, i) => requireText(h, `highlight ${i + 1}`, project.id)) as [
+        string,
+        string,
+        string,
+      ],
       imageAlt: requireText(entry.imageAlt, 'imageAlt', project.id),
     };
   });
