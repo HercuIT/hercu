@@ -1,5 +1,6 @@
 import { readFileSync } from 'node:fs';
 import { createRequire } from 'node:module';
+import { fileURLToPath } from 'node:url';
 import { describe, expect, it } from 'vitest';
 import semver from 'semver';
 
@@ -9,7 +10,8 @@ function enginesOf(pkgJsonPath: string): string | undefined {
   return JSON.parse(readFileSync(pkgJsonPath, 'utf8')).engines?.node;
 }
 
-const ours = enginesOf(new URL('../package.json', import.meta.url).pathname.replace(/^\/([A-Za-z]:)/, '$1'));
+// fileURLToPath decodes %20/%C3%A1 and handles Windows drive letters; URL.pathname does neither.
+const ours = enginesOf(fileURLToPath(new URL('../package.json', import.meta.url)));
 
 // Tools that run during dev/CI/build. Our declared range must not promise a Node version they reject.
 const tools = ['astro', 'vite', 'vitest', 'wrangler'];
