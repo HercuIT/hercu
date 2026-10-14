@@ -1,0 +1,75 @@
+name: Claude Code Review
+
+on:
+  pull_request:
+    types: [opened, synchronize, ready_for_review, reopened]
+
+# A new push to the PR cancels the review it supersedes.
+concurrency:
+  group: claude-review-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  review:
+    name: Claude code review
+    # Skip drafts (reviewed on ready_for_review), fork PRs (no access to secrets)
+    # and Dependabot PRs (no access to secrets; action bumps are covered by CI).
+    if: >-
+      github.event.pull_request.draft == false &&
+      github.event.pull_request.head.repo.full_name == github.repository &&
+      github.actor != 'dependabot[bot]'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    permissions:
+      contents: read
+      pull-requests: write
+      id-token: write # used by the action to obtain its GitHub token
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 1
+
+      - uses: anthropics/claude-code-action@58985842b834ed26087302ba27d07bc24ca8697a # v1.0.244
+        with:
+          anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
+          # One summary comment per PR, updated on every push instead of piling up.
+          use_sticky_comment: true
+          prompt: |
+            REPO: ${{ github.repository }}
+            PR NUMBER: ${{ github.event.pull_request.number }}
+
+            You are reviewing a pull request for the HércuIT corporate website
+            (Astro 7 static site, Tailwind CSS v4, TypeScript strict, Vitest).
+
+            First read AGENTS.md and GEMINI.md: they are the project's rules. Then read the
+            diff with `gh pr diff` and open the surrounding code where you need context.
+
+            Review for, in priority order:
+            1. Correctness bugs and regressions: broken behavior, wrong logic, broken links or anchors.
+            2. Security: unsafe URLs (anything but https, javascript:/data: links), missing
+               rel="noopener" on target="_blank", secrets or tokens in code, risky workflow
+               permissions or unpinned actions in .github/.
+            3. Project rules:
+               - All UI text comes from the dictionaries, in BOTH src/constants/strings/es.ts and
+                 en.ts. Hard-coded user-facing text in components is a defect.
+               - Spanish is the default locale and uses formal "usted"; flag spelling mistakes.
+               - New or changed logic must ship with unit tests that cover the happy path,
+                 negative scenarios and edge cases (empty values, boundaries, accents, both
+                 locales). Point out specific missing cases.
+               - Brand tokens only (ink, steel, mist, brand-*); no raw Tailwind blue-*/gray-*.
+               - Zero client JS unless the change justifies it.
+            4. Accessibility: labels, accessible names, aria-hidden on decorative icons,
+               WCAG AA contrast, keyboard operability, heading order.
+            5. Performance: unoptimized images, layout shift, unnecessary dependencies.
+
+            How to report:
+            - Use inline comments (mcp__github_inline_comment__create_inline_comment) only for
+              concrete, actionable issues, each with the failure scenario and a suggested fix.
+            - Then post ONE summary comment with `gh pr comment`: a verdict line
+              ("No blocking issues" or "N issues to address"), the issues ranked by severity,
+              and missing tests, if any.
+            - Skip pure style nits and anything a linter or `npm run check` already catches.
+            - Do not approve or request changes; humans own the merge decision.
+            - If there is nothing worth flagging, say so in one short summary comment.
+          claude_args: |
+            --allowedTools "Read,Grep,Glob,mcp__github_inline_comment__create_inline_comment,Bash(gh pr comment:*),Bash(gh pr diff:*),Bash(gh pr view:*)"
