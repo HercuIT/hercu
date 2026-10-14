@@ -92,6 +92,7 @@ export const en = {
         "ai-consultancy": "AI Consultancy",
         "ai-architecture": "AI Architecture",
         "ai-bot": "AI Bot",
+        "ai-whatsapp-automation": "WhatsApp Business Automation with AI",
         "qa-web-app": "QA for Web Apps",
         "qa-mobile-app": "QA for Mobile Apps",
         "qa-ai-automation": "QA + AI Automation",

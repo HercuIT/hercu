@@ -10,8 +10,8 @@ describe('serviceGroups catalogue', () => {
     expect(serviceGroups.map((g) => g.id)).toEqual(['ai', 'qa', 'development', 'training']);
   });
 
-  it('contains exactly the 13 requested services', () => {
-    expect(allServiceIds).toHaveLength(13);
+  it('contains exactly the 14 offered services', () => {
+    expect(allServiceIds).toHaveLength(14);
   });
 
   it('never repeats a service slug across groups', () => {
@@ -58,6 +58,16 @@ describe.each(locales)('buildServiceOptions with the "%s" dictionary', (locale) 
     const label = groups.flatMap((g) => g.options).find((o) => o.value === 'app-like-binkleaner')?.label;
     expect(label).toContain('BinKleaner');
     expect(label).toContain('Nopalito Limpio');
+  });
+
+  it('keeps the "WhatsApp Business" brand name untranslated', () => {
+    const label = groups.flatMap((g) => g.options).find((o) => o.value === 'ai-whatsapp-automation')?.label;
+    expect(label).toContain('WhatsApp Business');
+  });
+
+  it('lists WhatsApp automation in the AI area, right after the AI bot', () => {
+    const ai = groups.find((g) => g.id === 'ai')?.options.map((o) => o.value) ?? [];
+    expect(ai.indexOf('ai-whatsapp-automation')).toBe(ai.indexOf('ai-bot') + 1);
   });
 
   it('has unique option labels (no two services read the same)', () => {
@@ -117,7 +127,7 @@ describe('buildServiceOptions with broken labels (negative cases)', () => {
     labels.options['not-a-service'] = 'Ghost';
     const rendered = buildServiceOptions(labels).flatMap((g) => g.options.map((o) => o.value));
     expect(rendered).not.toContain('not-a-service');
-    expect(rendered).toHaveLength(13);
+    expect(rendered).toHaveLength(allServiceIds.length);
   });
 
   it('accepts very long labels unchanged', () => {
