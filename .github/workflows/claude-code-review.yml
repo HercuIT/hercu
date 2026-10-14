@@ -46,9 +46,13 @@ jobs:
 
             Review for, in priority order:
             1. Correctness bugs and regressions: broken behavior, wrong logic, broken links or anchors.
-            2. Security: unsafe URLs (anything but https, javascript:/data: links), missing
-               rel="noopener" on target="_blank", secrets or tokens in code, risky workflow
-               permissions or unpinned actions in .github/.
+            2. Security:
+               - Dangerous URL schemes in href/src (javascript:, data:, vbscript:) and external
+                 links over plain http:// instead of https://.
+               - These are SAFE and must not be flagged: fragment links (#contacto), root-relative
+                 or relative paths (/, /en/, ./img.png), tel: and mailto: links.
+               - Missing rel="noopener" on target="_blank", secrets or tokens in code, risky
+                 workflow permissions or unpinned actions in .github/.
             3. Project rules:
                - All UI text comes from the dictionaries, in BOTH src/constants/strings/es.ts and
                  en.ts. Hard-coded user-facing text in components is a defect.
