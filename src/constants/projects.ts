@@ -18,9 +18,23 @@ export type ProjectConfig = { id: ProjectId; name: string; url: string };
 
 export type ProjectCard = ProjectConfig & ProjectCopy;
 
+// One DNS label: 1–63 chars, letters/digits/hyphens, no leading or trailing hyphen.
+// URL has already lowercased and punycoded the hostname (e.g. "bücher.de" → "xn--bcher-kva.de").
+const DNS_LABEL = /^[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?$/;
+
+/** True for a public domain name: ≥ 2 valid labels, ≤ 253 chars, and not an IP address. */
+function isDomainName(hostname: string): boolean {
+  if (hostname.length > 253) return false;
+  const labels = hostname.split('.');
+  if (labels.length < 2 || !labels.every((label) => DNS_LABEL.test(label))) return false;
+  // An all-numeric last label means an IPv4 literal (e.g. 192.168.1.1), not a domain.
+  return !/^\d+$/.test(labels[labels.length - 1]);
+}
+
 /**
- * True only for absolute `https:` URLs with a dotted hostname and no embedded credentials.
- * Rejects `http:`, `javascript:`, relative paths, blanks and values with surrounding whitespace.
+ * True only for absolute `https:` URLs on a well-formed domain name, without embedded credentials.
+ * Rejects `http:`, `javascript:`, relative paths, blanks, surrounding whitespace, IP addresses and
+ * malformed hosts such as `https://.`, `https://a..b` or `https://-bad.com`.
  */
 export function isSafeHttpsUrl(value: unknown): boolean {
   if (typeof value !== 'string' || value === '' || value !== value.trim()) return false;
@@ -30,7 +44,7 @@ export function isSafeHttpsUrl(value: unknown): boolean {
   } catch {
     return false;
   }
-  return url.protocol === 'https:' && url.hostname.includes('.') && url.username === '' && url.password === '';
+  return url.protocol === 'https:' && isDomainName(url.hostname) && url.username === '' && url.password === '';
 }
 
 function requireText(value: unknown, field: string, id: string): string {
