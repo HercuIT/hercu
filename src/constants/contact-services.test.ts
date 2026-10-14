@@ -10,6 +10,17 @@ describe('serviceGroups catalogue', () => {
     expect(serviceGroups.map((g) => g.id)).toEqual(['ai', 'qa', 'development', 'training']);
   });
 
+  // Slugs are the values the form submits, so they are a contract with any backend or report.
+  // Renaming, removing or adding one must be a deliberate change to this list.
+  it('submits exactly these service values, grouped and ordered', () => {
+    expect(Object.fromEntries(serviceGroups.map((g) => [g.id, [...g.services]]))).toEqual({
+      ai: ['ai-consultancy', 'ai-architecture', 'ai-bot', 'ai-whatsapp-automation'],
+      qa: ['qa-web-app', 'qa-mobile-app', 'qa-ai-automation', 'qa-ai-generated-app'],
+      development: ['new-app', 'app-like-binkleaner'],
+      training: ['ai-training', 'qa-training', 'other-training', 'remote-team-building'],
+    });
+  });
+
   it('contains exactly the 14 offered services', () => {
     expect(allServiceIds).toHaveLength(14);
   });

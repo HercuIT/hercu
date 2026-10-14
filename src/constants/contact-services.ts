@@ -3,7 +3,7 @@
 // Values are stable, locale-independent slugs so submissions are identical in every language.
 export const serviceGroups = [
   { id: 'ai', services: ['ai-consultancy', 'ai-architecture', 'ai-bot', 'ai-whatsapp-automation'] },
-  { id: 'qa', services: ['qa-web-app', 'qa-mobile-app', 'qa-ai-automation', 'qa-ai-generated-app'] },
+  { id: 'qa', services: ['qa-web', 'qa-mobile-app', 'qa-ai-automation', 'qa-ai-generated-app'] },
   { id: 'development', services: ['new-app', 'app-like-binkleaner'] },
   { id: 'training', services: ['ai-training', 'qa-training', 'other-training', 'remote-team-building'] },
 ] as const;
