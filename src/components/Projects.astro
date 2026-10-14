@@ -1,0 +1,73 @@
+---
+import { Image } from 'astro:assets';
+import type { ImageMetadata } from 'astro';
+import { buildProjectCards, type ProjectId } from '../constants/projects';
+import { useStrings } from '../i18n/utils';
+import binkleaner from '../assets/projects/binkleaner.png';
+import nopalitoLimpio from '../assets/projects/nopalito-limpio.png';
+
+const t = useStrings(Astro.currentLocale);
+const cards = buildProjectCards(t.projects.items);
+
+// Home-page screenshots of each live site (1280×800, 16:10).
+const images: Record<ProjectId, ImageMetadata> = {
+  binkleaner,
+  'nopalito-limpio': nopalitoLimpio,
+};
+---
+
+<section id={t.nav.projects.id} class="py-24 bg-white">
+  <div class="container mx-auto px-4">
+    <div class="text-center mb-16">
+      <h2 class="text-3xl md:text-4xl font-display font-bold tracking-wordmark text-ink mb-4">{t.projects.title}</h2>
+      <p class="text-lg text-steel max-w-2xl mx-auto mb-6">{t.projects.intro}</p>
+      <div class="w-20 h-1.5 bg-brand-500 mx-auto rounded-full"></div>
+    </div>
+
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-5xl mx-auto">
+      {cards.map((card) => (
+        <article aria-labelledby={`project-${card.id}`} class="flex flex-col rounded-2xl border border-ink/10 bg-mist overflow-hidden shadow-sm">
+          <Image
+            src={images[card.id]}
+            alt={card.imageAlt}
+            widths={[640, 1280]}
+            sizes="(min-width: 768px) 50vw, 100vw"
+            loading="lazy"
+            class="w-full h-auto aspect-[16/10] object-cover object-top border-b border-ink/10"
+          />
+          <div class="flex flex-col flex-1 p-8">
+            <h3 id={`project-${card.id}`} class="text-2xl font-display font-bold tracking-wordmark text-ink mb-2">{card.name}</h3>
+            <p class="text-steel leading-relaxed mb-6">{card.description}</p>
+            <ul class="space-y-2 mb-8">
+              {card.highlights.map((highlight) => (
+                <li class="flex items-start gap-3 text-ink">
+                  <span aria-hidden="true" class="mt-[0.45em] box-border size-2.5 flex-none rounded-full border-2 border-brand-500"></span>
+                  {highlight}
+                </li>
+              ))}
+            </ul>
+            <div class="mt-auto flex flex-wrap items-center gap-4">
+              <a
+                href={`#${t.nav.contact.id}`}
+                class="px-6 py-3 bg-brand-500 text-white hover:text-white font-semibold rounded-lg hover:bg-brand-600 transition-colors"
+              >
+                {t.projects.cta}<span class="sr-only">: {card.name}</span>
+              </a>
+              <a
+                href={card.url}
+                target="_blank"
+                rel="noopener"
+                class="inline-flex items-center gap-2 font-semibold text-brand-500 hover:text-brand-600 transition-colors"
+              >
+                {t.projects.visit}<span class="sr-only">: {card.name} {t.projects.newTab}</span>
+                <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M13.5 6H5.25A2.25 2.25 0 0 0 3 8.25v10.5A2.25 2.25 0 0 0 5.25 21h10.5A2.25 2.25 0 0 0 18 18.75V10.5m-10.5 6L21 3m0 0h-5.25M21 3v5.25" />
+                </svg>
+              </a>
+            </div>
+          </div>
+        </article>
+      ))}
+    </div>
+  </div>
+</section>
