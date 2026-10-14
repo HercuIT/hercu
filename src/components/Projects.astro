@@ -9,6 +9,17 @@ import nopalitoLimpio from '../assets/projects/nopalito-limpio.png';
 const t = useStrings(Astro.currentLocale);
 const cards = buildProjectCards(t.projects.items);
 
+// Rendered card width per breakpoint: Tailwind `container` (max 40/48/64/80rem) with px-4,
+// a `max-w-5xl` (64rem) grid with gap-8, two columns from md. Keep in sync with the markup below,
+// or browsers download a larger candidate than the slot needs.
+const imageSizes = [
+  '(min-width: 1280px) 496px', // grid capped at 1024px → (1024 - 32) / 2
+  '(min-width: 1024px) 480px', // (1024 - 32 - 32) / 2
+  '(min-width: 768px) 352px', // (768 - 32 - 32) / 2
+  '(min-width: 640px) 608px', // single column: 640 - 32
+  'calc(100vw - 2rem)',
+].join(', ');
+
 // Home-page screenshots of each live site (1280×800, 16:10).
 const images: Record<ProjectId, ImageMetadata> = {
   binkleaner,
@@ -31,7 +42,7 @@ const images: Record<ProjectId, ImageMetadata> = {
             src={images[card.id]}
             alt={card.imageAlt}
             widths={[640, 1280]}
-            sizes="(min-width: 768px) 50vw, 100vw"
+            sizes={imageSizes}
             loading="lazy"
             class="w-full h-auto aspect-[16/10] object-cover object-top border-b border-ink/10"
           />
