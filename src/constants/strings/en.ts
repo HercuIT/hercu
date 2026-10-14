@@ -79,6 +79,31 @@ export const en = {
     callPrefix: "Call us at",
     formName: "Full name",
     formEmail: "Email",
+    service: {
+      label: "Which service are you interested in?",
+      placeholder: "Select a service",
+      groups: {
+        ai: "Artificial intelligence",
+        qa: "Software quality (QA)",
+        development: "Development",
+        training: "Training & teams"
+      },
+      options: {
+        "ai-consultancy": "AI Consultancy",
+        "ai-architecture": "AI Architecture",
+        "ai-bot": "AI Bot",
+        "qa-web-app": "QA for Web Apps",
+        "qa-mobile-app": "QA for Mobile Apps",
+        "qa-ai-automation": "QA + AI Automation",
+        "qa-ai-generated-app": "QA for AI-Generated Apps",
+        "new-app": "New App from Scratch",
+        "app-like-binkleaner": "App Similar to BinKleaner or Nopalito Limpio",
+        "ai-training": "AI Training",
+        "qa-training": "QA Training",
+        "other-training": "Other Training",
+        "remote-team-building": "Team Building for Remote Teams"
+      }
+    },
     formMessage: "Your idea",
     placeholders: {
       name: "Jane Doe",

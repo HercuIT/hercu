@@ -1,3 +1,5 @@
+import type { ServiceLabels } from '../contact-services';
+
 type Item = { title: string; description: string };
 type Stat = { value: string; label: string };
 type NavLink = { label: string; id: string };
@@ -81,6 +83,31 @@ export const es = {
     callPrefix: "Llámmenos al",
     formName: "Nombre completo",
     formEmail: "Correo electrónico",
+    service: {
+      label: "¿Qué servicio le interesa?",
+      placeholder: "Seleccione un servicio",
+      groups: {
+        ai: "Inteligencia artificial",
+        qa: "Calidad de software (QA)",
+        development: "Desarrollo",
+        training: "Capacitación y equipos"
+      },
+      options: {
+        "ai-consultancy": "Consultoría en IA",
+        "ai-architecture": "Arquitectura de soluciones con IA",
+        "ai-bot": "Bot con IA",
+        "qa-web-app": "QA para aplicaciones web",
+        "qa-mobile-app": "QA para aplicaciones móviles",
+        "qa-ai-automation": "QA + automatización con IA",
+        "qa-ai-generated-app": "QA para apps generadas con IA",
+        "new-app": "Nueva aplicación desde cero",
+        "app-like-binkleaner": "App similar a BinKleaner o Nopalito Limpio",
+        "ai-training": "Capacitación en IA",
+        "qa-training": "Capacitación en QA",
+        "other-training": "Otra capacitación",
+        "remote-team-building": "Team building para equipos remotos"
+      }
+    } as { label: string; placeholder: string } & ServiceLabels,
     formMessage: "Su idea",
     placeholders: {
       name: "Juana Pérez",

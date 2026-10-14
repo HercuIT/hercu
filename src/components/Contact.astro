@@ -1,8 +1,10 @@
 ---
 import { shared } from '../constants/strings';
 import { useStrings } from '../i18n/utils';
+import { buildServiceOptions } from '../constants/contact-services';
 
 const t = useStrings(Astro.currentLocale);
+const serviceOptions = buildServiceOptions(t.contact.service);
 ---
 
 <section id={t.nav.contact.id} class="py-24 bg-ink text-white">
@@ -57,6 +59,22 @@ const t = useStrings(Astro.currentLocale);
             <div>
               <label for="email" class="block text-sm font-medium text-mist/80 mb-1">{t.contact.formEmail}</label>
               <input type="email" id="email" name="email" class="w-full px-4 py-3 bg-white/5 border border-mist/15 rounded-lg focus:ring-2 focus:ring-brand-400 focus:border-transparent outline-none transition-all text-white" placeholder={t.contact.placeholders.email} required />
+            </div>
+            <div>
+              <label for="service" class="block text-sm font-medium text-mist/80 mb-1">{t.contact.service.label}</label>
+              <div class="relative">
+                <select id="service" name="service" class="w-full appearance-none px-4 py-3 pr-11 bg-white/5 border border-mist/15 rounded-lg focus:ring-2 focus:ring-brand-400 focus:border-transparent outline-none transition-all text-white [color-scheme:dark] has-[option[value='']:checked]:text-mist/60">
+                  <option value="" selected>{t.contact.service.placeholder}</option>
+                  {serviceOptions.map((group) => (
+                    <optgroup label={group.label}>
+                      {group.options.map((option) => <option value={option.value}>{option.label}</option>)}
+                    </optgroup>
+                  ))}
+                </select>
+                <svg xmlns="http://www.w3.org/2000/svg" class="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 w-5 h-5 text-mist/60" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+                </svg>
+              </div>
             </div>
             <div>
               <label for="message" class="block text-sm font-medium text-mist/80 mb-1">{t.contact.formMessage}</label>
