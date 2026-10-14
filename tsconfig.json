@@ -1,5 +1,7 @@
 {
   "extends": "astro/tsconfigs/strict",
   "include": [".astro/types.d.ts", "**/*"],
-  "exclude": ["dist"]
+  // mcp-specs-server is a separate package with its own package.json, node_modules and tsconfig;
+  // the site's CI only installs the root dependencies, so it must not be type-checked here.
+  "exclude": ["dist", "mcp-specs-server", ".wrangler"]
 }

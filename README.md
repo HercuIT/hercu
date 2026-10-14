@@ -1,5 +1,7 @@
 # Hércuit Website - Quality-First Software House
 
+[![CI](https://github.com/HercuIT/hercu/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/HercuIT/hercu/actions/workflows/ci.yml)
+
 This is the informative corporate website for **Hércuit, S. de R.L. de C.V.**, a technology solutions firm based in Torreón, Coahuila, specializing in custom software development and software quality consultancy.
 
 ## 🚀 Mission & Identity

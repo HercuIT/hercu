@@ -46,4 +46,11 @@
   :focus-visible {
     @apply outline-2 outline-offset-2 outline-brand-500;
   }
+
+  /* The open list must not inherit the placeholder color; match the dark field. */
+  select option,
+  select optgroup {
+    background-color: var(--color-ink);
+    color: #fff;
+  }
 }
