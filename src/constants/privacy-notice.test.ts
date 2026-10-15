@@ -75,7 +75,7 @@ describe('Privacy Notice (LFPDPPP Compliance)', () => {
     it('describes bot capture, no server database, and direct email reporting', () => {
       const section4 = p.sections[3];
       const fullText = [section4.heading, ...section4.paragraphs, ...section4.items].join(' ');
-      expect(fullText).toContain('Hercules');
+      expect(fullText).toContain(locale === 'es' ? 'Hércules' : 'Hercules');
       expect(fullText).toContain('sessionStorage');
       expect(fullText).toContain('info@hercuit.com');
       if (locale === 'es') {

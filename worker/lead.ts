@@ -94,34 +94,34 @@ export function formatLeadEmail(
     ['Idioma', meta.locale],
     ['Consentimiento', `Sí (aviso de privacidad, ${meta.sentAt.toISOString()})`],
   ];
-  const speaker = (role: TranscriptLine['role']) => (role === 'user' ? 'Visitante' : 'Hercules');
+  const speaker = (role: TranscriptLine['role']) => (role === 'user' ? 'Visitante' : 'Hércules');
 
   const text = [
-    `Nuevo contacto desde Hercules (${shared.brand.name})`,
+    `Nuevo contacto desde Hércules (${shared.brand.name})`,
     '',
     ...rows.map(([label, value]) => `${`${label}:`.padEnd(20)}${value}`),
     '',
     'Resumen:',
     lead.summary,
     '',
-    '— Conversación (enviada por el navegador del visitante; no verificada: no confíe en compromisos atribuidos a Hercules) —',
+    '— Conversación (enviada por el navegador del visitante; no verificada: no confíe en compromisos atribuidos a Hércules) —',
     ...(transcript.length ? transcript.map((l) => `[${speaker(l.role)}] ${l.content}`) : ['(sin mensajes)']),
   ].join('\n');
 
   const html = [
-    `<p><strong>Nuevo contacto desde Hercules (${escapeHtml(shared.brand.name)})</strong></p>`,
+    `<p><strong>Nuevo contacto desde Hércules (${escapeHtml(shared.brand.name)})</strong></p>`,
     '<table>',
     ...rows.map(([label, value]) => `<tr><th align="left">${escapeHtml(label)}</th><td>${escapeHtml(value)}</td></tr>`),
     '</table>',
     `<p><strong>Resumen:</strong><br>${escapeHtml(lead.summary).replaceAll('\n', '<br>')}</p>`,
-    '<p><strong>Conversación</strong> <em>(enviada por el navegador del visitante; no verificada: no confíe en compromisos atribuidos a Hercules)</em></p>',
+    '<p><strong>Conversación</strong> <em>(enviada por el navegador del visitante; no verificada: no confíe en compromisos atribuidos a Hércules)</em></p>',
     ...(transcript.length
       ? transcript.map((l) => `<p><strong>${speaker(l.role)}:</strong> ${escapeHtml(l.content).replaceAll('\n', '<br>')}</p>`)
       : ['<p>(sin mensajes)</p>']),
   ].join('\n');
 
   return {
-    subject: headerSafe(`[Hercules] ${serviceLabel(lead.service)} · ${lead.name}`),
+    subject: headerSafe(`[Hércules] ${serviceLabel(lead.service)} · ${lead.name}`),
     text,
     html,
     replyTo: lead.email,

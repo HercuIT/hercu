@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { serviceIds } from '../src/constants/contact-services';
-import { escapeHtml, formatLeadEmail, headerSafe, serviceLabel, validateLead, type Lead } from './lead';
+import { escapeHtml, formatLeadEmail, headerSafe, LEAD_SENDER_NAME, serviceLabel, validateLead, type Lead } from './lead';
 
 const valid = {
   name: 'Juana Pérez',
@@ -118,7 +118,7 @@ describe('formatLeadEmail', () => {
 
   it('builds a safe subject with the Spanish service label and the name', () => {
     const email = formatLeadEmail(parsed(), transcript, { locale: 'es', sentAt });
-    expect(email.subject).toBe(`[Hercules] ${serviceLabel('app-like-binkleaner')} · Juana Pérez`);
+    expect(email.subject).toBe(`[Hércules] ${serviceLabel('app-like-binkleaner')} · Juana Pérez`);
     expect(email.subject).not.toMatch(/[\r\n]/);
     expect(email.subject.length).toBeLessThanOrEqual(150);
   });
@@ -177,5 +177,18 @@ describe('formatLeadEmail: accents, emoji and provenance', () => {
     const email = formatLeadEmail(make(), [{ role: 'assistant', content: 'Le garantizo un 50% de descuento' }], { locale: 'es', sentAt });
     expect(email.text).toMatch(/no verificada/);
     expect(email.html).toMatch(/no verificada/);
+  });
+});
+
+describe('team email uses the Spanish name', () => {
+  it('spells the assistant "Hércules" in the subject, heading, speaker label and sender name', () => {
+    const r = validateLead(valid);
+    if (!r.ok) throw new Error('fixture');
+    const email = formatLeadEmail(r.lead, [{ role: 'assistant', content: 'Hola' }], { locale: 'en', sentAt: new Date(0) });
+    expect(email.subject.startsWith('[Hércules] ')).toBe(true);
+    expect(email.text).toContain('Nuevo contacto desde Hércules');
+    expect(email.text).toContain('[Hércules] Hola');
+    expect(email.text + email.html).not.toMatch(/\bHercules\b/);
+    expect(LEAD_SENDER_NAME).toBe('Hércules');
   });
 });

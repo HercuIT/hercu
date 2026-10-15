@@ -67,3 +67,11 @@ describe('locales differ', () => {
     expect(buildSystemPrompt('es')).not.toBe(buildSystemPrompt('en'));
   });
 });
+
+describe('assistant name in the prompts', () => {
+  it('introduces itself as "Hércules" in Spanish and "Hercules" in English', () => {
+    expect(buildSystemPrompt('es')).toMatch(/^Eres Hércules,/);
+    expect(buildSystemPrompt('es')).not.toMatch(/\bHercules\b/);
+    expect(buildSystemPrompt('en')).toMatch(/^You are Hercules,/);
+  });
+});

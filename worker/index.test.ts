@@ -189,7 +189,7 @@ describe('handleHercules', () => {
     expect(s.send.mock.calls[0][0]).toMatchObject({
       to: 'info@hercuit.com',
       replyTo: 'juana@empresa.com',
-      from: { name: 'Hercules', email: 'hercules@hercuit.com' },
+      from: { name: 'Hércules', email: 'hercules@hercuit.com' },
     });
   });
 });

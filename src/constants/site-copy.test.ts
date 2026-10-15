@@ -106,3 +106,17 @@ describe('Spanish register', () => {
     expect(offenders).toEqual([]);
   });
 });
+
+describe('assistant name spelling', () => {
+  const allSpanish = allStrings(strings.es).join('\n');
+
+  it('is "Hércules" everywhere in the Spanish copy, never the unaccented form', () => {
+    expect(allSpanish).toContain('Hércules');
+    expect(allSpanish).not.toMatch(/\bHercules\b/);
+  });
+
+  it('stays "Hercules" in the English copy', () => {
+    expect(strings.en.hercules.title).toBe('Hercules');
+    expect(allStrings(strings.en).join('\n')).not.toContain('Hércules');
+  });
+});

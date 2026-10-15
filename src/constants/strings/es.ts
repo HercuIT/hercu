@@ -139,17 +139,17 @@ export const es = {
     submit: "Enviar mi idea"
   },
   hercules: {
-    open: "Hablar con Hercules",
-    heroLink: "o hable con Hercules, nuestro asistente virtual",
-    title: "Hercules",
+    open: "Hablar con Hércules",
+    heroLink: "o hable con Hércules, nuestro asistente virtual",
+    title: "Hércules",
     subtitle: "Asistente virtual de HércuIT",
-    greeting: "Hola, soy Hercules, el asistente virtual de HércuIT. ¿En qué le puedo ayudar?",
+    greeting: "Hola, soy Hércules, el asistente virtual de HércuIT. ¿En qué le puedo ayudar?",
     quickReplies: ["Conocer los servicios", "Tengo una idea de app", "Necesito QA para mi producto"] as [string, string, string],
     inputLabel: "Escriba su mensaje",
     placeholder: "Escriba su mensaje…",
     send: "Enviar mensaje",
     close: "Cerrar asistente",
-    typing: "Hercules está escribiendo…",
+    typing: "Hércules está escribiendo…",
     disclaimer: "Asistente virtual con IA. Puede cometer errores.",
     privacyLink: "Aviso de privacidad",
     opensNewTab: "(abre en una pestaña nueva)",
@@ -159,7 +159,7 @@ export const es = {
     sent: "¡Listo! Recibimos su solicitud y el equipo de HércuIT le contactará pronto.",
     errors: {
       rateLimited: "Demasiados mensajes en poco tiempo. Espere un momento e intente de nuevo.",
-      unavailable: "Hercules no está disponible en este momento.",
+      unavailable: "Hércules no está disponible en este momento.",
       refused: "No puedo ayudar con esa solicitud.",
       invalid: "No pudimos verificar su solicitud. Recargue la página e intente de nuevo.",
       fallback: "Puede llamarnos al"
@@ -174,7 +174,7 @@ export const es = {
       {
         heading: "1. Identidad y domicilio del responsable",
         paragraphs: [
-          "HércuIT, S. de R.L. de C.V. (en lo sucesivo denominada «HércuIT»), con domicilio en Torreón, Coahuila, México, es la persona moral responsable del uso, tratamiento y salvaguarda de los datos personales que se recaban a través de su sitio web oficial, de sus formularios en línea y de su asistente virtual interactivo («bot Hercules»).",
+          "HércuIT, S. de R.L. de C.V. (en lo sucesivo denominada «HércuIT»), con domicilio en Torreón, Coahuila, México, es la persona moral responsable del uso, tratamiento y salvaguarda de los datos personales que se recaban a través de su sitio web oficial, de sus formularios en línea y de su asistente virtual interactivo («bot Hércules»).",
           "Para cualquier consulta, aclaración o gestión relativa al tratamiento de sus datos personales o al presente aviso, nuestro Departamento de Privacidad pone a su disposición los siguientes canales de atención oficial:"
         ],
         items: [
@@ -188,7 +188,7 @@ export const es = {
       {
         heading: "2. Datos personales sometidos a tratamiento",
         paragraphs: [
-          "Para atender sus solicitudes y proveer información sobre nuestros servicios tecnológicos, HércuIT recaba las siguientes categorías de datos personales mediante el formulario de contacto o mediante la interacción interactiva con el asistente virtual («bot Hercules»):",
+          "Para atender sus solicitudes y proveer información sobre nuestros servicios tecnológicos, HércuIT recaba las siguientes categorías de datos personales mediante el formulario de contacto o mediante la interacción interactiva con el asistente virtual («bot Hércules»):",
           "Declaración sobre datos sensibles: HércuIT NO solicita, no recaba ni realiza tratamiento alguno sobre datos personales sensibles (tales como origen racial o étnico, estado de salud presente o futuro, información genética, creencias religiosas, filosóficas o morales, afiliación sindical, opiniones políticas o preferencia sexual). Solicitamos atentamente al titular abstenerse de compartir información de esta naturaleza a través de cualquiera de nuestros medios de contacto."
         ],
         items: [
@@ -208,7 +208,7 @@ export const es = {
         ],
         items: [
           "Atender, procesar y dar puntual seguimiento a solicitudes de información, cotizaciones o propuestas de desarrollo de software y aseguramiento de calidad (QA).",
-          "Gestionar la interacción en tiempo real mediante el asistente virtual interactivo (bot Hercules) y compilar el resumen del requerimiento para su atención técnica.",
+          "Gestionar la interacción en tiempo real mediante el asistente virtual interactivo (bot Hércules) y compilar el resumen del requerimiento para su atención técnica.",
           "Establecer comunicación directa por el medio de contacto indicado por el titular (correo electrónico, llamada telefónica o WhatsApp) para brindar seguimiento personalizado.",
           "Elaborar presupuestos, propuestas comerciales y formalizar acuerdos contractuales de prestación de servicios tecnológicos.",
           "Envío de comunicaciones sobre novedades tecnológicas, publicaciones técnicas de blog o actualizaciones sobre la oferta de servicios de HércuIT.",
@@ -222,9 +222,9 @@ export const es = {
           "Una vez que el titular revisa el resumen de su solicitud, acepta el presente aviso de privacidad y confirma explícitamente el envío, los datos de contacto y el resumen de la consulta se transmiten directamente vía correo electrónico seguro a la cuenta de correo institucional de HércuIT (info@hercuit.com). La gestión y seguimiento de la solicitud se realiza exclusivamente dentro de dicha cuenta de correo electrónico institucional, implementando estrictas medidas administrativas, técnicas y físicas de seguridad para proteger su información contra pérdida, acceso no autorizado o divulgación indebida."
         ],
         items: [
-          "Captura interactiva o por formulario: Los datos se recaban a través del formulario de contacto o durante el diálogo interactivo con el asistente virtual («bot Hercules»).",
+          "Captura interactiva o por formulario: Los datos se recaban a través del formulario de contacto o durante el diálogo interactivo con el asistente virtual («bot Hércules»).",
           "Ausencia de almacenamiento en bases de datos del servidor web: HércuIT no almacena ni conserva los datos personales ni las conversaciones en bases de datos persistentes del servidor web ni en sistemas de almacenamiento en la nube accesibles al público.",
-          "Almacenamiento temporal en sesión: La interacción con el asistente Hercules utiliza únicamente memoria temporal del navegador web del usuario (sessionStorage), la cual se descarta automáticamente al cerrar la pestaña o la ventana de navegación.",
+          "Almacenamiento temporal en sesión: La interacción con el asistente Hércules utiliza únicamente memoria temporal del navegador web del usuario (sessionStorage), la cual se descarta automáticamente al cerrar la pestaña o la ventana de navegación.",
           "Transmisión por correo institucional: La información recabada se consolida y envía únicamente mediante correo electrónico hacia info@hercuit.com tras la confirmación expresa del titular."
         ]
       },
@@ -265,7 +265,7 @@ export const es = {
         ],
         items: [
           "Infraestructura de nube y seguridad perimetral (Cloudflare, Inc.): Proveedor encargado de la mitigación de ataques informáticos, verificación de peticiones y enrutamiento seguro de correo electrónico hacia info@hercuit.com.",
-          "Procesamiento de inteligencia artificial (Anthropic, PBC): Proveedor del modelo de lenguaje que procesa en tiempo real los mensajes del asistente interactivo Hercules para generar las respuestas de orientación en el sitio. De conformidad con sus políticas comerciales para servicios API, Anthropic no utiliza los datos ni el texto de las conversaciones para entrenar sus modelos de inteligencia artificial."
+          "Procesamiento de inteligencia artificial (Anthropic, PBC): Proveedor del modelo de lenguaje que procesa en tiempo real los mensajes del asistente interactivo Hércules para generar las respuestas de orientación en el sitio. De conformidad con sus políticas comerciales para servicios API, Anthropic no utiliza los datos ni el texto de las conversaciones para entrenar sus modelos de inteligencia artificial."
         ]
       },
       {
@@ -275,7 +275,7 @@ export const es = {
         ],
         items: [
           "No se emplean cookies de rastreo publicitario de terceros ni herramientas de monitoreo conductual para la elaboración de perfiles comerciales.",
-          "El asistente virtual Hercules utiliza almacenamiento de sesión (sessionStorage) exclusivamente durante la visita activa del usuario en el navegador.",
+          "El asistente virtual Hércules utiliza almacenamiento de sesión (sessionStorage) exclusivamente durante la visita activa del usuario en el navegador.",
           "El usuario tiene la facultad de desactivar, limitar o eliminar las cookies y el almacenamiento web mediante las opciones de configuración de su navegador de internet, sin perjuicio de continuar consultando el contenido informativo de la plataforma."
         ]
       },
@@ -295,7 +295,7 @@ export const es = {
       heading: "10. Avisos de privacidad simplificado y corto (formatos alternativos)",
       subheading: "Formatos aplicables en canales de espacio limitado conforme a los Lineamientos del INAI",
       paragraphs: [
-        "En cumplimiento de los Lineamientos Vigésimo Séptimo a Trigésimo Primero expedidos por el INAI, cuando la captura de datos se efectúe en espacios reducidos, interfaces móviles o mediante el asistente interactivo («bot Hercules»), se pone a disposición del titular el formato de Aviso de Privacidad Simplificado:",
+        "En cumplimiento de los Lineamientos Vigésimo Séptimo a Trigésimo Primero expedidos por el INAI, cuando la captura de datos se efectúe en espacios reducidos, interfaces móviles o mediante el asistente interactivo («bot Hércules»), se pone a disposición del titular el formato de Aviso de Privacidad Simplificado:",
         "«HércuIT, S. de R.L. de C.V., con domicilio en Torreón, Coahuila, México, es responsable del tratamiento de los datos personales de identificación, contacto y requerimientos que usted proporciona mediante este medio. Sus datos se utilizarán para la atención de sus consultas, elaboración de propuestas de servicios de software y calidad, y orientación mediante nuestro asistente interactivo, consolidando su solicitud para su envío directo por correo electrónico institucional a info@hercuit.com, sin almacenamiento en bases de datos del servidor web. Usted puede manifestar su negativa para finalidades secundarias o ejercer sus derechos ARCO enviando un correo a info@hercuit.com. El aviso de privacidad integral se encuentra disponible en: https://hercuit.com/aviso-de-privacidad».",
         "Asimismo, en la casilla de verificación de consentimiento (checkbox) desplegada por el asistente virtual y en formularios breves, se emplea el formato de Aviso de Privacidad Corto:",
         "«Acepto el aviso de privacidad para el tratamiento y reporte de mis datos por correo electrónico conforme a los términos disponibles en hercuit.com/aviso-de-privacidad»."
