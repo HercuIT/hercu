@@ -14,6 +14,7 @@ import {
   saveConversation,
   errorNotice,
   settleReply,
+  startNewConversation,
   type ChatMessage,
 } from './hercules-core';
 
@@ -314,12 +315,19 @@ class HerculesPanel {
     clearConversation(session());
     this.conversation = [];
     this.status(this.config.strings.sent);
+    this.offerNewConversation();
+  }
+
+  /** Locks the input and offers "Nueva conversación" (after a lead is sent or the limit is hit). */
+  private offerNewConversation(): void {
     this.input.disabled = true;
     this.sendButton.disabled = true;
     const again = el('button', 'mx-auto block rounded-lg bg-ink px-4 py-2 text-sm font-semibold text-white hover:bg-ink/90', this.config.strings.newConversation);
     again.type = 'button';
     again.addEventListener('click', () => {
-      this.consent.checked = false; // each conversation needs its own explicit consent
+      const fresh = startNewConversation(session());
+      this.conversation = fresh.conversation;
+      this.consent.checked = fresh.consentChecked;
       this.input.disabled = false;
       this.sendButton.disabled = false;
       this.renderHistory();
@@ -335,6 +343,7 @@ class HerculesPanel {
     if (!text || this.busy) return;
     if (isConversationFull(this.conversation)) {
       this.status(this.config.strings.limitReached);
+      this.offerNewConversation(); // otherwise the visitor is stuck until a reload
       return;
     }
 

@@ -10,6 +10,8 @@ import {
   prepareUserMessage,
   saveConversation,
   settleReply,
+  startNewConversation,
+  truncateSafe,
   TurnstileGate,
 } from './hercules-core';
 
@@ -318,5 +320,81 @@ describe('TurnstileGate.fail (misconfigured widget)', () => {
   it('does not raise an unhandled rejection when nobody is waiting', async () => {
     const gate = new TurnstileGate(1000);
     expect(() => gate.fail(new Error('x'))).not.toThrow();
+  });
+});
+
+describe('truncateSafe and the limits with emoji at the boundary', () => {
+  const rocket = '🚀'; // 2 UTF-16 code units (a surrogate pair)
+  const isWellFormed = (s: string) => !/[\uD800-\uDBFF](?![\uDC00-\uDFFF])|(?<![\uD800-\uDBFF])[\uDC00-\uDFFF]/.test(s);
+
+  it('drops an emoji whole when the limit falls between its two halves (user, 2000)', () => {
+    const text = 'x'.repeat(1999) + rocket; // the rocket would occupy code units 2000 and 2001
+    const out = prepareUserMessage(text)!;
+    expect(out).toHaveLength(1999);
+    expect(isWellFormed(out)).toBe(true);
+  });
+
+  it('keeps an emoji that fits exactly at the user limit', () => {
+    const text = 'x'.repeat(1998) + rocket; // exactly 2000 code units
+    expect(prepareUserMessage(text)).toBe(text);
+  });
+
+  it('drops an emoji whole at the assistant limit (4000)', () => {
+    const out = capAssistantReply('y'.repeat(3999) + rocket + 'z');
+    expect(out).toHaveLength(3999);
+    expect(isWellFormed(out)).toBe(true);
+  });
+
+  it('keeps an emoji that fits exactly at the assistant limit', () => {
+    const text = 'y'.repeat(3998) + rocket;
+    expect(capAssistantReply(text)).toBe(text);
+  });
+
+  it('leaves short text and accented characters untouched', () => {
+    expect(truncateSafe('José Ñúñez 🚀', 100)).toBe('José Ñúñez 🚀');
+    expect(truncateSafe('', 10)).toBe('');
+  });
+
+  it('never exceeds the limit', () => {
+    for (const max of [1, 2, 3, 10]) {
+      expect(truncateSafe(rocket.repeat(20), max).length).toBeLessThanOrEqual(max);
+    }
+  });
+});
+
+describe('startNewConversation (after "sent" or "limit reached")', () => {
+  const memoryStore = () => {
+    const map = new Map<string, string>();
+    return {
+      getItem: (k: string) => map.get(k) ?? null,
+      setItem: (k: string, v: string) => void map.set(k, v),
+      removeItem: (k: string) => void map.delete(k),
+      map,
+    };
+  };
+
+  it('starts empty with consent unticked after the limit was reached, and clears the stored copy', () => {
+    const s = memoryStore();
+    const full = Array.from({ length: 28 }, (_, i) => ({ role: (i % 2 ? 'assistant' : 'user') as 'user' | 'assistant', content: 'x' }));
+    saveConversation(s, full);
+    expect(isConversationFull([...full, { role: 'user', content: 'x' }, { role: 'assistant', content: 'y' }])).toBe(true);
+
+    const fresh = startNewConversation(s);
+    expect(fresh).toEqual({ conversation: [], consentChecked: false });
+    expect(s.map.size).toBe(0);
+    expect(loadConversation(s)).toEqual([]);
+    expect(isConversationFull(fresh.conversation)).toBe(false);
+  });
+
+  it('works when storage is blocked (private mode) or missing', () => {
+    const blocked = { removeItem: () => { throw new Error('SecurityError'); } };
+    expect(startNewConversation(blocked)).toEqual({ conversation: [], consentChecked: false });
+    expect(startNewConversation(undefined)).toEqual({ conversation: [], consentChecked: false });
+  });
+
+  it('returns a new array each time (no shared state between conversations)', () => {
+    const a = startNewConversation(undefined);
+    const b = startNewConversation(undefined);
+    expect(a.conversation).not.toBe(b.conversation);
   });
 });

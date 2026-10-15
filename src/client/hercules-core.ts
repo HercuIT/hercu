@@ -90,15 +90,26 @@ export function isConversationFull(conversation: ChatMessage[]): boolean {
 }
 
 /** Normalizes a visitor message; null when there is nothing to send. */
+/**
+ * Cuts to at most `max` UTF-16 code units (the unit the server's limits count) without splitting a
+ * surrogate pair, so an emoji at the boundary is dropped whole instead of leaving half of it.
+ */
+export function truncateSafe(text: string, max: number): string {
+  if (text.length <= max) return text;
+  const cut = text.slice(0, max);
+  const last = cut.charCodeAt(cut.length - 1);
+  return last >= 0xd800 && last <= 0xdbff ? cut.slice(0, -1) : cut;
+}
+
 export function prepareUserMessage(text: string): string | null {
   const trimmed = text.trim();
   if (!trimmed) return null;
-  return trimmed.slice(0, MAX_USER_CHARS);
+  return truncateSafe(trimmed, MAX_USER_CHARS);
 }
 
 /** Assistant replies are stored capped to what the server accepts back in the history. */
 export function capAssistantReply(text: string): string {
-  return text.trim().slice(0, MAX_ASSISTANT_CHARS);
+  return truncateSafe(text.trim(), MAX_ASSISTANT_CHARS);
 }
 
 /** The two Turnstile calls the gate needs (window.turnstile in the browser, a fake in tests). */
@@ -203,4 +214,15 @@ export function errorNotice(code: string, e: NoticeStrings, phone: string): { te
   const message =
     code === 'rate_limited' ? e.rateLimited : code === 'refused' ? e.refused : code === 'invalid_request' ? e.invalid : e.unavailable;
   return { text: `${message} ${e.fallback} ${phone}.`, urgent: true };
+}
+
+export type ConversationState = { conversation: ChatMessage[]; consentChecked: boolean };
+
+/**
+ * State for "Nueva conversación" (after a lead was sent or the history limit was reached): empty
+ * history, consent unticked (each conversation needs its own explicit consent), stored copy removed.
+ */
+export function startNewConversation(storage: Pick<Storage, 'removeItem'> | undefined): ConversationState {
+  clearConversation(storage);
+  return { conversation: [], consentChecked: false };
 }

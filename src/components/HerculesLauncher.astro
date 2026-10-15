@@ -33,34 +33,19 @@ const config = { locale, siteKey, strings: t.hercules, privacyHref: privacyPaths
 </button>
 
 <script>
+  import { createWidgetLoader } from '../client/widget-loader';
+
   const launcher = document.getElementById('hercules-launcher');
   if (launcher) {
     const config = JSON.parse(launcher.dataset.config ?? '{}');
     config.logoHtml = launcher.querySelector('svg')?.outerHTML ?? '';
-    // One shared download; clicks that arrive while it is in flight are ignored, so a double click
-    // can't open and immediately close the panel.
-    let widget: Promise<typeof import('../client/hercules-widget')> | null = null;
-    let loading = false;
-    const run = async (action: 'toggle' | 'open') => {
-      if (loading) return;
-      loading = true;
-      try {
-        // A failed download (offline, deploy in progress) must not be cached, or every later click fails.
-        const mod = await (widget ??= import('../client/hercules-widget').catch((err) => {
-          widget = null;
-          throw err;
-        }));
-        if (action === 'toggle') mod.toggleHercules(config, launcher);
-        else mod.openHercules(config, launcher);
-      } finally {
-        loading = false;
-      }
-    };
-    launcher.addEventListener('click', () => void run('toggle'));
+    // Download once, ignore clicks while loading, retry after a failed download (see widget-loader.ts).
+    const run = createWidgetLoader(() => import('../client/hercules-widget'));
+    launcher.addEventListener('click', () => void run((mod) => mod.toggleHercules(config, launcher)));
     // Secondary entry points (e.g. the hero link) only appear once this script runs, and only open.
     for (const trigger of document.querySelectorAll<HTMLElement>('[data-hercules-open]')) {
       trigger.hidden = false;
-      trigger.addEventListener('click', () => void run('open'));
+      trigger.addEventListener('click', () => void run((mod) => mod.openHercules(config, launcher)));
     }
   }
 </script>
