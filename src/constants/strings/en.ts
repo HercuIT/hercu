@@ -169,124 +169,127 @@ export const en = {
     lawReference: "Pursuant to Mexico's LFPDPPP and Guidelines",
     updated: "Last updated: October 14, 2026",
     introduction: "HércuIT, S. de R.L. de C.V. is committed to protecting your personal data and respecting your right to informational self-determination. This Comprehensive Privacy Notice is issued in strict compliance with the provisions of Mexico's Federal Law on Protection of Personal Data Held by Private Parties (LFPDPPP), its Regulations, and the Privacy Notice Guidelines issued by the National Institute for Transparency, Access to Information and Personal Data Protection (INAI).",
+    // Ordered content: a string is a paragraph, a string[] is a bulleted list right after its lead-in.
     sections: [
       {
         heading: "1. Identity and address of the data controller",
-        paragraphs: [
+        blocks: [
           "HércuIT, S. de R.L. de C.V. (hereinafter commercially referred to as \"HércuIT\"), with physical address in Torreón, Coahuila, Mexico, is the legal entity responsible for the use, processing, and safeguarding of personal data collected through its official website, online forms, and interactive virtual assistant (\"Hercules bot\").",
-          "For any inquiry, clarification, or request regarding the processing of your personal data or this notice, our Privacy Department provides the following official contact channels:"
-        ],
-        items: [
-          "Corporate name: HércuIT, S. de R.L. de C.V.",
-          "Commercial name: HércuIT",
-          "Physical address: Torreón, Coahuila, Mexico",
-          "Official privacy email: info@hercuit.com",
-          "Contact telephone: +52 33 1713 3469"
+          "For any inquiry, clarification, or request regarding the processing of your personal data or this notice, our Privacy Department provides the following official contact channels:",
+          [
+            "Corporate name: HércuIT, S. de R.L. de C.V.",
+            "Commercial name: HércuIT",
+            "Physical address: Torreón, Coahuila, Mexico",
+            "Official privacy email: info@hercuit.com",
+            "Contact telephone: +52 33 1713 3469"
+          ]
         ]
       },
       {
         heading: "2. Personal data subject to processing",
-        paragraphs: [
+        blocks: [
           "To address your inquiries and provide information regarding our technology services, HércuIT collects the following categories of personal data via the contact form or through interactive dialogue with our virtual assistant (\"Hercules bot\"):",
+          [
+            "Identification data: full name of the requester or contact person.",
+            "Contact data: email address and telephone number (landline or mobile).",
+            "Employment and corporate data: company or organization name, business sector, and job title or function.",
+            "Project and inquiry information: technical description of the services of interest (custom software development, software quality assurance consultancy and testing, automation, or technical audits), estimated budget, and the transcript of messages exchanged with the virtual assistant or submitted via contact forms."
+          ],
           "Express statement regarding sensitive data: HércuIT does NOT request, collect, or process any personal data classified as sensitive under the LFPDPPP (such as racial or ethnic origin, present or future health status, genetic information, religious, philosophical, or moral beliefs, union membership, political opinions, or sexual preference). We kindly request data subjects to refrain from sharing information of this nature through any of our contact channels."
-        ],
-        items: [
-          "Identification data: full name of the requester or contact person.",
-          "Contact data: email address and telephone number (landline or mobile).",
-          "Employment and corporate data: company or organization name, business sector, and job title or function.",
-          "Project and inquiry information: technical description of the services of interest (custom software development, software quality assurance consultancy and testing, automation, or technical audits), estimated budget, and the transcript of messages exchanged with the virtual assistant or submitted via contact forms."
         ]
       },
       {
         heading: "3. Purposes of personal data processing (necessary and secondary)",
-        paragraphs: [
+        blocks: [
           "The processing of personal data collected is subject to legitimate, well-defined purposes, clearly distinguishing those essential to the legal relationship from voluntary or secondary purposes:",
           "Primary or necessary purposes (those that give rise to and are indispensable for the existence, maintenance, and fulfillment of the relationship and requested assistance):",
+          [
+            "Receive, process, and promptly follow up on requests for information, quotes, or proposals for software development and quality assurance (QA) services.",
+            "Manage real-time interaction through the interactive virtual assistant (Hercules bot) and compile technical project summaries for engineering evaluation.",
+            "Establish direct communication via the channel chosen by the data subject (email, phone call, or WhatsApp) to provide personalized follow-up.",
+            "Prepare budgets, commercial proposals, and formalize service agreements or contracts for technology solutions."
+          ],
           "Secondary or voluntary purposes (those not essential to the main legal relationship, but which allow us to provide improved commercial and technical service):",
+          [
+            "Send informational communications regarding technology updates, technical engineering blog posts, or updates regarding HércuIT's service offerings.",
+            "Conduct voluntary surveys regarding customer satisfaction, quality evaluation, and user experience with our platform and services."
+          ],
           "Mechanism to refuse secondary purposes: Any data subject who does not wish their personal data to be processed for the aforementioned secondary purposes may manifest their refusal at any time by sending an email to info@hercuit.com with the subject line \"Refusal of secondary purposes\". Refusal to allow the use of your personal data for secondary purposes will not be a ground to deny you the services or assistance requested."
-        ],
-        items: [
-          "Receive, process, and promptly follow up on requests for information, quotes, or proposals for software development and quality assurance (QA) services.",
-          "Manage real-time interaction through the interactive virtual assistant (Hercules bot) and compile technical project summaries for engineering evaluation.",
-          "Establish direct communication via the channel chosen by the data subject (email, phone call, or WhatsApp) to provide personalized follow-up.",
-          "Prepare budgets, commercial proposals, and formalize service agreements or contracts for technology solutions.",
-          "Send informational communications regarding technology updates, technical engineering blog posts, or updates regarding HércuIT's service offerings.",
-          "Conduct voluntary surveys regarding customer satisfaction, quality evaluation, and user experience with our platform and services."
         ]
       },
       {
         heading: "4. Capture mechanism, storage, and reporting by email",
-        paragraphs: [
+        blocks: [
           "In adherence to the principles of legality, proportionality, and accountability under the LFPDPPP, we transparently disclose the technical mechanisms through which your personal data is processed and stored:",
+          [
+            "Interactive or form-based capture: Data is collected when entered into the contact form or during interactive conversation with our virtual assistant (\"Hercules bot\").",
+            "No persistent web server database storage: HércuIT does not store or keep personal data or conversation transcripts in persistent web server databases or publicly accessible cloud repositories.",
+            "Temporary session storage: Interaction with the Hercules assistant uses only temporary browser memory (sessionStorage), which is automatically discarded upon closing the browser tab or window.",
+            "Transmission via corporate email: Collected information is consolidated and dispatched solely via email to info@hercuit.com upon express confirmation from the data subject."
+          ],
           "Once the data subject reviews the summary of their request, accepts this privacy notice, and explicitly confirms submission, the contact information and consultation summary are transmitted directly via secure email to HércuIT's institutional inbox (info@hercuit.com). Management and follow-up are handled exclusively within this corporate email account, protected by rigorous administrative, technical, and physical security measures to safeguard your information against loss, unauthorized access, or unlawful disclosure."
-        ],
-        items: [
-          "Interactive or form-based capture: Data is collected when entered into the contact form or during interactive conversation with our virtual assistant (\"Hercules bot\").",
-          "No persistent web server database storage: HércuIT does not store or keep personal data or conversation transcripts in persistent web server databases or publicly accessible cloud repositories.",
-          "Temporary session storage: Interaction with the Hercules assistant uses only temporary browser memory (sessionStorage), which is automatically discarded upon closing the browser tab or window.",
-          "Transmission via corporate email: Collected information is consolidated and dispatched solely via email to info@hercuit.com upon express confirmation from the data subject."
         ]
       },
       {
         heading: "5. Options and means to limit the use or disclosure of data",
-        paragraphs: [
-          "To enable data subjects to limit the exposure of their personal data and restrict its use for non-essential purposes, HércuIT provides the following specific mechanisms:"
-        ],
-        items: [
-          "HércuIT internal exclusion list: Data subjects may request free registration on our internal exclusion list by emailing info@hercuit.com, ensuring their data is not used for advertising, promotional, or commercial prospecting purposes.",
-          "Public Registry to Avoid Advertising (REPEP): In accordance with the Federal Consumer Protection Law, data subjects may register with PROFECO's REPEP to prevent unsolicited marketing calls and promotional communications."
+        blocks: [
+          "To enable data subjects to limit the exposure of their personal data and restrict its use for non-essential purposes, HércuIT provides the following specific mechanisms:",
+          [
+            "HércuIT internal exclusion list: Data subjects may request free registration on our internal exclusion list by emailing info@hercuit.com, ensuring their data is not used for advertising, promotional, or commercial prospecting purposes.",
+            "Public Registry to Avoid Advertising (REPEP): In accordance with the Federal Consumer Protection Law, data subjects may register with PROFECO's REPEP to prevent unsolicited marketing calls and promotional communications."
+          ]
         ]
       },
       {
         heading: "6. Means and procedure for exercising ARCO rights and revocation of consent",
-        paragraphs: [
+        blocks: [
           "Pursuant to the LFPDPPP, data subjects (or their duly accredited legal representatives) have the right to Access the personal data we hold and the details of its processing (Access); request the correction of personal information if it is outdated, inaccurate, or incomplete (Rectification); request deletion from our email records and files when deemed not to comply with applicable legal principles (Cancellation); as well as Object to processing for specific purposes (Opposition). These rights are collectively referred to as ARCO Rights.",
           "Additionally, data subjects may revoke their consent for the processing of their personal data at any time.",
-          "Procedure, timeframes, and requirements for exercising ARCO Rights and Revocation (pursuant to Articles 29, 31, and 32 of the LFPDPPP):"
-        ],
-        items: [
-          "Request reception channel: Submit a written request via email addressed to HércuIT's Privacy Department at: info@hercuit.com.",
-          "Identity verification: Attach a digital copy of valid official identification (INE voter ID, passport, or professional license) or, if acting through a legal representative, a notarized power of attorney or proxy letter signed before two witnesses with attached IDs.",
-          "Contact and notification details: Provide the full name of the data subject, telephone number, and the email address designated to receive official communications regarding the request.",
-          "Clear description of the right exercised: Clearly specify the right being exercised (Access, Rectification, Cancellation, Opposition, or Revocation) and the specific personal data concerned.",
-          "Supporting documentation for rectification: When requesting rectification, specify the changes requested and provide supporting documentation justifying the update.",
-          "Resolution and response timeframe: HércuIT will communicate the determination reached within a maximum timeframe of 20 (twenty) business days from the date the complete request was formally received.",
-          "Implementation timeframe: If the request is determined to be substantiated, it will become effective within 15 (fifteen) business days following notification of the response. These timeframes may be extended once for an equal period where justified under the law.",
-          "Gratuitous nature of the procedure: The processing and issuance of responses to ARCO and revocation requests are entirely free of charge, delivered electronically to the email address designated by the data subject."
+          "Procedure, timeframes, and requirements for exercising ARCO Rights and Revocation (pursuant to Articles 29, 31, and 32 of the LFPDPPP):",
+          [
+            "Request reception channel: Submit a written request via email addressed to HércuIT's Privacy Department at: info@hercuit.com.",
+            "Identity verification: Attach a digital copy of valid official identification (INE voter ID, passport, or professional license) or, if acting through a legal representative, a notarized power of attorney or proxy letter signed before two witnesses with attached IDs.",
+            "Contact and notification details: Provide the full name of the data subject, telephone number, and the email address designated to receive official communications regarding the request.",
+            "Clear description of the right exercised: Clearly specify the right being exercised (Access, Rectification, Cancellation, Opposition, or Revocation) and the specific personal data concerned.",
+            "Supporting documentation for rectification: When requesting rectification, specify the changes requested and provide supporting documentation justifying the update.",
+            "Resolution and response timeframe: HércuIT will communicate the determination reached within a maximum timeframe of 20 (twenty) business days from the date the complete request was formally received.",
+            "Implementation timeframe: If the request is determined to be substantiated, it will become effective within 15 (fifteen) business days following notification of the response. These timeframes may be extended once for an equal period where justified under the law.",
+            "Gratuitous nature of the procedure: The processing and issuance of responses to ARCO and revocation requests are entirely free of charge, delivered electronically to the email address designated by the data subject."
+          ]
         ]
       },
       {
         heading: "7. Personal data transfers and third-party processors",
-        paragraphs: [
+        blocks: [
           "HércuIT does NOT sell, rent, commercialize, or transfer your personal data to third parties unrelated to the relationship with the data subject.",
           "Solely to operate the digital infrastructure of our website, provide technical security, and deliver interactive assistant capabilities, technological remittances are conducted with providers acting as processors under strict confidentiality and security instructions from HércuIT:",
+          [
+            "Cloud infrastructure and perimeter security (Cloudflare, Inc.): Provider responsible for mitigating cyberattacks, validating request integrity, and performing secure email routing to info@hercuit.com.",
+            "Artificial intelligence processing (Anthropic, PBC): Provider of the language model that processes interactive messages with the Hercules assistant in real time to generate conversational guidance. In accordance with its commercial API service terms, Anthropic does not use customer conversational data to train AI models."
+          ],
           "These remittances and transfers are exempt from requiring express consent under Article 37 of the LFPDPPP (sections IV and VII), as they are legally indispensable for the maintenance and fulfillment of the relationship requested by the data subject and for delivering our firm's technology services."
-        ],
-        items: [
-          "Cloud infrastructure and perimeter security (Cloudflare, Inc.): Provider responsible for mitigating cyberattacks, validating request integrity, and performing secure email routing to info@hercuit.com.",
-          "Artificial intelligence processing (Anthropic, PBC): Provider of the language model that processes interactive messages with the Hercules assistant in real time to generate conversational guidance. In accordance with its commercial API service terms, Anthropic does not use customer conversational data to train AI models."
         ]
       },
       {
         heading: "8. Use of cookies and technological mechanisms",
-        paragraphs: [
-          "HércuIT informs you that our website uses strictly necessary technical elements and temporary storage to ensure proper site browsing and protect against unauthorized access:"
-        ],
-        items: [
-          "No third-party advertising cookies or behavioral tracking tools are used to construct commercial consumer profiles.",
-          "The Hercules virtual assistant uses browser session storage (sessionStorage) solely during the user's active browsing session.",
-          "Users have the option to disable, restrict, or clear cookies and local web storage through their browser settings, without hindering access to the informative content of our website."
+        blocks: [
+          "HércuIT informs you that our website uses strictly necessary technical elements and temporary storage to ensure proper site browsing and protect against unauthorized access:",
+          [
+            "No third-party advertising cookies or behavioral tracking tools are used to construct commercial consumer profiles.",
+            "The Hercules virtual assistant uses browser session storage (sessionStorage) solely during the user's active browsing session.",
+            "Users have the option to disable, restrict, or clear cookies and local web storage through their browser settings, without hindering access to the informative content of our website."
+          ]
         ]
       },
       {
         heading: "9. Procedure for changes to the privacy notice",
-        paragraphs: [
+        blocks: [
           "HércuIT reserves the right to make modifications, additions, or updates to this privacy notice at any time to address legislative or case law reforms, regulatory requirements, internal policies, or changes in our technology service offerings.",
-          "Any modification or update to this privacy notice will be promptly and fully published on our official website, remaining available for public consultation at the following permanent web addresses:"
-        ],
-        items: [
-          "Spanish version: https://hercuit.com/aviso-de-privacidad",
-          "English version: https://hercuit.com/en/privacy-notice"
+          "Any modification or update to this privacy notice will be promptly and fully published on our official website, remaining available for public consultation at the following permanent web addresses:",
+          [
+            "Spanish version: https://hercuit.com/aviso-de-privacidad",
+            "English version: https://hercuit.com/en/privacy-notice"
+          ]
         ]
       }
     ],

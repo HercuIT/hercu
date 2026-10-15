@@ -1,6 +1,11 @@
 import { describe, expect, it } from 'vitest';
 import { strings } from './strings';
 
+/** Paragraph blocks (strings) and list items (from string[] blocks) of a privacy section. */
+type Section = { heading: string; blocks: (string | string[])[] };
+const paragraphsOf = (s: Section) => s.blocks.filter((b): b is string => typeof b === 'string');
+const itemsOf = (s: Section) => s.blocks.filter((b): b is string[] => Array.isArray(b)).flat();
+
 const locales = ['es', 'en'] as const;
 
 /**
@@ -27,12 +32,12 @@ describe('Privacy Notice (LFPDPPP Compliance)', () => {
       for (const [index, section] of p.sections.entries()) {
         expect(section.heading.trim()).not.toBe('');
         expect(section.heading).toMatch(new RegExp(`^${index + 1}\\.`));
-        expect(section.paragraphs.length).toBeGreaterThan(0);
-        for (const para of section.paragraphs) {
+        expect(paragraphsOf(section).length).toBeGreaterThan(0);
+        for (const para of paragraphsOf(section)) {
           expect(para.trim()).not.toBe('');
         }
-        expect(section.items.length).toBeGreaterThan(0);
-        for (const item of section.items) {
+        expect(itemsOf(section).length).toBeGreaterThan(0);
+        for (const item of itemsOf(section)) {
           expect(item.trim()).not.toBe('');
         }
       }
@@ -40,7 +45,7 @@ describe('Privacy Notice (LFPDPPP Compliance)', () => {
 
     it('identifies HércuIT and physical address in Torreón, Coahuila', () => {
       const section1 = p.sections[0];
-      const fullText = [section1.heading, ...section1.paragraphs, ...section1.items].join(' ');
+      const fullText = [section1.heading, ...paragraphsOf(section1), ...itemsOf(section1)].join(' ');
       expect(fullText).toContain('HércuIT, S. de R.L. de C.V.');
       expect(fullText).toContain('Torreón, Coahuila');
       expect(fullText).toContain('info@hercuit.com');
@@ -48,7 +53,7 @@ describe('Privacy Notice (LFPDPPP Compliance)', () => {
 
     it('identifies categories of data and explicitly disclaims sensitive data', () => {
       const section2 = p.sections[1];
-      const fullText = [section2.heading, ...section2.paragraphs, ...section2.items].join(' ');
+      const fullText = [section2.heading, ...paragraphsOf(section2), ...itemsOf(section2)].join(' ');
       if (locale === 'es') {
         expect(fullText).toMatch(/datos personales sensibles/i);
         expect(fullText).toMatch(/NO solicita, no recaba/i);
@@ -60,7 +65,7 @@ describe('Privacy Notice (LFPDPPP Compliance)', () => {
 
     it('distinguishes primary and secondary purposes with opt-out mechanism', () => {
       const section3 = p.sections[2];
-      const fullText = [section3.heading, ...section3.paragraphs, ...section3.items].join(' ');
+      const fullText = [section3.heading, ...paragraphsOf(section3), ...itemsOf(section3)].join(' ');
       if (locale === 'es') {
         expect(fullText).toMatch(/primarias o necesarias/i);
         expect(fullText).toMatch(/secundarias o voluntarias/i);
@@ -74,7 +79,7 @@ describe('Privacy Notice (LFPDPPP Compliance)', () => {
 
     it('describes bot capture, no server database, and direct email reporting', () => {
       const section4 = p.sections[3];
-      const fullText = [section4.heading, ...section4.paragraphs, ...section4.items].join(' ');
+      const fullText = [section4.heading, ...paragraphsOf(section4), ...itemsOf(section4)].join(' ');
       expect(fullText).toContain(locale === 'es' ? 'Hércules' : 'Hercules');
       expect(fullText).toContain('sessionStorage');
       expect(fullText).toContain('info@hercuit.com');
@@ -89,7 +94,7 @@ describe('Privacy Notice (LFPDPPP Compliance)', () => {
 
     it('provides options to limit use: internal exclusion list and REPEP', () => {
       const section5 = p.sections[4];
-      const fullText = [section5.heading, ...section5.paragraphs, ...section5.items].join(' ');
+      const fullText = [section5.heading, ...paragraphsOf(section5), ...itemsOf(section5)].join(' ');
       expect(fullText).toContain('REPEP');
       expect(fullText).toContain('info@hercuit.com');
       if (locale === 'es') {
@@ -101,7 +106,7 @@ describe('Privacy Notice (LFPDPPP Compliance)', () => {
 
     it('specifies ARCO rights, consent revocation, and 20/15 business day statutory timeframes', () => {
       const section6 = p.sections[5];
-      const fullText = [section6.heading, ...section6.paragraphs, ...section6.items].join(' ');
+      const fullText = [section6.heading, ...paragraphsOf(section6), ...itemsOf(section6)].join(' ');
       expect(fullText).toContain('ARCO');
       expect(fullText).toContain('info@hercuit.com');
       expect(fullText).toMatch(/20/);
@@ -119,7 +124,7 @@ describe('Privacy Notice (LFPDPPP Compliance)', () => {
 
     it('discloses Cloudflare and Anthropic processors under LFPDPPP Article 37', () => {
       const section7 = p.sections[6];
-      const fullText = [section7.heading, ...section7.paragraphs, ...section7.items].join(' ');
+      const fullText = [section7.heading, ...paragraphsOf(section7), ...itemsOf(section7)].join(' ');
       expect(fullText).toContain('Cloudflare');
       expect(fullText).toContain('Anthropic');
       expect(fullText).toMatch(/37/);
@@ -132,7 +137,7 @@ describe('Privacy Notice (LFPDPPP Compliance)', () => {
 
     it('provides permanent URLs for privacy notice updates', () => {
       const section9 = p.sections[8];
-      const fullText = [section9.heading, ...section9.paragraphs, ...section9.items].join(' ');
+      const fullText = [section9.heading, ...paragraphsOf(section9), ...itemsOf(section9)].join(' ');
       expect(fullText).toContain('https://hercuit.com/aviso-de-privacidad');
       expect(fullText).toContain('https://hercuit.com/en/privacy-notice');
     });
@@ -161,8 +166,8 @@ describe('Privacy Notice (LFPDPPP Compliance)', () => {
       for (let i = 0; i < strings.es.privacy.sections.length; i++) {
         const esSec = strings.es.privacy.sections[i];
         const enSec = strings.en.privacy.sections[i];
-        expect(enSec.paragraphs.length).toBe(esSec.paragraphs.length);
-        expect(enSec.items.length).toBe(esSec.items.length);
+        expect(paragraphsOf(enSec).length).toBe(paragraphsOf(esSec).length);
+        expect(itemsOf(enSec).length).toBe(itemsOf(esSec).length);
       }
     });
 
@@ -179,7 +184,7 @@ describe('Privacy Notice (LFPDPPP Compliance)', () => {
         p.lawReference,
         p.updated,
         p.introduction,
-        ...p.sections.flatMap((s) => [s.heading, ...s.paragraphs, ...s.items]),
+        ...p.sections.flatMap((s) => [s.heading, ...s.blocks.flat()]),
         p.simplifiedNotice.heading,
         p.simplifiedNotice.subheading,
         ...p.simplifiedNotice.paragraphs,
@@ -194,10 +199,49 @@ describe('Privacy Notice (LFPDPPP Compliance)', () => {
       const allText = [
         p.title,
         p.introduction,
-        ...p.sections.flatMap((s) => [s.heading, ...s.paragraphs, ...s.items]),
+        ...p.sections.flatMap((s) => [s.heading, ...s.blocks.flat()]),
         ...p.simplifiedNotice.paragraphs,
       ].join(' ');
       expect(allText).not.toMatch(/e-?commerce|comercio electr[oó]nico/i);
     });
+  });
+});
+
+describe('privacy notice structure: lists follow their lead-ins, in order', () => {
+  it.each(['es', 'en'] as const)('"%s": every paragraph ending in ":" is immediately followed by a list', (locale) => {
+    for (const s of strings[locale].privacy.sections) {
+      s.blocks.forEach((block, i) => {
+        if (typeof block === 'string' && block.trimEnd().endsWith(':')) {
+          expect(Array.isArray(s.blocks[i + 1]), `${s.heading}: "${block.slice(-40)}" needs a list right after it`).toBe(true);
+        }
+      });
+    }
+  });
+
+  it.each(['es', 'en'] as const)('"%s": every list comes right after a lead-in paragraph ending in ":"', (locale) => {
+    for (const s of strings[locale].privacy.sections) {
+      s.blocks.forEach((block, i) => {
+        if (Array.isArray(block)) {
+          const previous = s.blocks[i - 1];
+          expect(typeof previous === 'string' && previous.trimEnd().endsWith(':'), `${s.heading}: list #${i} has no lead-in`).toBe(true);
+          expect(block.length).toBeGreaterThan(0);
+        }
+      });
+    }
+  });
+
+  it.each(['es', 'en'] as const)('"%s": §3 keeps primary and secondary purposes in two separate lists (LFPDPPP)', (locale) => {
+    const s3 = strings[locale].privacy.sections[2];
+    const lists = s3.blocks.filter((b): b is string[] => Array.isArray(b));
+    expect(lists).toHaveLength(2);
+    const [primaryLeadIn, secondaryLeadIn] = s3.blocks.filter((b, i) => typeof b === 'string' && Array.isArray(s3.blocks[i + 1])) as string[];
+    expect(primaryLeadIn).toMatch(locale === 'es' ? /primarias o necesarias/i : /primary or necessary/i);
+    expect(secondaryLeadIn).toMatch(locale === 'es' ? /secundarias o voluntarias/i : /secondary or voluntary/i);
+  });
+
+  it('has the same block layout (paragraph vs list, list sizes) in both languages', () => {
+    const shape = (l: 'es' | 'en') =>
+      strings[l].privacy.sections.map((s) => s.blocks.map((b) => (typeof b === 'string' ? 'p' : `ul${b.length}`)).join(' '));
+    expect(shape('en')).toEqual(shape('es'));
   });
 });
