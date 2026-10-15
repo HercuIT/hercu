@@ -9,7 +9,7 @@ export type Block = { kind: 'paragraph'; lines: Line[] } | { kind: 'list'; items
 /** "- ", "* ", "• ", "1. " or "1) " followed by content. Numbered items become bullets (decided). */
 const LIST_ITEM = /^(?:[-*•]|\d{1,3}[.)])\s+(\S.*)$/;
 const HEADING = /^#{1,6}\s+(\S.*)$/;
-const QUOTE = /^>\s?(.*)$/;
+const QUOTE = /^>(?:\s+|$)(.*)$/;
 /** "---" or "___" on its own line: a separator, read as a paragraph break. A run of "*" stays text
  *  ("****" is shown as written). */
 const RULE = /^(?:-{3,}|_{3,})$/;
