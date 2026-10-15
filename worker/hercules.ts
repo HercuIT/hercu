@@ -210,6 +210,7 @@ function markShared(message: string[], value: string[], min: number, mask: boole
     }
     let start = i - longest;
     while (start < i && start > 0 && isWordChar(message[start - 1])) start++;
+    while (start < i && message[start] === ' ') start++;
     if (i - start >= min) mask.fill(true, start, i);
     previous = current;
   }

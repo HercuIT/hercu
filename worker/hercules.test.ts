@@ -503,7 +503,8 @@ describe('emailFailureLog redacts partial echoes of visitor data', () => {
   it('redacts the truncated name when the error echoes the real subject (the reported case)', () => {
     const { subject } = formatLeadEmail(lead, [], { locale: 'es', sentAt: new Date('2026-10-15T12:00:00Z') });
     const message = log(`subject rejected: ${subject}`);
-    expect(message.startsWith('subject rejected: [Hércules] ')).toBe(true);
+    // The label's "Automatiza…" and "WhatsApp" are redacted too: the summary shares them. Over-redacting is the safe side.
+    expect(message).toBe(`subject rejected: [Hércules] ${REDACTED}ción de ${REDACTED}Business con IA · ${REDACTED}`);
     expect(message.endsWith(REDACTED)).toBe(true);
     for (const word of ['María', 'Fernández', 'Garza', 'Ñúñez']) expect(message).not.toContain(word);
   });
