@@ -1,0 +1,47 @@
+---
+// Floating button that opens Hercules. The chat code is a separate chunk imported on the first click,
+// so pages load 0 KB of widget JS until a visitor asks for it (specs/hercules-assistant/03).
+import { shared } from '../constants/strings';
+import { getLocale, privacyPaths, useStrings } from '../i18n/utils';
+import LogoMark from './brand/LogoMark.astro';
+
+const locale = getLocale(Astro.currentLocale);
+const t = useStrings(locale);
+
+// Cloudflare's documented always-pass Turnstile test key, used only in local dev. Production builds
+// must set PUBLIC_TURNSTILE_SITE_KEY (the Worker's TURNSTILE_SECRET rejects test tokens).
+const TEST_SITE_KEY = '1x00000000000000000000AA';
+const siteKey = import.meta.env.PUBLIC_TURNSTILE_SITE_KEY ?? (import.meta.env.DEV ? TEST_SITE_KEY : '');
+
+const config = { locale, siteKey, strings: t.hercules, privacyHref: privacyPaths[locale], phone: shared.phone };
+---
+
+<button
+  type="button"
+  id="hercules-launcher"
+  data-config={JSON.stringify(config)}
+  aria-label={t.hercules.open}
+  aria-expanded="false"
+  aria-controls="hercules-panel"
+  class="fixed bottom-4 right-4 z-50 flex size-14 items-center justify-center rounded-full bg-ink shadow-lg shadow-ink/30 transition-colors hover:bg-ink/90"
+>
+  <LogoMark decorative size={36} />
+</button>
+
+<script>
+  const launcher = document.getElementById('hercules-launcher');
+  if (launcher) {
+    const open = async () => {
+      const { toggleHercules } = await import('../client/hercules-widget');
+      const config = JSON.parse(launcher.dataset.config ?? '{}');
+      config.logoHtml = launcher.querySelector('svg')?.outerHTML ?? '';
+      toggleHercules(config, launcher);
+    };
+    launcher.addEventListener('click', () => void open());
+    // Secondary entry points (e.g. the hero link) only appear once this script runs.
+    for (const trigger of document.querySelectorAll<HTMLElement>('[data-hercules-open]')) {
+      trigger.hidden = false;
+      trigger.addEventListener('click', () => void open());
+    }
+  }
+</script>

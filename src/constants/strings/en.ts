@@ -148,6 +148,7 @@ export const en = {
     disclaimer: "AI virtual assistant. It can make mistakes.",
     privacyLink: "Privacy notice",
     newConversation: "New conversation",
+    limitReached: "This conversation has reached its limit. Start a new one to continue.",
     sent: "Done! We received your request and the HércuIT team will contact you soon.",
     errors: {
       rateLimited: "Too many messages in a short time. Please wait a moment and try again.",

@@ -13,6 +13,9 @@ export function getLocale(current: string | undefined): Locale {
   return (locales as readonly string[]).includes(current ?? '') ? (current as Locale) : defaultLocale;
 }
 
+/** Privacy notice route per locale (Spanish default at the root, English under /en/). */
+export const privacyPaths: Record<Locale, string> = { es: '/aviso-de-privacidad', en: '/en/privacy-notice' };
+
 /** Usage in any component: `const t = useStrings(Astro.currentLocale);` */
 export function useStrings(current: string | undefined) {
   return strings[getLocale(current)];

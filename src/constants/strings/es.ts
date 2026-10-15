@@ -153,6 +153,7 @@ export const es = {
     disclaimer: "Asistente virtual con IA. Puede cometer errores.",
     privacyLink: "Aviso de privacidad",
     newConversation: "Nueva conversación",
+    limitReached: "Esta conversación llegó a su límite. Inicie una nueva para continuar.",
     sent: "¡Listo! Recibimos su solicitud y el equipo de HércuIT le contactará pronto.",
     errors: {
       rateLimited: "Demasiados mensajes en poco tiempo. Espere un momento e intente de nuevo.",

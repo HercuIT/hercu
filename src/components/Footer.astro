@@ -1,9 +1,10 @@
 ---
 import { shared } from '../constants/strings';
-import { useStrings } from '../i18n/utils';
+import { getLocale, privacyPaths, useStrings } from '../i18n/utils';
 import Logo from './brand/Logo.astro';
 
-const t = useStrings(Astro.currentLocale);
+const locale = getLocale(Astro.currentLocale);
+const t = useStrings(locale);
 const currentYear = new Date().getFullYear();
 ---
 
@@ -14,6 +15,7 @@ const currentYear = new Date().getFullYear();
       
       <p class="text-sm text-steel">
         &copy; {currentYear} {shared.companyName} {t.footer.rights}
+        <a href={privacyPaths[locale]} class="ml-1 underline-offset-4 hover:text-ink hover:underline">{t.hercules.privacyLink}</a>
       </p>
       
       <div class="text-sm text-steel flex flex-col items-center md:items-end gap-1">
