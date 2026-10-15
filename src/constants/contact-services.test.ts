@@ -14,15 +14,15 @@ describe('serviceGroups catalogue', () => {
   // Renaming, removing or adding one must be a deliberate change to this list.
   it('submits exactly these service values, grouped and ordered', () => {
     expect(Object.fromEntries(serviceGroups.map((g) => [g.id, [...g.services]]))).toEqual({
-      ai: ['ai-consultancy', 'ai-architecture', 'ai-bot', 'ai-whatsapp-automation'],
+      ai: ['ai-consultancy', 'ai-architecture', 'ai-bot', 'ai-whatsapp-automation', 'ai-data-reports'],
       qa: ['qa-web-app', 'qa-mobile-app', 'qa-ai-automation', 'qa-ai-generated-app'],
       development: ['new-app', 'app-like-binkleaner'],
       training: ['ai-training', 'qa-training', 'other-training', 'remote-team-building'],
     });
   });
 
-  it('contains exactly the 14 offered services', () => {
-    expect(allServiceIds).toHaveLength(14);
+  it('contains exactly the 15 offered services', () => {
+    expect(allServiceIds).toHaveLength(15);
   });
 
   it('never repeats a service slug across groups', () => {
@@ -79,6 +79,15 @@ describe.each(locales)('buildServiceOptions with the "%s" dictionary', (locale) 
   it('lists WhatsApp automation in the AI area, right after the AI bot', () => {
     const ai = groups.find((g) => g.id === 'ai')?.options.map((o) => o.value) ?? [];
     expect(ai.indexOf('ai-whatsapp-automation')).toBe(ai.indexOf('ai-bot') + 1);
+  });
+
+  it('offers AI data extraction with automated Excel/CSV reports and dashboards, last in the AI area', () => {
+    const ai = groups.find((g) => g.id === 'ai')?.options ?? [];
+    expect(ai.at(-1)?.value).toBe('ai-data-reports');
+    const label = ai.at(-1)?.label ?? '';
+    expect(label).toContain('Excel');
+    expect(label).toContain('CSV');
+    expect(label).toMatch(/dashboards/i);
   });
 
   it('has unique option labels (no two services read the same)', () => {
