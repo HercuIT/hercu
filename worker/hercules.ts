@@ -188,6 +188,85 @@ const REDACT_INPUT_MAX = 1000;
 
 const isWordChar = (c: string | undefined) => c !== undefined && /[\p{L}\p{N}]/u.test(c);
 
+/** Compares characters ignoring case, and "_" and "+" as spaces (Q-encoding and form encoding). */
+const fold = (c: string) => {
+  const lower = c.toLowerCase();
+  return lower === '_' || lower === '+' ? ' ' : lower;
+};
+
+/** Fewest digits shared with the visitor's phone for a number in the error to count as theirs. */
+const MIN_PHONE_DIGITS = 7;
+
+/** An RFC 2047 encoded word, e.g. =?UTF-8?Q?Juana_P=C3=A9rez?= or =?UTF-8?B?SnVhbmE=?=. */
+const ENCODED_WORD = /=\?([^?\s]+)\?([QB])\?([^?\s]*)\?=/gi;
+
+function qDecode(data: string): Uint8Array {
+  const bytes: number[] = [];
+  for (let i = 0; i < data.length; i++) {
+    const hex = data.slice(i + 1, i + 3);
+    if (data[i] === '=' && /^[0-9a-f]{2}$/i.test(hex)) {
+      bytes.push(parseInt(hex, 16));
+      i += 2;
+    } else if (data[i] === '_') {
+      bytes.push(0x20);
+    } else {
+      bytes.push(...new TextEncoder().encode(data[i]));
+    }
+  }
+  return Uint8Array.from(bytes);
+}
+
+/**
+ * Decodes what an error may have copied from the email in encoded form: RFC 2047 encoded words
+ * (adjacent ones joined, as the RFC says) and percent-encoding. Anything that can't be decoded
+ * (unknown charset, broken base64 or UTF-8) is redacted outright: it can't be checked, so it isn't logged.
+ */
+function decodeEchoes(text: string): string {
+  const words = text
+    .replace(/(\?=)\s+(?==\?[^?\s]+\?[QB]\?)/gi, '$1')
+    .replace(ENCODED_WORD, (_word, charset: string, encoding: string, data: string) => {
+      try {
+        const bytes = encoding.toUpperCase() === 'B' ? Uint8Array.from(atob(data), (c) => c.charCodeAt(0)) : qDecode(data);
+        return new TextDecoder(charset, { fatal: true, ignoreBOM: false }).decode(bytes);
+      } catch {
+        return REDACTED;
+      }
+    });
+  return words.replace(/(?:%[0-9a-f]{2})+/gi, (run) => {
+    try {
+      return decodeURIComponent(run);
+    } catch {
+      return REDACTED;
+    }
+  });
+}
+
+/** Length of the longest run of characters `a` and `b` share. */
+function longestCommonRun(a: string, b: string): number {
+  let best = 0;
+  let previous = new Uint16Array(b.length + 1);
+  for (let i = 1; i <= a.length; i++) {
+    const current = new Uint16Array(b.length + 1);
+    for (let j = 1; j <= b.length; j++) {
+      if (a[i - 1] === b[j - 1]) best = Math.max(best, (current[j] = previous[j - 1] + 1));
+    }
+    previous = current;
+  }
+  return best;
+}
+
+/**
+ * Redacts a number in any format ("528711234567", "(871) 123-4567", "871.123.4567") that shares
+ * MIN_PHONE_DIGITS+ consecutive digits with the visitor's phone, whatever format they typed it in.
+ */
+function redactPhone(text: string, phone: string | undefined): string {
+  const target = (phone ?? '').replace(/\D/g, '');
+  if (target.length < MIN_PHONE_DIGITS) return text;
+  return text.replace(/[+(]*\d[\d\s().-]*\d/g, (run) =>
+    longestCommonRun(run.replace(/\D/g, ''), target) >= MIN_PHONE_DIGITS ? REDACTED : run,
+  );
+}
+
 /**
  * Marks in `mask` every stretch of `message` (case-insensitive, per character) that also appears in
  * `value` and starts at a word boundary in the message: an echo or quote starts at a word, while
@@ -202,8 +281,8 @@ const isWordChar = (c: string | undefined) => c !== undefined && /[\p{L}\p{N}]/u
 function markShared(message: string[], value: string[], mask: boolean[]): void {
   const wholeWordOnly = value.length < MIN_SHARED;
   const min = Math.min(MIN_SHARED, value.length);
-  const a = message.map((c) => c.toLowerCase());
-  const b = value.map((c) => c.toLowerCase());
+  const a = message.map(fold);
+  const b = value.map(fold);
   let previous = new Uint16Array(b.length + 1);
   for (let i = 1; i <= a.length; i++) {
     const current = new Uint16Array(b.length + 1);
@@ -227,22 +306,28 @@ function markShared(message: string[], value: string[], mask: boolean[]): void {
  * Log entry for a failed send. Keeps Cloudflare's reason (e.g. "destination address not verified"),
  * but the binding received the visitor's Reply-To, name and summary, and its error may echo any of
  * them, whole or cut short (the subject caps the name at 150 characters; an error may quote part
- * of the body). So before logging, the message is single-lined and stripped of control characters,
- * then redacted: every stretch of MIN_SHARED+ characters shared with a visitor value (a shorter
- * value only as a whole word), then every email address not on hercuit.com. Capping comes
- * last, so the cap can't cut a value short of being recognized.
+ * of the body), and possibly encoded (=?UTF-8?Q?Juana_P=C3=A9rez?=, juana%40empresa.com). So
+ * before logging, the message is decoded (decodeEchoes), single-lined, stripped of control
+ * characters and NFC-normalized, like each visitor value, then redacted:
+ *  1. every stretch of MIN_SHARED+ characters shared with a visitor value (a shorter value only
+ *     as a whole word), ignoring case and treating "_" and "+" as spaces;
+ *  2. every number sharing MIN_PHONE_DIGITS+ digits with the visitor's phone, in any format;
+ *  3. every email address not on hercuit.com.
+ * Capping comes last, so the cap can't cut a value short of being recognized.
  */
 export function emailFailureLog(err: unknown, lead?: Lead): { event: 'email_failed'; kind: string; message: string } {
   if (!(err instanceof Error)) return { event: 'email_failed', kind: 'unknown', message: '' };
-  const chars = Array.from(headerSafe(err.message, Infinity)).slice(0, REDACT_INPUT_MAX);
+  // Bound the decoding work too; encoded text shrinks when decoded, so allow a few times more.
+  const decoded = decodeEchoes(err.message.slice(0, REDACT_INPUT_MAX * 4));
+  const chars = Array.from(headerSafe(decoded, Infinity).normalize('NFC')).slice(0, REDACT_INPUT_MAX);
   const mask = chars.map(() => false);
   for (const field of [lead?.summary, lead?.email, lead?.name, lead?.company, lead?.phone]) {
-    const value = Array.from(headerSafe(field ?? '', Infinity));
+    const value = Array.from(headerSafe(field ?? '', Infinity).normalize('NFC'));
     // No length floor: company may be one character ("X"), and whole-word matching keeps that safe.
     if (value.length > 0) markShared(chars, value, mask);
   }
   const redacted = chars.map((c, i) => (!mask[i] ? c : mask[i - 1] ? '' : REDACTED)).join('');
-  const message = redacted.replace(/[^\s@<>"'(),;:]+@[^\s@<>"'(),;:]+/gu, (address) =>
+  const message = redactPhone(redacted, lead?.phone).replace(/[^\s@<>"'(),;:]+@[^\s@<>"'(),;:]+/gu, (address) =>
     /@hercuit\.com\.?$/i.test(address) ? address : REDACTED,
   );
   return { event: 'email_failed', kind: err.name, message: message.slice(0, EMAIL_ERROR_MAX) };
