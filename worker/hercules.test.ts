@@ -1,6 +1,6 @@
 import Anthropic from '@anthropic-ai/sdk';
 import { describe, expect, it, vi } from 'vitest';
-import { buildParams, formatSse, MAX_ITERATIONS, runConversation, type Deps, type SseEvent, type StreamParams } from './hercules';
+import { buildParams, EMAIL_ERROR_MAX, emailFailureLog, formatSse, MAX_ITERATIONS, runConversation, type Deps, type SseEvent, type StreamParams } from './hercules';
 import type { ChatMessage } from './guards';
 import type { LeadEmail } from './lead';
 
@@ -163,7 +163,11 @@ describe('runConversation: negative cases (no email is sent)', () => {
     await h.run();
     expect(h.kinds()).not.toContain('lead_sent');
     expect(lastBlocks(h.calls[1])[0]).toMatchObject({ is_error: true, content: expect.stringMatching(/Could not send/) });
-    expect(h.logs.some((l) => l.event === 'email_failed')).toBe(true);
+    expect(h.logs).toContainEqual({ event: 'email_failed', kind: 'Error', message: 'send failed' });
+    // The reason is logged, the visitor's data is not.
+    const logged = JSON.stringify(h.logs);
+    expect(logged).not.toContain(validLead.name);
+    expect(logged).not.toContain(validLead.email);
   });
 
   it('emits "refused" on a refusal and stops', async () => {
@@ -345,5 +349,47 @@ describe('runConversation: English locale', () => {
     expect(h.emails[0].subject).toContain('José Ñúñez 🚀');
     expect(h.text()).toBe('Done! We will contact you soon.');
     expect((h.calls[0] as unknown as { system: { text: string }[] }).system[0].text).toMatch(/Never invent prices/);
+  });
+});
+
+describe('emailFailureLog', () => {
+  it("keeps Cloudflare's reason and the error type", () => {
+    expect(emailFailureLog(new Error('destination address not verified'))).toEqual({
+      event: 'email_failed',
+      kind: 'Error',
+      message: 'destination address not verified',
+    });
+  });
+
+  it('keeps the name of an Error subclass', () => {
+    expect(emailFailureLog(new TypeError('bad sender')).kind).toBe('TypeError');
+  });
+
+  it.each([
+    ['a string', 'boom'],
+    ['null', null],
+    ['undefined', undefined],
+    ['a plain object', { message: 'not an Error' }],
+  ])('logs "unknown" with no message for a thrown non-Error (%s)', (_label, thrown) => {
+    expect(emailFailureLog(thrown)).toEqual({ event: 'email_failed', kind: 'unknown', message: '' });
+  });
+
+  it('logs an empty message as empty', () => {
+    expect(emailFailureLog(new Error('')).message).toBe('');
+  });
+
+  it(`caps the message at ${EMAIL_ERROR_MAX} characters`, () => {
+    expect(emailFailureLog(new Error('x'.repeat(5000))).message).toHaveLength(EMAIL_ERROR_MAX);
+    expect(emailFailureLog(new Error('x'.repeat(EMAIL_ERROR_MAX))).message).toHaveLength(EMAIL_ERROR_MAX);
+  });
+
+  it('flattens newlines and strips control characters so one failure is one log line', () => {
+    expect(emailFailureLog(new Error('line one\r\nline two\u0000\u001b[31m')).message).toBe('line one line two [31m');
+  });
+
+  it('keeps accents and emoji', () => {
+    expect(emailFailureLog(new Error('Dirección no verificada: hercuitmx@gmail.com 🚫')).message).toBe(
+      'Dirección no verificada: hercuitmx@gmail.com 🚫',
+    );
   });
 });
