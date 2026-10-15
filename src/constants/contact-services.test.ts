@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { buildServiceOptions, serviceGroups, type ServiceLabels } from './contact-services';
+import { buildServiceOptions, serviceGroups, serviceIds, type ServiceLabels } from './contact-services';
 import { strings } from './strings';
 
 const allServiceIds = serviceGroups.flatMap((group) => [...group.services]);
@@ -147,5 +147,16 @@ describe('buildServiceOptions with broken labels (negative cases)', () => {
     labels.options['ai-bot'] = long;
     const option = buildServiceOptions(labels).flatMap((g) => g.options).find((o) => o.value === 'ai-bot');
     expect(option?.label).toBe(long);
+  });
+});
+
+describe('serviceIds', () => {
+  it('lists every catalogue slug in order', () => {
+    expect([...serviceIds]).toEqual(serviceGroups.flatMap((g) => [...g.services]));
+  });
+
+  it('is frozen, so no consumer can mutate the shared list', () => {
+    expect(Object.isFrozen(serviceIds)).toBe(true);
+    expect(() => (serviceIds as string[]).push('ecommerce')).toThrow(TypeError);
   });
 });

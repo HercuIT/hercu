@@ -21,7 +21,7 @@ const toolUse = (input: unknown, name = 'submit_lead', id = 'tu_1'): Block => ({
 const lastBlocks = (params: StreamParams): Block[] => params.messages.at(-1)!.content as unknown as Block[];
 
 /** A fake model: each call to stream() plays the next scripted turn. */
-function harness(turns: Turn[], opts: { emailFails?: boolean } = {}) {
+function harness(turns: Turn[], opts: { emailFails?: boolean; privacyAccepted?: boolean } = {}) {
   const calls: StreamParams[] = [];
   const emails: LeadEmail[] = [];
   const events: SseEvent[] = [];
@@ -58,7 +58,11 @@ function harness(turns: Turn[], opts: { emailFails?: boolean } = {}) {
     log: (entry) => logs.push(entry),
   };
   const run = (history: ChatMessage[] = [{ role: 'user', content: 'Sí, confirmo y acepto el aviso.' }]) =>
-    runConversation({ model: 'claude-opus-5-5', locale: 'es', history }, deps, (e) => events.push(e));
+    runConversation(
+      { model: 'claude-opus-5-5', locale: 'es', history, privacyAccepted: opts.privacyAccepted ?? true },
+      deps,
+      (e) => events.push(e),
+    );
   const kinds = () => events.map((e) => e.event);
   const text = () => events.flatMap((e) => (e.event === 'text' ? [e.data.delta] : [])).join('').trim();
   return { run, calls, emails, events, logs, kinds, text, deps };
@@ -221,5 +225,53 @@ describe('runConversation: edge cases', () => {
 describe('formatSse', () => {
   it('writes one event per message with single-line JSON data', () => {
     expect(formatSse({ event: 'text', data: { delta: 'hola\nmundo' } })).toBe('event: text\ndata: {"delta":"hola\\nmundo"}\n\n');
+  });
+});
+
+describe('runConversation: consent is the visitor\'s checkbox, not the model\'s claim', () => {
+  it('refuses to send when the checkbox is not ticked, even if the model says consent: true', async () => {
+    const h = harness(
+      [{ content: [toolUse(validLead)], stop_reason: 'tool_use' }, { text: 'Por favor marque la casilla.', stop_reason: 'end_turn' }],
+      { privacyAccepted: false },
+    );
+    await h.run();
+    expect(h.deps.sendEmail).not.toHaveBeenCalled();
+    expect(h.kinds()).not.toContain('lead_sent');
+    expect(lastBlocks(h.calls[1])[0]).toMatchObject({ is_error: true, content: expect.stringMatching(/not ticked/) });
+    expect(h.text()).toBe('Por favor marque la casilla.');
+  });
+});
+
+describe('runConversation: reserved final turn', () => {
+  const choice = (p: StreamParams) => (p as unknown as { tool_choice: { type: string } }).tool_choice.type;
+
+  it('allows tools on early turns and forbids them on the last one', async () => {
+    const turns: Turn[] = Array.from({ length: 5 }, () => ({ content: [toolUse({ consent: false })], stop_reason: 'tool_use' }));
+    const h = harness(turns);
+    await h.run();
+    expect(h.calls.map(choice)).toEqual([...Array(MAX_ITERATIONS - 1).fill('auto'), 'none']);
+  });
+
+  it('explains a rejected submission that happens on the second tool round', async () => {
+    const h = harness([
+      { content: [toolUse({ ...validLead, email: 'bad' }, 'submit_lead', 'a')], stop_reason: 'tool_use' },
+      { content: [toolUse({ ...validLead, email: 'still-bad' }, 'submit_lead', 'b')], stop_reason: 'tool_use' },
+      { text: '¿Me confirma un correo válido?', stop_reason: 'end_turn' },
+    ]);
+    await h.run();
+    expect(h.calls).toHaveLength(3);
+    expect(h.text()).toBe('¿Me confirma un correo válido?');
+    expect(h.deps.sendEmail).not.toHaveBeenCalled();
+  });
+
+  it('never executes a tool call that arrives on the final turn', async () => {
+    const h = harness([
+      { content: [toolUse({ consent: false }, 'submit_lead', 'a')], stop_reason: 'tool_use' },
+      { content: [toolUse({ consent: false }, 'submit_lead', 'b')], stop_reason: 'tool_use' },
+      { content: [toolUse(validLead, 'submit_lead', 'c')], stop_reason: 'tool_use' },
+    ]);
+    await h.run();
+    expect(h.deps.sendEmail).not.toHaveBeenCalled();
+    expect(h.calls).toHaveLength(MAX_ITERATIONS);
   });
 });

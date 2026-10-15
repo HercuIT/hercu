@@ -20,6 +20,10 @@ describe('validateLead: happy path', () => {
     if (r.ok) expect(r.lead.email).toBe('juana@empresa.com');
   });
 
+  it('accepts "any" as the preferred channel (no preference)', () => {
+    expect(lead({ preferredContact: 'any' }).ok).toBe(true);
+  });
+
   it('accepts optional phone and company', () => {
     expect(lead({ phone: '+52 33 1234 5678', company: 'Lavandería Juana' }).ok).toBe(true);
   });
@@ -43,6 +47,8 @@ describe('validateLead: negative cases', () => {
     ['summary under 10 chars', { summary: 'App' }],
     ['summary over 1500 chars', { summary: 'x'.repeat(1501) }],
     ['phone with letters', { phone: '33-CALL-NOW' }],
+    ['phone made only of separators', { phone: '-------' }],
+    ['phone with fewer than 7 digits', { phone: '(33) 12-34' }],
     ['company with a control character', { company: 'ACME\u0007' }],
     ['unknown contact channel', { preferredContact: 'fax' }],
     ['extra property', { creditCard: '4111' }],
@@ -122,8 +128,8 @@ describe('formatLeadEmail', () => {
   });
 
   it('includes every field, the slug and the transcript in order (text part)', () => {
-    const { text } = formatLeadEmail(parsed({ phone: '+52 33 1234 5678' }), transcript, { locale: 'en', sentAt });
-    for (const s of ['Juana Pérez', 'juana@empresa.com', '+52 33 1234 5678', '[app-like-binkleaner]', 'WhatsApp', 'Idioma:', 'en', sentAt.toISOString()]) {
+    const { text } = formatLeadEmail(parsed({ phone: '+52 33 1234 5678', company: 'Lavandería Juana' }), transcript, { locale: 'en', sentAt });
+    for (const s of ['Juana Pérez', 'juana@empresa.com', '+52 33 1234 5678', 'Lavandería Juana', valid.summary, '[app-like-binkleaner]', 'WhatsApp', 'Idioma:', 'en', sentAt.toISOString()]) {
       expect(text).toContain(s);
     }
     const order = transcript.map((l) => text.indexOf(l.content));
@@ -135,6 +141,10 @@ describe('formatLeadEmail', () => {
     expect(html).not.toContain('<img');
     expect(html).not.toContain('<b>para</b>');
     expect(html).toContain('&lt;img');
+  });
+
+  it('labels the no-preference channel in Spanish', () => {
+    expect(formatLeadEmail(parsed({ preferredContact: 'any' }), [], { locale: 'es', sentAt }).text).toContain('Sin preferencia');
   });
 
   it('labels an undecided service and still renders an empty transcript', () => {

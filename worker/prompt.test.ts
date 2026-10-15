@@ -32,9 +32,25 @@ describe.each(locales)('buildSystemPrompt("%s")', (locale) => {
     for (const p of strings[locale].qualityMandate.points) expect(prompt).toContain(p.title);
   });
 
-  it('forbids invented prices and requires consent before submit_lead', () => {
+  it('forbids invented prices', () => {
     expect(prompt).toMatch(locale === 'es' ? /Nunca inventes precios/ : /Never invent prices/);
-    expect(prompt).toContain('submit_lead');
+  });
+
+  it('requires explicit confirmation AND the privacy checkbox before submit_lead', () => {
+    const rule = prompt.split('\n').find((line) => line.includes('submit_lead SOLO') || line.includes('submit_lead ONLY'));
+    expect(rule).toBeDefined();
+    if (locale === 'es') {
+      expect(rule).toMatch(/confirmación explícita/);
+      expect(rule).toMatch(/marcar la casilla "Acepto el aviso de privacidad"/);
+    } else {
+      expect(rule).toMatch(/explicit confirmation/);
+      expect(rule).toMatch(/tick the "I accept the privacy notice" checkbox/);
+    }
+  });
+
+  it('asks for a contact channel and allows "any" when there is no preference (submit_lead requires it)', () => {
+    expect(prompt).toMatch(locale === 'es' ? /medio de contacto preferido/ : /preferred contact channel/);
+    expect(prompt).toContain('"any"');
   });
 });
 
@@ -42,7 +58,7 @@ describe('Spanish prompt register', () => {
   it('asks for formal "usted" and does not address the visitor with tú pronouns', () => {
     const es = buildSystemPrompt('es');
     expect(es).toContain('"usted"');
-    expect(es).not.toMatch(/(?<!\p{L})(tu|tus|contigo)(?!\p{L})/iu);
+    expect(es).not.toMatch(/(?<!\p{L})(tú|tu|tus|contigo)(?!\p{L})/iu);
   });
 });
 

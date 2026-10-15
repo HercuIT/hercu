@@ -82,6 +82,13 @@ describe('conversation storage', () => {
     { role: 'assistant' as const, content: '¿En qué le ayudo?' },
   ];
 
+  it('restores the longest history that still leaves room for one more message (28)', () => {
+    const s = memory();
+    const longest = Array.from({ length: 28 }, (_, i) => ({ role: (i % 2 ? 'assistant' : 'user') as 'user' | 'assistant', content: 'x' }));
+    saveConversation(s, longest);
+    expect(loadConversation(s)).toHaveLength(28);
+  });
+
   it('round-trips a valid conversation', () => {
     const s = memory();
     saveConversation(s, conversation);
@@ -103,6 +110,11 @@ describe('conversation storage', () => {
     ['non-string content', '[{"role":"user","content":42}]'],
     ['a history starting with assistant', '[{"role":"assistant","content":"x"}]'],
     ['two user messages in a row', '[{"role":"user","content":"a"},{"role":"user","content":"b"}]'],
+    ['a history ending with an unanswered user message', '[{"role":"user","content":"a"}]'],
+    ['a blank message', '[{"role":"user","content":"  "},{"role":"assistant","content":"b"}]'],
+    ['an over-long user message', JSON.stringify([{ role: 'user', content: 'x'.repeat(2001) }, { role: 'assistant', content: 'b' }])],
+    ['an over-long assistant message', JSON.stringify([{ role: 'user', content: 'a' }, { role: 'assistant', content: 'y'.repeat(4001) }])],
+    ['a full history with no room for another message', JSON.stringify(Array.from({ length: 30 }, (_, i) => ({ role: i % 2 ? 'assistant' : 'user', content: 'x' })))],
   ])('returns [] for %s', (_label, raw) => {
     const s = memory();
     if (raw !== null) s.map.set(STORAGE_KEY, raw);

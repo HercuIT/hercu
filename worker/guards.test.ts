@@ -1,10 +1,12 @@
 import { describe, expect, it, vi } from 'vitest';
 import {
+  checkRequestShape,
   GuardError,
   MAX_BODY_BYTES,
   MAX_MESSAGES,
   parseHerculesRequest,
   parseHostnames,
+  readCappedBody,
   TURNSTILE_ACTION,
   validateBody,
   validateHistory,
@@ -17,6 +19,7 @@ const alternating = (n: number) =>
 const body = (patch: Record<string, unknown> = {}) => ({
   locale: 'es',
   turnstileToken: 'token',
+  privacyAccepted: false,
   messages: [{ role: 'user', content: 'Hola' }],
   ...patch,
 });
@@ -59,8 +62,15 @@ describe('validateBody', () => {
     ['a missing turnstile token', body({ turnstileToken: undefined })],
     ['an empty turnstile token', body({ turnstileToken: '' })],
     ['an oversized turnstile token', body({ turnstileToken: 'x'.repeat(2049) })],
+    ['a missing privacyAccepted', body({ privacyAccepted: undefined })],
+    ['a string privacyAccepted', body({ privacyAccepted: 'true' })],
   ])('rejects %s', (_label, input) => {
     expect(() => validateBody(input)).toThrow(GuardError);
+  });
+
+  it('passes the privacy checkbox state through', () => {
+    expect(validateBody(body({ privacyAccepted: true })).privacyAccepted).toBe(true);
+    expect(validateBody(body()).privacyAccepted).toBe(false);
   });
 
   it('accepts both locales', () => {
@@ -158,5 +168,62 @@ describe('verifyTurnstile', () => {
     const fetchImpl = reply(200, ok);
     expect(await check(fetchImpl, overrides)).toBe(false);
     expect(fetchImpl).not.toHaveBeenCalled();
+  });
+});
+
+describe('checkRequestShape (runs before the rate limiter)', () => {
+  it('passes a same-origin JSON POST without reading the body', () => {
+    const req = request();
+    expect(() => checkRequestShape(req)).not.toThrow();
+    expect(req.bodyUsed).toBe(false);
+  });
+
+  it.each([
+    ['a cross-site form post', { origin: 'https://evil.example', type: 'application/x-www-form-urlencoded' }],
+    ['a missing Origin', { origin: null }],
+    ['a GET', { method: 'GET' }],
+  ])('rejects %s from headers alone', (_label, init) => {
+    expect(() => checkRequestShape(request(init as Parameters<typeof request>[0]))).toThrow(GuardError);
+  });
+});
+
+describe('readCappedBody', () => {
+  const streamOf = (chunks: Uint8Array[]) => {
+    let cancelled = false;
+    const stream = new ReadableStream<Uint8Array>({
+      pull(controller) {
+        const next = chunks.shift();
+        if (next) controller.enqueue(next);
+        else controller.close();
+      },
+      cancel() {
+        cancelled = true;
+      },
+    });
+    return { stream, wasCancelled: () => cancelled };
+  };
+  const req = (stream: ReadableStream<Uint8Array>) =>
+    new Request(`${ORIGIN}/api/hercules`, { method: 'POST', body: stream, duplex: 'half' } as RequestInit);
+
+  it('stops reading and cancels once the cap is exceeded, with no Content-Length', async () => {
+    const chunk = new Uint8Array(1024).fill(120);
+    const { stream, wasCancelled } = streamOf(Array.from({ length: 100 }, () => chunk.slice()));
+    await expect(readCappedBody(req(stream), 4096)).rejects.toMatchObject({ status: 413 });
+    expect(wasCancelled()).toBe(true);
+  });
+
+  it('decodes a multi-byte character split across chunks', async () => {
+    const bytes = new TextEncoder().encode('ñandú 🚀');
+    const { stream } = streamOf([bytes.slice(0, 1), bytes.slice(1, 7), bytes.slice(7)]);
+    expect(await readCappedBody(req(stream))).toBe('ñandú 🚀');
+  });
+
+  it('accepts a body exactly at the cap', async () => {
+    const { stream } = streamOf([new Uint8Array(4096).fill(97)]);
+    expect(await readCappedBody(req(stream), 4096)).toHaveLength(4096);
+  });
+
+  it('returns an empty string for a request without a body', async () => {
+    expect(await readCappedBody(new Request(`${ORIGIN}/api/hercules`, { method: 'POST' }))).toBe('');
   });
 });
