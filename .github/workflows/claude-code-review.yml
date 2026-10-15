@@ -29,9 +29,48 @@ jobs:
         with:
           fetch-depth: 1
 
+      # Fails fast with a clear reason instead of the action's opaque "result is_error:true".
+      # Never prints the credential: only its type, the HTTP status and the API's error type/message.
+      - name: Check Anthropic credentials
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          CLAUDE_CODE_OAUTH_TOKEN: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+        run: |
+          if [ -n "$CLAUDE_CODE_OAUTH_TOKEN" ]; then
+            echo "Using the CLAUDE_CODE_OAUTH_TOKEN secret (Claude subscription)."
+            exit 0
+          fi
+          if [ -z "$ANTHROPIC_API_KEY" ]; then
+            echo "::error::Neither ANTHROPIC_API_KEY nor CLAUDE_CODE_OAUTH_TOKEN is set as a repository secret."
+            exit 1
+          fi
+          case "$ANTHROPIC_API_KEY" in
+            sk-ant-oat*)
+              echo "::error::ANTHROPIC_API_KEY contains a Claude subscription token (sk-ant-oat…), not an API key. Save it as a secret named CLAUDE_CODE_OAUTH_TOKEN instead and delete ANTHROPIC_API_KEY."
+              exit 1 ;;
+            sk-ant-api*) ;;
+            *) echo "::warning::ANTHROPIC_API_KEY does not start with sk-ant-api; it may not be an Anthropic API key." ;;
+          esac
+          if [ "$ANTHROPIC_API_KEY" != "$(printf '%s' "$ANTHROPIC_API_KEY" | tr -d '[:space:]')" ]; then
+            echo "::error::ANTHROPIC_API_KEY contains spaces or line breaks. Paste the key again without them."
+            exit 1
+          fi
+          # Smallest possible request (1 output token on the cheapest model): also detects an empty credit balance.
+          status=$(curl -sS -o /tmp/anthropic-check.json -w '%{http_code}' https://api.anthropic.com/v1/messages \
+            -H "x-api-key: $ANTHROPIC_API_KEY" -H "anthropic-version: 2023-06-01" -H "content-type: application/json" \
+            -d '{"model":"claude-haiku-5-5","max_tokens":1,"messages":[{"role":"user","content":"ok"}]}')
+          if [ "$status" != "200" ]; then
+            reason=$(jq -r '"\(.error.type // "unknown"): \(.error.message // "no message")"' /tmp/anthropic-check.json 2>/dev/null)
+            echo "::error::Anthropic API rejected the key (HTTP $status) - $reason"
+            exit 1
+          fi
+          echo "ANTHROPIC_API_KEY is valid and the account can make requests."
+
       - uses: anthropics/claude-code-action@58985842b834ed26087302ba27d07bc24ca8697a # v1.0.244
         with:
+          # Either credential works; the check above explains which one is in use.
           anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
+          claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
           # One summary comment per PR, updated on every push instead of piling up.
           use_sticky_comment: true
           prompt: |
