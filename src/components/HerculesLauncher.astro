@@ -261,6 +261,18 @@ const nodes = [
     display: none;
   }
 
+  /* Phones: beside the launcher it would cover the hero's left-aligned CTA, so it sits above it. */
+  @media (max-width: 639px) {
+    .hl-teaser {
+      right: 0;
+      bottom: calc(100% + 12px);
+    }
+
+    .hl-teaser[data-state='in'] {
+      animation-name: hl-teaser-up;
+    }
+  }
+
   .hl-teaser[data-state='in'] {
     animation: hl-teaser-in var(--hl-teaser-in) cubic-bezier(0.2, 0.8, 0.2, 1) both;
   }
@@ -377,6 +389,13 @@ const nodes = [
     from {
       opacity: 0;
       transform: translateX(8px);
+    }
+  }
+
+  @keyframes hl-teaser-up {
+    from {
+      opacity: 0;
+      transform: translateY(8px);
     }
   }
 
