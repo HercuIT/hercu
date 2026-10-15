@@ -30,8 +30,8 @@ function setup(opts: {
     TURNSTILE_SECRET: turnstileSecret,
     TURNSTILE_HOSTNAMES: 'hercuit.com',
     HERCULES_MODEL: 'claude-opus-5-5',
-    LEAD_FROM: 'hercules@hercuit.com',
-    LEAD_TO: 'info@hercuit.com',
+    LEAD_FROM: 'info@hercuit.com',
+    LEAD_TO: 'hercuitmx@gmail.com',
     LEADS_EMAIL: { send },
     CHAT_LIMITER: { limit: limiter },
   } as unknown as Env;
@@ -187,9 +187,9 @@ describe('handleHercules', () => {
     expect(r.body).toContain('event: lead_sent');
     expect(s.send).toHaveBeenCalledOnce();
     expect(s.send.mock.calls[0][0]).toMatchObject({
-      to: 'info@hercuit.com',
+      to: 'hercuitmx@gmail.com',
       replyTo: 'juana@empresa.com',
-      from: { name: 'Hércules', email: 'hercules@hercuit.com' },
+      from: { name: 'Hércules', email: 'info@hercuit.com' },
     });
   });
 });

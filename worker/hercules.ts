@@ -167,12 +167,40 @@ async function handleToolUse(
   try {
     await deps.sendEmail(email);
   } catch (err) {
-    deps.log({ event: 'email_failed', kind: err instanceof Error ? err.name : 'unknown' });
+    deps.log(emailFailureLog(err));
     return result('Could not send the email. Apologize and give the visitor the phone number and the contact form.', true);
   }
   deps.log({ event: 'lead_sent' });
   emit({ event: 'lead_sent', data: { ok: true } });
   return result('sent');
+}
+
+/**
+ * Why a send failed, as a fixed category. Checked in order; the first match wins. The error text
+ * itself is never logged: the binding received the visitor's Reply-To, name, summary and transcript,
+ * and its error may echo any of them, in any encoding, so no redaction can be shown to be complete.
+ */
+const EMAIL_FAILURE_REASONS = [
+  ['destination_not_verified', /\bnot\s+verified\b|\bunverified\b/i],
+  ['not_allowed', /\bnot\s+allowed\b|\bforbidden\b|\bunauthori[sz]ed\b|\bpermission\b|\bdenied\b/i],
+  ['rate_limited', /\brate[\s_-]*limit|\btoo\s+many\b|\bquota\b/i],
+  ['timeout', /\btime[ds]?[\s_-]*out\b|\btimeout\b/i],
+  ['invalid_message', /\binvalid\b|\bmalformed\b|\btoo\s+(large|long|big)\b/i],
+] as const;
+
+export type EmailFailureReason = (typeof EMAIL_FAILURE_REASONS)[number][0] | 'other';
+
+/**
+ * Log entry for a failed send: the error type, a fixed reason category and the message length.
+ * Enough to tell "destination not verified" from a rate limit or an outage; for anything logged
+ * as "other", reproduce the failure and read the error directly.
+ */
+export function emailFailureLog(err: unknown): { event: 'email_failed'; kind: string; reason: EmailFailureReason; length: number } {
+  if (!(err instanceof Error)) return { event: 'email_failed', kind: 'unknown', reason: 'other', length: 0 };
+  const reason = EMAIL_FAILURE_REASONS.find(([, pattern]) => pattern.test(err.message))?.[0] ?? 'other';
+  // err.name is free text too; keep it only when it looks like an error class name.
+  const kind = /^[A-Za-z]{1,40}$/.test(err.name) ? err.name : 'unknown';
+  return { event: 'email_failed', kind, reason, length: err.message.length };
 }
 
 /** SSE wire format: one event per message, JSON data on a single line. */

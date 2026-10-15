@@ -19,13 +19,15 @@
   },
   "vars": {
     "HERCULES_MODEL": "claude-opus-5-5",
-    "LEAD_FROM": "hercules@hercuit.com",
-    "LEAD_TO": "info@hercuit.com",
+    // Sender must be on hercuit.com (Email Routing enabled). LEAD_TO must equal the binding's
+    // destination_address below and be a verified Email Routing destination; see tests/wrangler-config.test.ts.
+    "LEAD_FROM": "info@hercuit.com",
+    "LEAD_TO": "hercuitmx@gmail.com",
     // Hostnames a Turnstile token may come from. Production only: never localhost here.
     "TURNSTILE_HOSTNAMES": "hercuit.com,www.hercuit.com,hercu.ramirezgjennyg.workers.dev"
   },
-  // Email Routing: this binding can ONLY send to info@hercuit.com, whatever the code asks.
-  "send_email": [{ "name": "LEADS_EMAIL", "destination_address": "info@hercuit.com" }],
+  // Email Routing: this binding can ONLY send to hercuitmx@gmail.com, whatever the code asks.
+  "send_email": [{ "name": "LEADS_EMAIL", "destination_address": "hercuitmx@gmail.com" }],
   // 20 requests per minute per visitor IP for /api/hercules.
   "ratelimits": [{ "name": "CHAT_LIMITER", "namespace_id": "1001", "simple": { "limit": 20, "period": 60 } }],
   // Secrets live in the account-level Cloudflare Secrets Store (never in the repo). The Worker reads

@@ -101,6 +101,10 @@ export const en = {
     locationLabel: "Location",
     phoneLabel: "Phone",
     callPrefix: "Call us at",
+    whatsappLabel: "WhatsApp",
+    whatsappCta: "Message us on WhatsApp",
+    whatsappAria: { prefix: "Message us on WhatsApp at", suffix: "(opens in a new tab)" },
+    whatsappMessage: "Hello, HércuIT. I'd like information about your services.",
     formName: "Full name",
     formEmail: "Email",
     service: {
@@ -167,7 +171,7 @@ export const en = {
   privacy: {
     title: "Privacy Notice",
     lawReference: "Pursuant to Mexico's LFPDPPP and Guidelines",
-    updated: "Last updated: October 14, 2026",
+    updated: "Last updated: October 15, 2026",
     introduction: "HércuIT, S. de R.L. de C.V. is committed to protecting your personal data and respecting your right to informational self-determination. This Comprehensive Privacy Notice is issued in strict compliance with the provisions of Mexico's Federal Law on Protection of Personal Data Held by Private Parties (LFPDPPP), its Regulations, and the Privacy Notice Guidelines issued by the National Institute for Transparency, Access to Information and Personal Data Protection (INAI).",
     // Ordered content: a string is a paragraph, a string[] is a bulleted list right after its lead-in.
     sections: [
@@ -225,9 +229,9 @@ export const en = {
             "Interactive or form-based capture: Data is collected when entered into the contact form or during interactive conversation with our virtual assistant (\"Hercules bot\").",
             "No persistent web server database storage: HércuIT does not store or keep personal data or conversation transcripts in persistent web server databases or publicly accessible cloud repositories.",
             "Temporary session storage: Interaction with the Hercules assistant uses only temporary browser memory (sessionStorage), which is automatically discarded upon closing the browser tab or window.",
-            "Transmission via corporate email: Collected information is consolidated and dispatched solely via email to info@hercuit.com upon express confirmation from the data subject."
+            "Transmission via email: Information collected by the Hercules assistant is consolidated and dispatched solely via an email sent from the corporate address info@hercuit.com to HércuIT's inbox hosted on Gmail (Google LLC), upon express confirmation from the data subject."
           ],
-          "Once the data subject reviews the summary of their request, accepts this privacy notice, and explicitly confirms submission, the contact information and consultation summary are transmitted directly via secure email to HércuIT's institutional inbox (info@hercuit.com). Management and follow-up are handled exclusively within this corporate email account, protected by rigorous administrative, technical, and physical security measures to safeguard your information against loss, unauthorized access, or unlawful disclosure."
+          "Once the data subject reviews the summary of their request, accepts this privacy notice, and explicitly confirms submission, the contact information and consultation summary are transmitted directly via secure email, sent from HércuIT's corporate address (info@hercuit.com), to HércuIT's inbox hosted on Google LLC's Gmail service. Management and follow-up are handled exclusively within this inbox, protected by rigorous administrative, technical, and physical security measures to safeguard your information against loss, unauthorized access, or unlawful disclosure."
         ]
       },
       {
@@ -264,7 +268,8 @@ export const en = {
           "HércuIT does NOT sell, rent, commercialize, or transfer your personal data to third parties unrelated to the relationship with the data subject.",
           "Solely to operate the digital infrastructure of our website, provide technical security, and deliver interactive assistant capabilities, technological remittances are conducted with providers acting as processors under strict confidentiality and security instructions from HércuIT:",
           [
-            "Cloud infrastructure and perimeter security (Cloudflare, Inc.): Provider responsible for mitigating cyberattacks, validating request integrity, and performing secure email routing to info@hercuit.com.",
+            "Cloud infrastructure and perimeter security (Cloudflare, Inc.): Provider responsible for mitigating cyberattacks, validating request integrity, sending requests from info@hercuit.com, and securely forwarding emails addressed to info@hercuit.com.",
+            "Email hosting (Google LLC, Gmail service): Provider of the inbox where HércuIT receives, manages, and follows up on requests sent through the Hercules assistant and on emails addressed to info@hercuit.com.",
             "Artificial intelligence processing (Anthropic, PBC): Provider of the language model that processes interactive messages with the Hercules assistant in real time to generate conversational guidance. In accordance with its commercial API service terms, Anthropic does not use customer conversational data to train AI models."
           ],
           "These remittances and transfers are exempt from requiring express consent under Article 37 of the LFPDPPP (sections IV and VII), as they are legally indispensable for the maintenance and fulfillment of the relationship requested by the data subject and for delivering our firm's technology services."
@@ -298,7 +303,7 @@ export const en = {
       subheading: "Formats applicable to space-constrained channels pursuant to INAI Guidelines",
       paragraphs: [
         "Pursuant to Guidelines 27 through 31 issued by the INAI, when personal data collection occurs within space-constrained channels, mobile interfaces, or through our interactive assistant (\"Hercules bot\"), the Simplified Privacy Notice format is made available:",
-        "\"HércuIT, S. de R.L. de C.V., based in Torreón, Coahuila, Mexico, is responsible for processing the identification, contact, and project requirements data you provide through this medium. Your data will be used to respond to your inquiries, prepare software and quality assurance proposals, and provide guidance via our interactive assistant, consolidating your request for direct transmission via corporate email to info@hercuit.com, without persistent database storage on web servers. You may state your refusal for secondary purposes or exercise your ARCO rights by emailing info@hercuit.com. The comprehensive privacy notice is available at: https://hercuit.com/en/privacy-notice\".",
+        "\"HércuIT, S. de R.L. de C.V., based in Torreón, Coahuila, Mexico, is responsible for processing the identification, contact, and project requirements data you provide through this medium. Your data will be used to respond to your inquiries, prepare software and quality assurance proposals, and provide guidance via our interactive assistant, consolidating your request for direct transmission via email, from info@hercuit.com, to HércuIT's inbox hosted on Gmail (Google LLC), without persistent database storage on web servers. You may state your refusal for secondary purposes or exercise your ARCO rights by emailing info@hercuit.com. The comprehensive privacy notice is available at: https://hercuit.com/en/privacy-notice\".",
         "Furthermore, within the consent checkbox displayed by the virtual assistant and in brief forms, the Short Privacy Notice format is utilized:",
         `"${CONSENT_LABEL}".`
       ]

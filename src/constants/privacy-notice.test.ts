@@ -248,3 +248,121 @@ describe('privacy notice structure: lists follow their lead-ins, in order', () =
     expect(shape('en')).toEqual(shape('es'));
   });
 });
+
+describe('privacy notice: leads are sent from info@hercuit.com to a Gmail inbox (specs/lead-email-routing)', () => {
+  const textOf = (s: Section) => [s.heading, ...s.blocks.flat()].join(' ');
+
+  it.each(locales)('"%s": §4 says the lead is sent from info@hercuit.com to the Gmail inbox', (locale) => {
+    const s4 = textOf(strings[locale].privacy.sections[3]);
+    expect(s4).toMatch(locale === 'es' ? /desde la dirección institucional info@hercuit\.com/ : /from the corporate address info@hercuit\.com/);
+    expect(s4).toContain('Gmail (Google LLC)');
+    // The old wording named info@hercuit.com as the destination.
+    expect(s4).not.toMatch(locale === 'es' ? /hacia info@hercuit\.com/ : /to info@hercuit\.com upon/);
+  });
+
+  it.each(locales)('"%s": §7 lists Google LLC (Gmail) as a processor, next to Cloudflare and Anthropic', (locale) => {
+    const items = itemsOf(strings[locale].privacy.sections[6]);
+    expect(items).toHaveLength(3);
+    const providers = items.map((i) => i.match(/\((Cloudflare|Anthropic|Google)[^)]*\)/)?.[1]);
+    expect([...providers].sort()).toEqual(['Anthropic', 'Cloudflare', 'Google']);
+    expect(items[providers.indexOf('Google')]).toMatch(/Gmail/);
+  });
+
+  it.each(locales)('"%s": the simplified notice names the Gmail inbox, and info@hercuit.com stays the ARCO channel', (locale) => {
+    const notice = strings[locale].privacy.simplifiedNotice.paragraphs.join(' ');
+    expect(notice).toContain('Gmail (Google LLC)');
+    expect(notice).toMatch(locale === 'es' ? /derechos ARCO enviando un correo a info@hercuit\.com/ : /ARCO rights by emailing info@hercuit\.com/);
+  });
+
+  it.each(locales)('"%s": never mentions the Gmail address itself (contact stays info@hercuit.com)', (locale) => {
+    const p = strings[locale].privacy;
+    const all = [p.introduction, ...p.sections.map(textOf), ...p.simplifiedNotice.paragraphs].join(' ');
+    expect(all).not.toContain('hercuitmx@gmail.com');
+  });
+});
+
+const MONTHS = {
+  es: ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre'],
+  en: ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'],
+};
+
+/** Reads "Última actualización: 15 de octubre de 2026" / "Last updated: October 15, 2026" as YYYY-MM-DD, or null. */
+function parseUpdated(locale: 'es' | 'en', text: string): string | null {
+  const m =
+    locale === 'es'
+      ? /^Última actualización: (\d{1,2}) de (\p{L}+) de (\d{4})$/u.exec(text)
+      : /^Last updated: (\p{L}+) (\d{1,2}), (\d{4})$/u.exec(text);
+  if (!m) return null;
+  const [day, month, year] = locale === 'es' ? [m[1], m[2], m[3]] : [m[2], m[1], m[3]];
+  const monthIndex = MONTHS[locale].indexOf(month);
+  const d = Number(day);
+  if (monthIndex === -1 || d < 1) return null;
+  const date = new Date(Date.UTC(Number(year), monthIndex, d));
+  if (date.getUTCMonth() !== monthIndex) return null; // e.g. 31 de febrero
+  return date.toISOString().slice(0, 10);
+}
+
+describe('parseUpdated', () => {
+  it.each([
+    ['es', 'Última actualización: 15 de octubre de 2026', '2026-10-15'],
+    ['en', 'Last updated: October 15, 2026', '2026-10-15'],
+    ['es', 'Última actualización: 1 de enero de 2027', '2027-01-01'],
+    ['en', 'Last updated: December 31, 2026', '2026-12-31'],
+  ] as const)('reads %s "%s"', (locale, text, expected) => {
+    expect(parseUpdated(locale, text)).toBe(expected);
+  });
+
+  it.each([
+    ['es', ''],
+    ['es', 'Última actualización: 31 de febrero de 2026'],
+    ['es', 'Última actualización: 15 de octobre de 2026'],
+    ['es', 'Ultima actualizacion: 15 de octubre de 2026'],
+    ['en', 'Last updated: 15 October 2026'],
+    ['en', 'Last updated: Octember 15, 2026'],
+    ['en', 'Last updated: October 0, 2026'],
+  ] as const)('rejects %s %j', (locale, text) => {
+    expect(parseUpdated(locale, text)).toBeNull();
+  });
+});
+
+describe('privacy notice "last updated" date', () => {
+  it('is a valid date in both locales, and the same date', () => {
+    const es = parseUpdated('es', strings.es.privacy.updated);
+    const en = parseUpdated('en', strings.en.privacy.updated);
+    expect(es).not.toBeNull();
+    expect(en).toBe(es);
+  });
+
+  it('reflects the Gmail delivery and Google processor change (15 October 2026 or later)', () => {
+    expect(parseUpdated('es', strings.es.privacy.updated)! >= '2026-10-15').toBe(true);
+  });
+});
+
+describe('privacy notice §4: only the Hercules assistant sends email (the contact form sends nothing)', () => {
+  const transmissionItem = (locale: 'es' | 'en') =>
+    itemsOf(strings[locale].privacy.sections[3]).filter((item) => /Gmail/.test(item));
+
+  it.each(locales)('"%s": exactly one §4 item names the Gmail delivery, and it is scoped to the assistant', (locale) => {
+    const items = transmissionItem(locale);
+    expect(items).toHaveLength(1);
+    expect(items[0]).toMatch(locale === 'es' ? /recabada por el asistente Hércules/ : /collected by the Hercules assistant/);
+  });
+
+  it.each(locales)('"%s": the Gmail delivery is never attributed to the contact form', (locale) => {
+    const s4 = strings[locale].privacy.sections[3];
+    for (const block of s4.blocks.flat()) {
+      if (/Gmail/.test(block)) expect(block).not.toMatch(locale === 'es' ? /formulario/i : /\bform\b/i);
+    }
+  });
+
+  it.each(locales)('"%s": the paragraph after the list describes the assistant\'s confirm-then-send flow', (locale) => {
+    const blocks = strings[locale].privacy.sections[3].blocks;
+    const paragraphs = paragraphsOf(strings[locale].privacy.sections[3]).filter((p) => /Gmail/.test(p));
+    expect(paragraphs).toHaveLength(1);
+    expect(paragraphs[0]).toMatch(locale === 'es' ? /revisa el resumen de su solicitud/ : /reviews the summary of their request/);
+    // Its position, not just its presence: the block right after §4's only list.
+    const listIndexes = blocks.flatMap((b, i) => (Array.isArray(b) ? [i] : []));
+    expect(listIndexes).toHaveLength(1);
+    expect(blocks.indexOf(paragraphs[0])).toBe(listIndexes[0] + 1);
+  });
+});

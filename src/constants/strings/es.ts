@@ -110,6 +110,12 @@ export const es = {
     locationLabel: "Ubicación",
     phoneLabel: "Teléfono",
     callPrefix: "Llámenos al",
+    whatsappLabel: "WhatsApp",
+    whatsappCta: "Escríbanos por WhatsApp",
+    /** Screen-reader label; the phone number goes between prefix and suffix. */
+    whatsappAria: { prefix: "Escríbanos por WhatsApp al", suffix: "(se abre en una pestaña nueva)" },
+    /** Pre-filled text of the chat the link opens. */
+    whatsappMessage: "Hola, HércuIT. Me gustaría información sobre sus servicios.",
     formName: "Nombre completo",
     formEmail: "Correo electrónico",
     service: {
@@ -176,7 +182,7 @@ export const es = {
   privacy: {
     title: "Aviso de Privacidad",
     lawReference: "Conforme a la LFPDPPP y sus Lineamientos · México",
-    updated: "Última actualización: 14 de octubre de 2026",
+    updated: "Última actualización: 15 de octubre de 2026",
     introduction: "HércuIT, S. de R.L. de C.V. está comprometida con la protección de sus datos personales y el respeto a su derecho a la autodeterminación informativa. El presente Aviso de Privacidad Integral se emite en estricto cumplimiento de las disposiciones de la Ley Federal de Protección de Datos Personales en Posesión de los Particulares (LFPDPPP), su Reglamento y los Lineamientos del Aviso de Privacidad expedidos por el Instituto Nacional de Transparencia, Acceso a la Información y Protección de Datos Personales (INAI).",
     // Ordered content: a string is a paragraph, a string[] is a bulleted list right after its lead-in.
     sections: [
@@ -234,9 +240,9 @@ export const es = {
             "Captura interactiva o por formulario: Los datos se recaban a través del formulario de contacto o durante el diálogo interactivo con el asistente virtual («bot Hércules»).",
             "Ausencia de almacenamiento en bases de datos del servidor web: HércuIT no almacena ni conserva los datos personales ni las conversaciones en bases de datos persistentes del servidor web ni en sistemas de almacenamiento en la nube accesibles al público.",
             "Almacenamiento temporal en sesión: La interacción con el asistente Hércules utiliza únicamente memoria temporal del navegador web del usuario (sessionStorage), la cual se descarta automáticamente al cerrar la pestaña o la ventana de navegación.",
-            "Transmisión por correo institucional: La información recabada se consolida y envía únicamente mediante correo electrónico hacia info@hercuit.com tras la confirmación expresa del titular."
+            "Transmisión por correo electrónico: La información recabada por el asistente Hércules se consolida y envía únicamente mediante un correo electrónico remitido desde la dirección institucional info@hercuit.com al buzón de HércuIT alojado en Gmail (Google LLC), tras la confirmación expresa del titular."
           ],
-          "Una vez que el titular revisa el resumen de su solicitud, acepta el presente aviso de privacidad y confirma explícitamente el envío, los datos de contacto y el resumen de la consulta se transmiten directamente vía correo electrónico seguro a la cuenta de correo institucional de HércuIT (info@hercuit.com). La gestión y seguimiento de la solicitud se realiza exclusivamente dentro de dicha cuenta de correo electrónico institucional, implementando estrictas medidas administrativas, técnicas y físicas de seguridad para proteger su información contra pérdida, acceso no autorizado o divulgación indebida."
+          "Una vez que el titular revisa el resumen de su solicitud, acepta el presente aviso de privacidad y confirma explícitamente el envío, los datos de contacto y el resumen de la consulta se transmiten directamente vía correo electrónico seguro, remitido desde la dirección institucional de HércuIT (info@hercuit.com), al buzón de correo de HércuIT alojado en el servicio Gmail de Google LLC. La gestión y seguimiento de la solicitud se realiza exclusivamente dentro de dicho buzón de correo electrónico, implementando estrictas medidas administrativas, técnicas y físicas de seguridad para proteger su información contra pérdida, acceso no autorizado o divulgación indebida."
         ]
       },
       {
@@ -273,7 +279,8 @@ export const es = {
           "HércuIT NO vende, no alquila, no comercializa ni transfiere sus datos personales a terceros ajenos a la relación con el titular.",
           "Con la finalidad exclusiva de operar la infraestructura digital del sitio web, brindar seguridad técnica y permitir la funcionalidad del asistente interactivo, se realizan remisiones tecnológicas a proveedores que actúan como encargados bajo instrucciones estrictas de confidencialidad y seguridad de HércuIT:",
           [
-            "Infraestructura de nube y seguridad perimetral (Cloudflare, Inc.): Proveedor encargado de la mitigación de ataques informáticos, verificación de peticiones y enrutamiento seguro de correo electrónico hacia info@hercuit.com.",
+            "Infraestructura de nube y seguridad perimetral (Cloudflare, Inc.): Proveedor encargado de la mitigación de ataques informáticos, verificación de peticiones, envío de las solicitudes desde info@hercuit.com y reenvío seguro de los correos dirigidos a info@hercuit.com.",
+            "Alojamiento de correo electrónico (Google LLC, servicio Gmail): Proveedor del buzón en el que HércuIT recibe, gestiona y da seguimiento a las solicitudes enviadas mediante el asistente Hércules y a los correos dirigidos a info@hercuit.com.",
             "Procesamiento de inteligencia artificial (Anthropic, PBC): Proveedor del modelo de lenguaje que procesa en tiempo real los mensajes del asistente interactivo Hércules para generar las respuestas de orientación en el sitio. De conformidad con sus políticas comerciales para servicios API, Anthropic no utiliza los datos ni el texto de las conversaciones para entrenar sus modelos de inteligencia artificial."
           ],
           "Dichas remisiones y transferencias se encuentran exceptuadas de la exigencia de consentimiento en términos del artículo 37 de la LFPDPPP (fracciones IV y VII), toda vez que resultan indispensables para el mantenimiento y cumplimiento de la relación solicitada por el propio titular y para la prestación de los servicios tecnológicos de la firma."
@@ -307,7 +314,7 @@ export const es = {
       subheading: "Formatos aplicables en canales de espacio limitado conforme a los Lineamientos del INAI",
       paragraphs: [
         "En cumplimiento de los Lineamientos Vigésimo Séptimo a Trigésimo Primero expedidos por el INAI, cuando la captura de datos se efectúe en espacios reducidos, interfaces móviles o mediante el asistente interactivo («bot Hércules»), se pone a disposición del titular el formato de Aviso de Privacidad Simplificado:",
-        "«HércuIT, S. de R.L. de C.V., con domicilio en Torreón, Coahuila, México, es responsable del tratamiento de los datos personales de identificación, contacto y requerimientos que usted proporciona mediante este medio. Sus datos se utilizarán para la atención de sus consultas, elaboración de propuestas de servicios de software y calidad, y orientación mediante nuestro asistente interactivo, consolidando su solicitud para su envío directo por correo electrónico institucional a info@hercuit.com, sin almacenamiento en bases de datos del servidor web. Usted puede manifestar su negativa para finalidades secundarias o ejercer sus derechos ARCO enviando un correo a info@hercuit.com. El aviso de privacidad integral se encuentra disponible en: https://hercuit.com/aviso-de-privacidad».",
+        "«HércuIT, S. de R.L. de C.V., con domicilio en Torreón, Coahuila, México, es responsable del tratamiento de los datos personales de identificación, contacto y requerimientos que usted proporciona mediante este medio. Sus datos se utilizarán para la atención de sus consultas, elaboración de propuestas de servicios de software y calidad, y orientación mediante nuestro asistente interactivo, consolidando su solicitud para su envío directo por correo electrónico, desde info@hercuit.com, al buzón de HércuIT alojado en Gmail (Google LLC), sin almacenamiento en bases de datos del servidor web. Usted puede manifestar su negativa para finalidades secundarias o ejercer sus derechos ARCO enviando un correo a info@hercuit.com. El aviso de privacidad integral se encuentra disponible en: https://hercuit.com/aviso-de-privacidad».",
         "Asimismo, en la casilla de verificación de consentimiento (checkbox) desplegada por el asistente virtual y en formularios breves, se emplea el formato de Aviso de Privacidad Corto:",
         `«${CONSENT_LABEL}».`
       ]

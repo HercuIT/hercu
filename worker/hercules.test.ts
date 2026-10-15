@@ -1,6 +1,6 @@
 import Anthropic from '@anthropic-ai/sdk';
 import { describe, expect, it, vi } from 'vitest';
-import { buildParams, formatSse, MAX_ITERATIONS, runConversation, type Deps, type SseEvent, type StreamParams } from './hercules';
+import { buildParams, emailFailureLog, formatSse, MAX_ITERATIONS, runConversation, type Deps, type SseEvent, type StreamParams } from './hercules';
 import type { ChatMessage } from './guards';
 import type { LeadEmail } from './lead';
 
@@ -163,7 +163,11 @@ describe('runConversation: negative cases (no email is sent)', () => {
     await h.run();
     expect(h.kinds()).not.toContain('lead_sent');
     expect(lastBlocks(h.calls[1])[0]).toMatchObject({ is_error: true, content: expect.stringMatching(/Could not send/) });
-    expect(h.logs.some((l) => l.event === 'email_failed')).toBe(true);
+    expect(h.logs).toContainEqual({ event: 'email_failed', kind: 'Error', reason: 'other', length: 'send failed'.length });
+    // The reason is logged, the visitor's data is not.
+    const logged = JSON.stringify(h.logs);
+    expect(logged).not.toContain(validLead.name);
+    expect(logged).not.toContain(validLead.email);
   });
 
   it('emits "refused" on a refusal and stops', async () => {
@@ -345,5 +349,114 @@ describe('runConversation: English locale', () => {
     expect(h.emails[0].subject).toContain('José Ñúñez 🚀');
     expect(h.text()).toBe('Done! We will contact you soon.');
     expect((h.calls[0] as unknown as { system: { text: string }[] }).system[0].text).toMatch(/Never invent prices/);
+  });
+});
+
+describe('emailFailureLog: a fixed reason category, never the error text', () => {
+  it.each([
+    ['destination address not verified', 'destination_not_verified'],
+    ['Destination Address NOT VERIFIED', 'destination_not_verified'],
+    ['email to unverified destination', 'destination_not_verified'],
+    ['sender info@hercuit.com is not allowed', 'not_allowed'],
+    ['403 Forbidden', 'not_allowed'],
+    ['Unauthorized', 'not_allowed'],
+    ['unauthorised sender', 'not_allowed'],
+    ['permission denied', 'not_allowed'],
+    ['Rate limit exceeded', 'rate_limited'],
+    ['rate_limited', 'rate_limited'],
+    ['Too many requests', 'rate_limited'],
+    ['daily quota reached', 'rate_limited'],
+    ['Request timed out', 'timeout'],
+    ['upstream timeout', 'timeout'],
+    ['time-out while sending', 'timeout'],
+    ['invalid Reply-To header', 'invalid_message'],
+    ['malformed MIME body', 'invalid_message'],
+    ['message too large', 'invalid_message'],
+  ] as const)('%j → %s', (message, reason) => {
+    expect(emailFailureLog(new Error(message))).toEqual({ event: 'email_failed', kind: 'Error', reason, length: message.length });
+  });
+
+  it('uses the first matching category when several apply', () => {
+    expect(emailFailureLog(new Error('invalid request: destination not verified')).reason).toBe('destination_not_verified');
+    expect(emailFailureLog(new Error('rate limit: request timed out')).reason).toBe('rate_limited');
+  });
+
+  it.each(['send failed', 'internal error', '', '   ', 'Fehler beim Senden 🚫', 'timeouts', 'notallowed'])(
+    'logs "other" for %j (no known reason, or only a look-alike word)',
+    (message) => {
+      expect(emailFailureLog(new Error(message)).reason).toBe('other');
+    },
+  );
+
+  it('keeps the error class name, including subclasses', () => {
+    expect(emailFailureLog(new TypeError('x')).kind).toBe('TypeError');
+    class EmailSendError extends Error {
+      override name = 'EmailSendError';
+    }
+    expect(emailFailureLog(new EmailSendError('x')).kind).toBe('EmailSendError');
+  });
+
+  it.each([
+    ['visitor data', 'Juana Pérez'],
+    ['an email address', 'juana@empresa.com'],
+    ['spaces', 'Send Error'],
+    ['a very long name', 'E'.repeat(41)],
+    ['an empty name', ''],
+  ])('logs kind "unknown" when the error name holds %s (it is free text too)', (_label, name) => {
+    const err = new Error('x');
+    err.name = name;
+    expect(emailFailureLog(err).kind).toBe('unknown');
+  });
+
+  it.each([
+    ['a string', 'boom'],
+    ['null', null],
+    ['undefined', undefined],
+    ['a plain object', { message: 'destination address not verified' }],
+  ])('logs kind "unknown", reason "other" and length 0 for a thrown non-Error (%s)', (_label, thrown) => {
+    expect(emailFailureLog(thrown)).toEqual({ event: 'email_failed', kind: 'unknown', reason: 'other', length: 0 });
+  });
+
+  it('logs the length of the message (UTF-16 units), not its content', () => {
+    expect(emailFailureLog(new Error('x'.repeat(5000))).length).toBe(5000);
+    expect(emailFailureLog(new Error('é🚀')).length).toBe(3);
+  });
+});
+
+describe('emailFailureLog: no visitor data can reach the log, however the error encodes it', () => {
+  const b64 = (text: string) => btoa(String.fromCharCode(...new TextEncoder().encode(text)));
+  // Every leak found in review while the log still carried redacted free text.
+  const echoes = [
+    ['the Reply-To address', 'invalid Reply-To: juana@empresa.com', ['juana', 'empresa']],
+    ['a percent-encoded address', 'invalid Reply-To: juana%40empresa.com', ['juana', 'empresa']],
+    ['a Q-encoded name', 'invalid From: =?UTF-8?Q?Juana_P=C3=A9rez?=', ['Juana', 'P=C3=A9rez']],
+    ['a B-encoded name', `invalid From: =?UTF-8?B?${b64('Juana Pérez')}?=`, [b64('Juana Pérez')]],
+    ['underscores for spaces', 'name=Juana_Pérez', ['Juana', 'Pérez']],
+    ['a truncated long name', 'subject rejected: [Hércules] QA · María José Fernández de la Gar', ['María', 'Fernández']],
+    ['a phone in another format', 'bad phone (871) 123-4567', ['871', '4567']],
+    ['a transcript line with a CURP and address', '[Visitante] Mi CURP es GOMJ800101MDFRRN09 y vivo en Calle Hidalgo 123', ['GOMJ800101MDFRRN09', 'Hidalgo']],
+    ['an HTML-escaped name', 'body rejected: <td>Juana O&#39;Brien &amp; Cía</td>', ['Brien', 'Cía']],
+    ['a quoted-printable body', 'body rejected: Mi nombre es Juana P=C3=A9rez', ['Juana', 'P=C3=A9rez']],
+  ] as const;
+
+  it.each(echoes)('%s: only the fixed fields are logged', (_label, message, fragments) => {
+    const entry = emailFailureLog(new Error(message));
+    expect(Object.keys(entry).sort()).toEqual(['event', 'kind', 'length', 'reason']);
+    expect(['destination_not_verified', 'not_allowed', 'rate_limited', 'timeout', 'invalid_message', 'other']).toContain(entry.reason);
+    const logged = JSON.stringify(entry);
+    for (const fragment of fragments) expect(logged).not.toContain(fragment);
+  });
+
+  it('a full conversation whose email error echoes the visitor and transcript logs none of it', async () => {
+    const h = harness([{ content: [toolUse(validLead)], stop_reason: 'tool_use' }, { text: 'Lo siento.', stop_reason: 'end_turn' }]);
+    h.deps.sendEmail = vi.fn(async () => {
+      throw new Error(`invalid Reply-To: ${validLead.email} (${validLead.name}) [Visitante] ${validLead.summary}`);
+    });
+    await h.run();
+    expect(h.logs).toContainEqual({ event: 'email_failed', kind: 'Error', reason: 'invalid_message', length: expect.any(Number) });
+    const logged = JSON.stringify(h.logs);
+    for (const value of [validLead.email, validLead.name, validLead.summary, 'Juana', 'empresa']) {
+      expect(logged).not.toContain(value);
+    }
   });
 });
