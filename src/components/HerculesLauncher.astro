@@ -31,17 +31,28 @@ const config = { locale, siteKey, strings: t.hercules, privacyHref: privacyPaths
 <script>
   const launcher = document.getElementById('hercules-launcher');
   if (launcher) {
-    const open = async () => {
-      const { toggleHercules } = await import('../client/hercules-widget');
-      const config = JSON.parse(launcher.dataset.config ?? '{}');
-      config.logoHtml = launcher.querySelector('svg')?.outerHTML ?? '';
-      toggleHercules(config, launcher);
+    const config = JSON.parse(launcher.dataset.config ?? '{}');
+    config.logoHtml = launcher.querySelector('svg')?.outerHTML ?? '';
+    // One shared download; clicks that arrive while it is in flight are ignored, so a double click
+    // can't open and immediately close the panel.
+    let widget: Promise<typeof import('../client/hercules-widget')> | null = null;
+    let loading = false;
+    const run = async (action: 'toggle' | 'open') => {
+      if (loading) return;
+      loading = true;
+      try {
+        const mod = await (widget ??= import('../client/hercules-widget'));
+        if (action === 'toggle') mod.toggleHercules(config, launcher);
+        else mod.openHercules(config, launcher);
+      } finally {
+        loading = false;
+      }
     };
-    launcher.addEventListener('click', () => void open());
-    // Secondary entry points (e.g. the hero link) only appear once this script runs.
+    launcher.addEventListener('click', () => void run('toggle'));
+    // Secondary entry points (e.g. the hero link) only appear once this script runs, and only open.
     for (const trigger of document.querySelectorAll<HTMLElement>('[data-hercules-open]')) {
       trigger.hidden = false;
-      trigger.addEventListener('click', () => void open());
+      trigger.addEventListener('click', () => void run('open'));
     }
   }
 </script>

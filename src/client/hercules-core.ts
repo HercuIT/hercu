@@ -55,9 +55,14 @@ export function loadConversation(storage: Pick<Storage, 'getItem'> | undefined):
     if (!raw) return [];
     const parsed: unknown = JSON.parse(raw);
     if (!Array.isArray(parsed) || !parsed.every(isMessage)) return [];
-    // Must alternate user/assistant starting with user, or the server would reject the next send.
-    if (!parsed.every((m, i) => m.role === (i % 2 === 0 ? 'user' : 'assistant'))) return [];
-    return parsed.slice(0, MAX_MESSAGES);
+    // Restore only what the server would accept back: complete user→assistant pairs (so the next
+    // user message keeps it alternating), room for that message, and non-blank in-limit content.
+    if (parsed.length % 2 !== 0 || parsed.length > MAX_MESSAGES - 1) return [];
+    const valid = parsed.every((m, i) => {
+      const max = m.role === 'user' ? MAX_USER_CHARS : MAX_ASSISTANT_CHARS;
+      return m.role === (i % 2 === 0 ? 'user' : 'assistant') && m.content.trim() !== '' && m.content.length <= max;
+    });
+    return valid ? parsed : [];
   } catch {
     return [];
   }

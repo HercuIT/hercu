@@ -66,6 +66,10 @@ class HerculesPanel {
   private busy = false;
   private turnstileId: string | null = null;
   private tokenWaiter: { resolve(token: string): void; reject(err: Error): void } | null = null;
+  private markTurnstileReady!: () => void;
+  private readonly turnstileReady = new Promise<void>((resolve) => (this.markTurnstileReady = resolve));
+  private readonly consent: HTMLInputElement;
+  private readonly small = window.matchMedia('(max-width: 639px)');
 
   constructor(
     private readonly config: WidgetConfig,
@@ -158,11 +162,22 @@ class HerculesPanel {
     phone.href = config.phone.href;
     footer.append(el('span', '', s.disclaimer), privacy, phone);
 
-    this.turnstileBox = el('div', 'hidden');
-    this.root.append(header, this.log, this.announcer, this.chips, this.form, footer, this.turnstileBox);
+    // Explicit consent, owned by the visitor (not the model): the server refuses submit_lead unless
+    // this box is ticked. Never pre-checked; not persisted.
+    const consentRow = el('label', 'flex items-center gap-2 px-4 pb-2 text-xs text-ink');
+    this.consent = el('input', 'size-4 accent-brand-500');
+    this.consent.type = 'checkbox';
+    consentRow.append(this.consent, el('span', '', s.consentLabel));
+
+    // Visible container: in interaction-only mode Turnstile stays invisible unless it needs the
+    // visitor to solve a challenge, which must be able to render here (never display:none).
+    this.turnstileBox = el('div', 'px-4');
+    this.root.append(header, this.log, this.announcer, this.chips, this.turnstileBox, this.form, consentRow, footer);
     this.root.addEventListener('keydown', (e) => {
       if (e.key === 'Escape') this.close();
+      else if (e.key === 'Tab') this.trapFocus(e);
     });
+    this.small.addEventListener('change', () => this.syncModal());
     document.body.append(this.root);
 
     this.renderHistory();
@@ -187,7 +202,31 @@ class HerculesPanel {
     this.chips.hidden = this.conversation.length > 0;
   }
 
+  /** Full-screen on small screens = a real modal (focus trapped); a side panel otherwise. */
+  private syncModal(): void {
+    this.root.setAttribute('aria-modal', String(this.small.matches));
+  }
+
+  private trapFocus(e: KeyboardEvent): void {
+    if (!this.small.matches) return;
+    const focusable = [...this.root.querySelectorAll<HTMLElement>('button, textarea, input, a[href]')].filter(
+      (node) => !node.hasAttribute('disabled') && node.offsetParent !== null,
+    );
+    if (focusable.length === 0) return;
+    const first = focusable[0];
+    const last = focusable[focusable.length - 1];
+    if (e.shiftKey && document.activeElement === first) {
+      e.preventDefault();
+      last.focus();
+    } else if (!e.shiftKey && document.activeElement === last) {
+      e.preventDefault();
+      first.focus();
+    }
+  }
+
   open(): void {
+    if (!this.root.hidden) return this.input.focus(); // idempotent: secondary triggers never close it
+    this.syncModal();
     this.root.hidden = false;
     this.launcher.setAttribute('aria-expanded', 'true');
     this.ensureTurnstile();
@@ -228,9 +267,16 @@ class HerculesPanel {
       callback: (token: string) => this.tokenWaiter?.resolve(token),
       'error-callback': () => this.tokenWaiter?.reject(new Error('turnstile')),
     });
+    this.markTurnstileReady();
   }
 
-  private token(): Promise<string> {
+  private async token(): Promise<string> {
+    // A quick reply can be clicked before the async Turnstile script has loaded: wait for it.
+    let readyTimer: ReturnType<typeof setTimeout> | undefined;
+    await Promise.race([
+      this.turnstileReady,
+      new Promise((_, reject) => (readyTimer = setTimeout(() => reject(new Error('turnstile not ready')), 15_000))),
+    ]).finally(() => clearTimeout(readyTimer));
     return new Promise((resolve, reject) => {
       const ts = window.turnstile;
       if (!ts || !this.turnstileId) return reject(new Error('turnstile not ready'));
@@ -290,13 +336,19 @@ class HerculesPanel {
     let replyNode: HTMLElement | null = null;
     let leadSent = false;
     let failed: string | null = null;
+    let sawDone = false;
 
     try {
       const turnstileToken = await this.token();
       const res = await fetch('/api/hercules', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ locale: this.config.locale, turnstileToken, messages: this.conversation }),
+        body: JSON.stringify({
+          locale: this.config.locale,
+          turnstileToken,
+          privacyAccepted: this.consent.checked,
+          messages: this.conversation,
+        }),
       });
       if (!res.body) throw new Error('no body');
       const reader = res.body.pipeThrough(new TextDecoderStream()).getReader();
@@ -319,15 +371,19 @@ class HerculesPanel {
             leadSent = true;
           } else if (event.event === 'error') {
             failed = event.code;
+          } else if (event.event === 'done') {
+            sawDone = true;
           }
         }
       }
     } catch {
       failed ??= 'unavailable';
     }
+    // EOF without `done` = truncated stream or a non-SSE error page: never keep a partial reply.
+    if (!sawDone) failed ??= 'unavailable';
 
     typing.remove();
-    if (reply.trim()) {
+    if (sawDone && reply.trim()) {
       const stored = capAssistantReply(reply);
       this.conversation.push({ role: 'assistant', content: stored });
       this.announcer.textContent = stored; // announce the completed reply once
@@ -352,8 +408,14 @@ class HerculesPanel {
 
 let panel: HerculesPanel | null = null;
 
-/** Opens (or closes) the panel, creating it on first use. */
+/** Floating button: opens or closes the panel, creating it on first use. */
 export function toggleHercules(config: WidgetConfig, launcher: HTMLElement): void {
   panel ??= new HerculesPanel(config, launcher);
   panel.toggle();
+}
+
+/** Secondary triggers (e.g. the hero link): always open, never close. */
+export function openHercules(config: WidgetConfig, launcher: HTMLElement): void {
+  panel ??= new HerculesPanel(config, launcher);
+  panel.open();
 }
