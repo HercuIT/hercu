@@ -1,9 +1,10 @@
 // Hercules chat panel (specs/hercules-assistant/03). Loaded on demand (dynamic import) the first time
 // the visitor opens the assistant, so pages ship no widget JS until then. Vanilla DOM, no framework;
 // visitor and model text is only ever inserted as text nodes (never innerHTML). Replies are formatted
-// (bold, bullet lists) by building elements from chat-format.ts, still with text nodes only.
+// (bold, bullet lists) by chat-render.ts, which builds elements and text nodes only.
 import type { Dictionary } from '../constants/strings';
-import { chatToSpeech, parseChatText } from './chat-format';
+import { chatToSpeech } from './chat-format';
+import { renderReply } from './chat-render';
 import {
   clearConversation,
   isConversationFull,
@@ -47,37 +48,6 @@ function el<K extends keyof HTMLElementTagNameMap>(tag: K, className = '', text?
   if (className) node.className = className;
   if (text !== undefined) node.textContent = text;
   return node;
-}
-
-/**
- * Renders a Hércules reply as paragraphs, bullet lists and bold text (specs/hercules-chat-formatting).
- * Elements and text nodes only, never innerHTML: "<b>" in a reply stays the literal text "<b>".
- * Called again on every streamed delta; an unclosed "**" shows literally until it closes.
- */
-function renderReply(node: HTMLElement, text: string): void {
-  node.replaceChildren(
-    ...parseChatText(text).map((block, index) => {
-      const spacing = index > 0 ? 'mt-2' : '';
-      const fill = (target: HTMLElement, line: { text: string; bold: boolean }[]) => {
-        for (const piece of line) target.append(piece.bold ? el('strong', 'font-semibold', piece.text) : document.createTextNode(piece.text));
-      };
-      if (block.kind === 'list') {
-        const list = el('ul', `list-disc space-y-1 pl-5 ${spacing}`.trim());
-        for (const item of block.items) {
-          const li = el('li');
-          fill(li, item);
-          list.append(li);
-        }
-        return list;
-      }
-      const paragraph = el('p', spacing);
-      block.lines.forEach((line, i) => {
-        if (i > 0) paragraph.append(el('br'));
-        fill(paragraph, line);
-      });
-      return paragraph;
-    }),
-  );
 }
 
 function session(): Storage | undefined {
