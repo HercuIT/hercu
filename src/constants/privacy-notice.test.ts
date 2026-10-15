@@ -280,3 +280,60 @@ describe('privacy notice: leads are sent from info@hercuit.com to a Gmail inbox 
     expect(all).not.toContain('hercuitmx@gmail.com');
   });
 });
+
+const MONTHS = {
+  es: ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre'],
+  en: ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'],
+};
+
+/** Reads "Última actualización: 15 de octubre de 2026" / "Last updated: October 15, 2026" as YYYY-MM-DD, or null. */
+function parseUpdated(locale: 'es' | 'en', text: string): string | null {
+  const m =
+    locale === 'es'
+      ? /^Última actualización: (\d{1,2}) de (\p{L}+) de (\d{4})$/u.exec(text)
+      : /^Last updated: (\p{L}+) (\d{1,2}), (\d{4})$/u.exec(text);
+  if (!m) return null;
+  const [day, month, year] = locale === 'es' ? [m[1], m[2], m[3]] : [m[2], m[1], m[3]];
+  const monthIndex = MONTHS[locale].indexOf(month);
+  const d = Number(day);
+  if (monthIndex === -1 || d < 1) return null;
+  const date = new Date(Date.UTC(Number(year), monthIndex, d));
+  if (date.getUTCMonth() !== monthIndex) return null; // e.g. 31 de febrero
+  return date.toISOString().slice(0, 10);
+}
+
+describe('parseUpdated', () => {
+  it.each([
+    ['es', 'Última actualización: 15 de octubre de 2026', '2026-10-15'],
+    ['en', 'Last updated: October 15, 2026', '2026-10-15'],
+    ['es', 'Última actualización: 1 de enero de 2027', '2027-01-01'],
+    ['en', 'Last updated: December 31, 2026', '2026-12-31'],
+  ] as const)('reads %s "%s"', (locale, text, expected) => {
+    expect(parseUpdated(locale, text)).toBe(expected);
+  });
+
+  it.each([
+    ['es', ''],
+    ['es', 'Última actualización: 31 de febrero de 2026'],
+    ['es', 'Última actualización: 15 de octobre de 2026'],
+    ['es', 'Ultima actualizacion: 15 de octubre de 2026'],
+    ['en', 'Last updated: 15 October 2026'],
+    ['en', 'Last updated: Octember 15, 2026'],
+    ['en', 'Last updated: October 0, 2026'],
+  ] as const)('rejects %s %j', (locale, text) => {
+    expect(parseUpdated(locale, text)).toBeNull();
+  });
+});
+
+describe('privacy notice "last updated" date', () => {
+  it('is a valid date in both locales, and the same date', () => {
+    const es = parseUpdated('es', strings.es.privacy.updated);
+    const en = parseUpdated('en', strings.en.privacy.updated);
+    expect(es).not.toBeNull();
+    expect(en).toBe(es);
+  });
+
+  it('reflects the Gmail delivery and Google processor change (15 October 2026 or later)', () => {
+    expect(parseUpdated('es', strings.es.privacy.updated)! >= '2026-10-15').toBe(true);
+  });
+});

@@ -182,7 +182,7 @@ export const es = {
   privacy: {
     title: "Aviso de Privacidad",
     lawReference: "Conforme a la LFPDPPP y sus Lineamientos · México",
-    updated: "Última actualización: 14 de octubre de 2026",
+    updated: "Última actualización: 15 de octubre de 2026",
     introduction: "HércuIT, S. de R.L. de C.V. está comprometida con la protección de sus datos personales y el respeto a su derecho a la autodeterminación informativa. El presente Aviso de Privacidad Integral se emite en estricto cumplimiento de las disposiciones de la Ley Federal de Protección de Datos Personales en Posesión de los Particulares (LFPDPPP), su Reglamento y los Lineamientos del Aviso de Privacidad expedidos por el Instituto Nacional de Transparencia, Acceso a la Información y Protección de Datos Personales (INAI).",
     // Ordered content: a string is a paragraph, a string[] is a bulleted list right after its lead-in.
     sections: [

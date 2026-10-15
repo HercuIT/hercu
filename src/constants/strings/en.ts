@@ -171,7 +171,7 @@ export const en = {
   privacy: {
     title: "Privacy Notice",
     lawReference: "Pursuant to Mexico's LFPDPPP and Guidelines",
-    updated: "Last updated: October 14, 2026",
+    updated: "Last updated: October 15, 2026",
     introduction: "HércuIT, S. de R.L. de C.V. is committed to protecting your personal data and respecting your right to informational self-determination. This Comprehensive Privacy Notice is issued in strict compliance with the provisions of Mexico's Federal Law on Protection of Personal Data Held by Private Parties (LFPDPPP), its Regulations, and the Privacy Notice Guidelines issued by the National Institute for Transparency, Access to Information and Personal Data Protection (INAI).",
     // Ordered content: a string is a paragraph, a string[] is a bulleted list right after its lead-in.
     sections: [
