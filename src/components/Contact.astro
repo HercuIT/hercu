@@ -2,8 +2,11 @@
 import { shared } from '../constants/strings';
 import { useStrings } from '../i18n/utils';
 import { buildServiceOptions } from '../constants/contact-services';
+import { whatsappHref } from '../constants/whatsapp';
+import WhatsAppIcon from './icons/WhatsAppIcon.astro';
 
 const t = useStrings(Astro.currentLocale);
+const whatsappLink = whatsappHref(shared.phone.e164, t.contact.whatsappMessage);
 const serviceOptions = buildServiceOptions(t.contact.service);
 ---
 
@@ -44,6 +47,23 @@ const serviceOptions = buildServiceOptions(t.contact.service);
                   class="text-mist/80 hover:text-white underline-offset-4 hover:underline whitespace-nowrap"
                 >
                   {shared.phone.display}
+                </a>
+              </div>
+            </div>
+            <div class="flex items-start gap-4">
+              <div class="p-3 bg-brand-500/20 rounded-lg">
+                <WhatsAppIcon class="w-6 h-6" />
+              </div>
+              <div>
+                <h4 class="font-bold text-white">{t.contact.whatsappLabel}</h4>
+                <a
+                  href={whatsappLink}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  aria-label={`${t.contact.whatsappAria.prefix} ${shared.phone.display} ${t.contact.whatsappAria.suffix}`}
+                  class="inline-block py-2 -my-2 text-mist/80 hover:text-white underline-offset-4 hover:underline"
+                >
+                  {t.contact.whatsappCta}
                 </a>
               </div>
             </div>

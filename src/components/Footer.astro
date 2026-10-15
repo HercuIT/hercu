@@ -1,10 +1,13 @@
 ---
 import { shared } from '../constants/strings';
 import { getLocale, privacyPaths, useStrings } from '../i18n/utils';
+import { whatsappHref } from '../constants/whatsapp';
 import Logo from './brand/Logo.astro';
+import WhatsAppIcon from './icons/WhatsAppIcon.astro';
 
 const locale = getLocale(Astro.currentLocale);
 const t = useStrings(locale);
+const whatsappLink = whatsappHref(shared.phone.e164, t.contact.whatsappMessage);
 const currentYear = new Date().getFullYear();
 ---
 
@@ -20,13 +23,25 @@ const currentYear = new Date().getFullYear();
       
       <div class="text-sm text-steel flex flex-col items-center md:items-end gap-1">
         <span>{shared.location}</span>
-        <a
-          href={shared.phone.href}
-          aria-label={`${t.contact.callPrefix} ${shared.phone.display}`}
-          class="text-steel hover:text-ink whitespace-nowrap"
-        >
-          {shared.phone.display}
-        </a>
+        <div class="flex flex-wrap items-center justify-center md:justify-end gap-x-4">
+          <a
+            href={shared.phone.href}
+            aria-label={`${t.contact.callPrefix} ${shared.phone.display}`}
+            class="py-2 text-steel hover:text-ink whitespace-nowrap"
+          >
+            {shared.phone.display}
+          </a>
+          <a
+            href={whatsappLink}
+            target="_blank"
+            rel="noopener noreferrer"
+            aria-label={`${t.contact.whatsappAria.prefix} ${shared.phone.display} ${t.contact.whatsappAria.suffix}`}
+            class="py-2 inline-flex items-center gap-1.5 text-steel hover:text-ink whitespace-nowrap"
+          >
+            <WhatsAppIcon class="w-4 h-4" tone="current" />
+            {t.contact.whatsappLabel}
+          </a>
+        </div>
       </div>
     </div>
   </div>
