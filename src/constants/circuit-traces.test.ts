@@ -125,6 +125,14 @@ describe('validateTraces: negative cases', () => {
     expect(() => validateTraces(withTrace(0, { d: 'M600 60 V401', end: [600, 401] }))).toThrow(/leaves the viewBox/);
   });
 
+  it('rejects a move-only path that draws nothing', () => {
+    expect(() => validateTraces(withTrace(0, { d: 'M600 60', end: [600, 60] }))).toThrow(/at least one drawing segment/);
+  });
+
+  it('rejects a move-only path padded with whitespace', () => {
+    expect(() => validateTraces(withTrace(0, { d: '  M600 60  ', end: [600, 60] }))).toThrow(/at least one drawing segment/);
+  });
+
   it('rejects an end node that does not match the last point', () => {
     expect(() => validateTraces(withTrace(0, { end: [331, 90] }))).toThrow(/end must equal its last point/);
   });
