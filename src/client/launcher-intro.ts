@@ -87,6 +87,15 @@ export function createTeaser(deps: TeaserDeps): { start: (delayMs: number) => vo
 
 export const timelineFor = (mode: IntroMode): Timeline => (mode === 'full' ? FULL : SHORT);
 
+/** Start time of each ping, relative to the ping phase. */
+export const pingStarts = (t: Timeline): number[] => Array.from({ length: t.pings }, (_, i) => i * t.pingGap);
+
+/** Most pings starting within any 1-second window (WCAG 2.3.1 allows at most 3 flashes per second). */
+export function maxPingsInAnySecond(t: Timeline): number {
+  const starts = pingStarts(t);
+  return Math.max(0, ...starts.map((s) => starts.filter((other) => other >= s && other < s + 1000).length));
+}
+
 /** When the teaser starts to slide in: after the last ping phase. */
 export const teaserStartsAt = (t: Timeline): number => t.wait + t.boot + t.traces + t.ping;
 

@@ -5,7 +5,9 @@ import {
   INTRO_KEY,
   introMode,
   markIntroSeen,
+  maxPingsInAnySecond,
   motionEndsAt,
+  pingStarts,
   SHORT,
   TEASER_RECHECK_MS,
   TEASER_VISIBLE_MS,
@@ -84,7 +86,7 @@ describe('timelines (WCAG 2.2.2 and 2.3.1)', () => {
     ['full', FULL],
     ['short', SHORT],
   ] as const)('%s: pings stay under 3 per second and fit inside the ping phase', (_mode, t: Timeline) => {
-    expect(t.pings / (t.ping / 1000)).toBeLessThan(3);
+    expect(maxPingsInAnySecond(t)).toBeLessThan(3);
     expect((t.pings - 1) * t.pingGap + t.pingDuration).toBeLessThanOrEqual(t.ping);
   });
 
@@ -222,5 +224,30 @@ describe('createTeaser (WCAG 2.4.3 focus order, 1.4.13 content on hover or focus
   it('rechecks often enough to feel immediate, but not in a busy loop', () => {
     expect(TEASER_RECHECK_MS).toBeGreaterThanOrEqual(250);
     expect(TEASER_RECHECK_MS).toBeLessThanOrEqual(2000);
+  });
+});
+
+describe('maxPingsInAnySecond (WCAG 2.3.1: fewer than 3 flashes in any 1 s window)', () => {
+  const timeline = (pings: number, pingGap: number, ping = 5000): Timeline => ({ ...FULL, pings, pingGap, ping });
+
+  it("catches the reviewer's case: 3 pings 400 ms apart start within one second, whatever the phase length", () => {
+    expect(maxPingsInAnySecond(timeline(3, 400, 1100))).toBe(3);
+  });
+
+  it.each([
+    [0, 300, 0],
+    [1, 0, 1],
+    [2, 300, 2],
+    [3, 500, 2],
+    [3, 999, 2],
+    [3, 1000, 1],
+    [4, 333, 4], // 0, 333, 666 and 999 ms all fall in the first second
+  ])('%i pings %i ms apart → at most %i in any second', (pings, gap, expected) => {
+    expect(maxPingsInAnySecond(timeline(pings, gap))).toBe(expected);
+  });
+
+  it('lists each ping start, from the start of the ping phase', () => {
+    expect(pingStarts(FULL)).toEqual([0, 300]);
+    expect(pingStarts(SHORT)).toEqual([0]);
   });
 });
