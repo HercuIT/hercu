@@ -337,3 +337,27 @@ describe('privacy notice "last updated" date', () => {
     expect(parseUpdated('es', strings.es.privacy.updated)! >= '2026-10-15').toBe(true);
   });
 });
+
+describe('privacy notice §4: only the Hercules assistant sends email (the contact form sends nothing)', () => {
+  const transmissionItem = (locale: 'es' | 'en') =>
+    itemsOf(strings[locale].privacy.sections[3]).filter((item) => /Gmail/.test(item));
+
+  it.each(locales)('"%s": exactly one §4 item names the Gmail delivery, and it is scoped to the assistant', (locale) => {
+    const items = transmissionItem(locale);
+    expect(items).toHaveLength(1);
+    expect(items[0]).toMatch(locale === 'es' ? /recabada por el asistente Hércules/ : /collected by the Hercules assistant/);
+  });
+
+  it.each(locales)('"%s": the Gmail delivery is never attributed to the contact form', (locale) => {
+    const s4 = strings[locale].privacy.sections[3];
+    for (const block of s4.blocks.flat()) {
+      if (/Gmail/.test(block)) expect(block).not.toMatch(locale === 'es' ? /formulario/i : /\bform\b/i);
+    }
+  });
+
+  it.each(locales)('"%s": the paragraph after the list describes the assistant\'s confirm-then-send flow', (locale) => {
+    const paragraphs = paragraphsOf(strings[locale].privacy.sections[3]).filter((p) => /Gmail/.test(p));
+    expect(paragraphs).toHaveLength(1);
+    expect(paragraphs[0]).toMatch(locale === 'es' ? /revisa el resumen de su solicitud/ : /reviews the summary of their request/);
+  });
+});

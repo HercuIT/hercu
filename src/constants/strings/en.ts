@@ -229,7 +229,7 @@ export const en = {
             "Interactive or form-based capture: Data is collected when entered into the contact form or during interactive conversation with our virtual assistant (\"Hercules bot\").",
             "No persistent web server database storage: HércuIT does not store or keep personal data or conversation transcripts in persistent web server databases or publicly accessible cloud repositories.",
             "Temporary session storage: Interaction with the Hercules assistant uses only temporary browser memory (sessionStorage), which is automatically discarded upon closing the browser tab or window.",
-            "Transmission via email: Collected information is consolidated and dispatched solely via an email sent from the corporate address info@hercuit.com to HércuIT's inbox hosted on Gmail (Google LLC), upon express confirmation from the data subject."
+            "Transmission via email: Information collected by the Hercules assistant is consolidated and dispatched solely via an email sent from the corporate address info@hercuit.com to HércuIT's inbox hosted on Gmail (Google LLC), upon express confirmation from the data subject."
           ],
           "Once the data subject reviews the summary of their request, accepts this privacy notice, and explicitly confirms submission, the contact information and consultation summary are transmitted directly via secure email, sent from HércuIT's corporate address (info@hercuit.com), to HércuIT's inbox hosted on Google LLC's Gmail service. Management and follow-up are handled exclusively within this inbox, protected by rigorous administrative, technical, and physical security measures to safeguard your information against loss, unauthorized access, or unlawful disclosure."
         ]
