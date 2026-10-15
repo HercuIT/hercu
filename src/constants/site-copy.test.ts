@@ -138,7 +138,9 @@ describe('consent wording is identical in the checkbox and the short privacy not
 });
 
 describe('launcher teaser copy (specs/hercules-launcher-intro)', () => {
-  it.each(['es', 'en'] as const)('"%s": teaser and dismiss label are non-blank, and the teaser fits two lines at 360 px', (locale) => {
+  it.each(['es', 'en'] as const)('"%s": teaser and dismiss label are non-blank, and the teaser is at most 60 characters', (locale) => {
+    // A length bound only: whether it fits two lines at 360 px depends on the font and the bubble's
+    // width, so that is checked visually (quality-test-plan.md §6), not here.
     const h = strings[locale].hercules;
     expect(h.teaser.trim()).not.toBe('');
     expect(h.teaserDismiss.trim()).not.toBe('');

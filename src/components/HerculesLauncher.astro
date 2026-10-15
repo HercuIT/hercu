@@ -56,9 +56,9 @@ const nodes = [
   </button>
 
   <div class="hl-teaser" hidden>
-    <!-- Read in normal reading order (it gives "Dismiss" its context) but not a live region, so it is
-         never announced on its own when it appears. -->
-    <span class="hl-teaser-text">{t.hercules.teaser}</span>
+    <!-- A real button (opens the chat, like the launcher), so keyboard and screen-reader users can use
+         it too, and it gives "Dismiss" its context. Not a live region: never announced on its own. -->
+    <button type="button" class="hl-teaser-text">{t.hercules.teaser}</button>
     <button type="button" class="hl-teaser-close" aria-label={t.hercules.teaserDismiss}>
       <svg viewBox="0 0 16 16" class="size-3.5" aria-hidden="true" focusable="false">
         <path d="M4 4l8 8M12 4l-8 8" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" />
@@ -262,7 +262,18 @@ const nodes = [
     display: none;
   }
 
-  /* Phones: beside the launcher it would cover the hero's left-aligned CTA, so it sits above it. */
+  .hl-teaser[data-state='in'] {
+    animation: hl-teaser-in var(--hl-teaser-in) cubic-bezier(0.2, 0.8, 0.2, 1) both;
+  }
+
+  .hl-teaser[data-state='out'] {
+    opacity: 0;
+    transition: opacity 0.2s ease;
+  }
+
+  /* Phones: beside the launcher it would cover the hero's left-aligned CTA, so it sits above it.
+     Must come AFTER the base rules above: same specificity, so the later `animation` shorthand
+     would otherwise reset animation-name (and before the reduced-motion block, which must win). */
   @media (max-width: 639px) {
     .hl-teaser {
       right: 0;
@@ -274,18 +285,16 @@ const nodes = [
     }
   }
 
-  .hl-teaser[data-state='in'] {
-    animation: hl-teaser-in var(--hl-teaser-in) cubic-bezier(0.2, 0.8, 0.2, 1) both;
-  }
-
-  .hl-teaser[data-state='out'] {
-    opacity: 0;
-    transition: opacity 0.2s ease;
-  }
-
   .hl-teaser-text {
-    cursor: pointer;
     padding-top: 0.125rem;
+    text-align: left;
+    color: inherit;
+    font: inherit;
+  }
+
+  /* Cyan focus ring: 8.7:1 on the navy bubble (the default brand ring would be too faint there). */
+  .hl-teaser button:focus-visible {
+    outline-color: var(--color-signal);
   }
 
   .hl-teaser-close {
