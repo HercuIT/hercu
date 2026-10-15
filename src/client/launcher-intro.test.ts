@@ -1,11 +1,13 @@
-import { describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import {
+  createTeaser,
   FULL,
   INTRO_KEY,
   introMode,
   markIntroSeen,
   motionEndsAt,
   SHORT,
+  TEASER_RECHECK_MS,
   TEASER_VISIBLE_MS,
   teaserStartsAt,
   timelineFor,
@@ -127,5 +129,98 @@ describe('timelineVars', () => {
     const vars = timelineVars(SHORT);
     expect(vars['--hl-traces']).toBe('0ms');
     expect(vars['--hl-teaser-in']).toBe('0ms');
+  });
+});
+
+describe('createTeaser (WCAG 2.4.3 focus order, 1.4.13 content on hover or focus)', () => {
+  /** A teaser wired to fakes: records what it did, and lets each test set hover/focus. */
+  function setup() {
+    vi.useFakeTimers();
+    const log: string[] = [];
+    const state = { hovered: false, focusInside: false };
+    const teaser = createTeaser({
+      show: () => log.push('show'),
+      hide: () => log.push('hide'),
+      isEngaged: () => state.hovered || state.focusInside,
+      hasFocus: () => state.focusInside,
+      focusLauncher: () => log.push('focus-launcher'),
+    });
+    return { teaser, log, state };
+  }
+  afterEach(() => vi.useRealTimers());
+
+  it('shows at the given time, then hides itself after TEASER_VISIBLE_MS', () => {
+    const { teaser, log } = setup();
+    teaser.start(3000);
+    vi.advanceTimersByTime(2999);
+    expect(log).toEqual([]);
+    vi.advanceTimersByTime(1);
+    expect(log).toEqual(['show']);
+    expect(teaser.visible()).toBe(true);
+    vi.advanceTimersByTime(TEASER_VISIBLE_MS);
+    expect(log).toEqual(['show', 'hide']);
+    expect(teaser.visible()).toBe(false);
+  });
+
+  it('postpones the auto-hide while the pointer is over it, and hides once it leaves', () => {
+    const { teaser, log, state } = setup();
+    teaser.start(0);
+    vi.advanceTimersByTime(0);
+    state.hovered = true;
+    vi.advanceTimersByTime(TEASER_VISIBLE_MS + 10 * TEASER_RECHECK_MS);
+    expect(log).toEqual(['show']);
+    state.hovered = false;
+    vi.advanceTimersByTime(TEASER_RECHECK_MS);
+    expect(log).toEqual(['show', 'hide']);
+  });
+
+  it('postpones the auto-hide while keyboard focus is inside (e.g. on "Dismiss"), so focus never drops to <body>', () => {
+    const { teaser, log, state } = setup();
+    teaser.start(0);
+    vi.advanceTimersByTime(0);
+    state.focusInside = true;
+    vi.advanceTimersByTime(TEASER_VISIBLE_MS * 3);
+    expect(log).toEqual(['show']);
+    expect(teaser.visible()).toBe(true);
+  });
+
+  it('moves focus to the launcher BEFORE hiding when it is dismissed with focus inside', () => {
+    const { teaser, log, state } = setup();
+    teaser.start(0);
+    vi.advanceTimersByTime(0);
+    state.focusInside = true;
+    teaser.dismiss();
+    expect(log).toEqual(['show', 'focus-launcher', 'hide']);
+  });
+
+  it('does not move focus when dismissed without focus inside (e.g. by a mouse click elsewhere)', () => {
+    const { teaser, log } = setup();
+    teaser.start(0);
+    vi.advanceTimersByTime(0);
+    teaser.dismiss();
+    expect(log).toEqual(['show', 'hide']);
+  });
+
+  it('dismissed before it shows (chat opened early): never shows, never hides', () => {
+    const { teaser, log } = setup();
+    teaser.start(3000);
+    teaser.dismiss();
+    vi.advanceTimersByTime(TEASER_VISIBLE_MS * 2);
+    expect(log).toEqual([]);
+    expect(teaser.visible()).toBe(false);
+  });
+
+  it('a second dismiss, or a dismiss after the auto-hide, does nothing', () => {
+    const { teaser, log } = setup();
+    teaser.start(0);
+    vi.advanceTimersByTime(TEASER_VISIBLE_MS);
+    teaser.dismiss();
+    teaser.dismiss();
+    expect(log).toEqual(['show', 'hide']);
+  });
+
+  it('rechecks often enough to feel immediate, but not in a busy loop', () => {
+    expect(TEASER_RECHECK_MS).toBeGreaterThanOrEqual(250);
+    expect(TEASER_RECHECK_MS).toBeLessThanOrEqual(2000);
   });
 });

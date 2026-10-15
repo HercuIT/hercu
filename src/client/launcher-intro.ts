@@ -33,6 +33,58 @@ export const SHORT: Timeline = { wait: 300, boot: 600, traces: 0, ping: 800, pin
 /** How long the teaser stays (static) before hiding itself. */
 export const TEASER_VISIBLE_MS = 8000;
 
+/** While the pointer or keyboard focus is on the teaser, how often the auto-hide checks again. */
+export const TEASER_RECHECK_MS = 1000;
+
+export type TeaserDeps = {
+  show: () => void;
+  hide: () => void;
+  /** Pointer over it or focus inside (`:hover, :focus-within`): the auto-hide waits. */
+  isEngaged: () => boolean;
+  /** Keyboard focus is inside the teaser (e.g. on its close button). */
+  hasFocus: () => boolean;
+  focusLauncher: () => void;
+};
+
+/**
+ * Shows and hides the teaser bubble, keeping it accessible:
+ *  - WCAG 1.4.13: the auto-hide never removes it from under the pointer or from keyboard focus; it
+ *    checks again every TEASER_RECHECK_MS until the visitor moves on.
+ *  - WCAG 2.4.3: when it is hidden with focus inside (close button, Escape), focus moves to the
+ *    launcher first, instead of falling back to <body>.
+ * Timers and DOM checks are injected, so this is unit-tested with fake timers.
+ */
+export function createTeaser(deps: TeaserDeps): { start: (delayMs: number) => void; dismiss: () => void; visible: () => boolean } {
+  let state: 'idle' | 'scheduled' | 'visible' | 'done' = 'idle';
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  const later = (fn: () => void, ms: number) => {
+    clearTimeout(timer);
+    timer = setTimeout(fn, ms);
+  };
+  const dismiss = () => {
+    clearTimeout(timer);
+    if (state === 'visible') {
+      if (deps.hasFocus()) deps.focusLauncher();
+      deps.hide();
+    }
+    state = 'done';
+  };
+  const autoHide = () => (deps.isEngaged() ? later(autoHide, TEASER_RECHECK_MS) : dismiss());
+  return {
+    start(delayMs) {
+      if (state !== 'idle') return;
+      state = 'scheduled';
+      later(() => {
+        state = 'visible';
+        deps.show();
+        later(autoHide, TEASER_VISIBLE_MS);
+      }, delayMs);
+    },
+    dismiss,
+    visible: () => state === 'visible',
+  };
+}
+
 export const timelineFor = (mode: IntroMode): Timeline => (mode === 'full' ? FULL : SHORT);
 
 /** When the teaser starts to slide in: after the last ping phase. */
