@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { shared, strings } from './strings';
-import { whatsappHref } from './whatsapp';
+import { whatsappAriaLabel, whatsappHref } from './whatsapp';
 
 const NUMBER = '+523317133469';
 const textParam = (href: string) => new URL(href).searchParams.get('text');
@@ -103,5 +103,33 @@ describe('Spanish WhatsApp copy', () => {
   it('uses the formal "usted" imperative', () => {
     expect(strings.es.contact.whatsappCta).toBe('Escríbanos por WhatsApp');
     expect(strings.es.contact.whatsappAria.prefix).toMatch(/^Escríbanos /);
+  });
+});
+
+describe('whatsappAriaLabel', () => {
+  it.each([
+    ['es', 'Escríbanos por WhatsApp al +52 33 1713 3469 (se abre en una pestaña nueva)'],
+    ['en', 'Message us on WhatsApp at +52 33 1713 3469 (opens in a new tab)'],
+  ] as const)('builds the full "%s" label from the dictionary and the shared number', (locale, expected) => {
+    expect(whatsappAriaLabel(strings[locale].contact.whatsappAria, shared.phone.display)).toBe(expected);
+  });
+
+  it('puts exactly one space between parts and none at the ends', () => {
+    expect(whatsappAriaLabel({ prefix: '  Chat at ', suffix: ' (new tab)  ' }, ' +1 555 0100 ')).toBe('Chat at +1 555 0100 (new tab)');
+  });
+
+  it.each([
+    ['a blank suffix', { prefix: 'Chat at', suffix: '  ' }, '+1 555 0100', 'Chat at +1 555 0100'],
+    ['an empty prefix', { prefix: '', suffix: '(new tab)' }, '+1 555 0100', '+1 555 0100 (new tab)'],
+    ['an empty number', { prefix: 'Chat', suffix: '(new tab)' }, '', 'Chat (new tab)'],
+    ['everything empty', { prefix: '', suffix: '' }, '', ''],
+  ])('leaves out %s without stray spaces', (_label, aria, phone, expected) => {
+    expect(whatsappAriaLabel(aria, phone)).toBe(expected);
+  });
+
+  it('keeps accents, ñ and emoji', () => {
+    expect(whatsappAriaLabel({ prefix: 'Escríbanos 💬', suffix: '(pestaña nueva)' }, '+52 33 1713 3469')).toBe(
+      'Escríbanos 💬 +52 33 1713 3469 (pestaña nueva)',
+    );
   });
 });
