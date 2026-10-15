@@ -1,0 +1,155 @@
+// Conversation runner for Hercules (specs/hercules-assistant/01 §4). All I/O is injected (model stream,
+// email, clock, logger), so the whole tool loop is unit-testable without network.
+import Anthropic from '@anthropic-ai/sdk';
+import type { ChatMessage } from './guards';
+import { formatLeadEmail, validateLead, type LeadEmail } from './lead';
+import { buildSystemPrompt } from './prompt';
+import { SUBMIT_LEAD, submitLeadTool } from './tool';
+
+type BetaMessage = Anthropic.Beta.Messages.BetaMessage;
+type BetaMessageParam = Anthropic.Beta.Messages.BetaMessageParam;
+type BetaToolResultBlockParam = Anthropic.Beta.Messages.BetaToolResultBlockParam;
+export type StreamParams = Parameters<Anthropic['beta']['messages']['stream']>[0];
+
+export const MAX_ITERATIONS = 2;
+export const MAX_TOKENS = 4096;
+
+export type SseEvent =
+  | { event: 'text'; data: { delta: string } }
+  | { event: 'lead_sent'; data: { ok: true } }
+  | { event: 'error'; data: { code: 'unavailable' | 'refused' } }
+  | { event: 'done'; data: Record<string, never> };
+
+export type ModelStream = {
+  onText(listener: (delta: string) => void): void;
+  finalMessage(): Promise<BetaMessage>;
+};
+
+export type Deps = {
+  stream(params: StreamParams): ModelStream;
+  sendEmail(email: LeadEmail): Promise<void>;
+  now(): Date;
+  log(entry: Record<string, unknown>): void;
+};
+
+const promptCache = new Map<'es' | 'en', string>();
+function systemPrompt(locale: 'es' | 'en'): string {
+  let prompt = promptCache.get(locale);
+  if (!prompt) promptCache.set(locale, (prompt = buildSystemPrompt(locale)));
+  return prompt;
+}
+
+export function buildParams(model: string, locale: 'es' | 'en', messages: BetaMessageParam[]): StreamParams {
+  return {
+    model,
+    max_tokens: MAX_TOKENS,
+    output_config: { effort: 'low' },
+    // On a safety decline the API retries on a fallback model inside the same call.
+    betas: ['server-side-fallback-2026-07-01'],
+    fallbacks: 'default',
+    system: [{ type: 'text', text: systemPrompt(locale), cache_control: { type: 'ephemeral' } }],
+    tools: [submitLeadTool],
+    tool_choice: { type: 'auto' },
+    messages,
+  };
+}
+
+/** Maps any model/SDK failure to a code the visitor sees; details only go to the log. */
+function failureKind(err: unknown): string {
+  if (err instanceof Anthropic.RateLimitError) return 'rate_limit';
+  if (err instanceof Anthropic.APIConnectionError) return 'connection';
+  if (err instanceof Anthropic.APIError) return `api_${err.status ?? 'unknown'}`;
+  return 'unknown';
+}
+
+export async function runConversation(
+  input: { model: string; locale: 'es' | 'en'; history: ChatMessage[] },
+  deps: Deps,
+  emit: (e: SseEvent) => void,
+): Promise<void> {
+  const messages: BetaMessageParam[] = input.history.map((m) => ({ role: m.role, content: m.content }));
+  let leadSent = false;
+
+  try {
+    for (let iteration = 0; iteration < MAX_ITERATIONS; iteration++) {
+      const stream = deps.stream(buildParams(input.model, input.locale, messages));
+      stream.onText((delta) => emit({ event: 'text', data: { delta } }));
+
+      let message: BetaMessage;
+      try {
+        message = await stream.finalMessage();
+      } catch (err) {
+        deps.log({ event: 'model_error', kind: failureKind(err), iteration });
+        emit({ event: 'error', data: { code: 'unavailable' } });
+        return;
+      }
+
+      deps.log({
+        event: 'model_turn',
+        iteration,
+        stop_reason: message.stop_reason,
+        input_tokens: message.usage.input_tokens,
+        output_tokens: message.usage.output_tokens,
+        cache_read_input_tokens: message.usage.cache_read_input_tokens ?? 0,
+      });
+
+      if (message.stop_reason === 'refusal') {
+        emit({ event: 'error', data: { code: 'refused' } });
+        return;
+      }
+      if (message.stop_reason !== 'tool_use') return; // end_turn, max_tokens, …: the reply is complete
+
+      // Replay the full assistant turn (thinking blocks included, unchanged), then the tool results.
+      messages.push({ role: 'assistant', content: message.content });
+      const results: BetaToolResultBlockParam[] = [];
+      for (const block of message.content) {
+        if (block.type !== 'tool_use') continue;
+        results.push(await handleToolUse(block, input, deps, leadSent, emit));
+        if (results.at(-1)?.content === 'sent') leadSent = true;
+      }
+      messages.push({ role: 'user', content: results });
+    }
+  } finally {
+    emit({ event: 'done', data: {} });
+  }
+}
+
+async function handleToolUse(
+  block: { id: string; name: string; input: unknown },
+  input: { locale: 'es' | 'en'; history: ChatMessage[] },
+  deps: Deps,
+  leadSent: boolean,
+  emit: (e: SseEvent) => void,
+): Promise<BetaToolResultBlockParam> {
+  const result = (content: string, isError = false): BetaToolResultBlockParam => ({
+    type: 'tool_result',
+    tool_use_id: block.id,
+    content,
+    ...(isError ? { is_error: true } : {}),
+  });
+
+  if (block.name !== SUBMIT_LEAD) return result(`Unknown tool "${block.name}".`, true);
+  if (leadSent) return result('The request was already sent in this conversation; do not send it again.', true);
+
+  const validation = validateLead(block.input);
+  if (!validation.ok) {
+    deps.log({ event: 'lead_invalid', issues: validation.issues.length });
+    return result(`Invalid lead, ask the visitor to correct it: ${validation.issues.join('; ')}`, true);
+  }
+
+  const email = formatLeadEmail(validation.lead, input.history, { locale: input.locale, sentAt: deps.now() });
+  try {
+    await deps.sendEmail(email);
+  } catch (err) {
+    deps.log({ event: 'email_failed', kind: err instanceof Error ? err.name : 'unknown' });
+    return result('Could not send the email. Apologize and give the visitor the phone number and the contact form.', true);
+  }
+  deps.log({ event: 'lead_sent' });
+  emit({ event: 'lead_sent', data: { ok: true } });
+  return result('sent');
+}
+
+/** SSE wire format: one event per message, JSON data on a single line. */
+export function formatSse(e: SseEvent): string {
+  return `event: ${e.event}\ndata: ${JSON.stringify(e.data)}\n\n`;
+}
