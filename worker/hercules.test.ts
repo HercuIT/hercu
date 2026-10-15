@@ -539,3 +539,43 @@ describe('emailFailureLog redacts partial echoes of visitor data', () => {
     expect(message).not.toContain('María');
   });
 });
+
+describe(`emailFailureLog: values shorter than ${MIN_SHARED} characters only match as whole words`, () => {
+  const base = {
+    name: 'Juana Pérez',
+    email: 'juana@empresa.com',
+    service: 'ai-bot',
+    summary: 'Necesitamos un bot para atender pedidos.',
+    preferredContact: 'email',
+    consent: true,
+  };
+  const log = (message: string, fields: Record<string, unknown>) =>
+    emailFailureLog(new Error(message), { ...base, ...fields } as unknown as Lead).message;
+
+  it.each([
+    ['company "AI"', { company: 'AI' }, 'send failed'],
+    ['company "AI"', { company: 'AI' }, 'domain not allowed'],
+    ['name "Al"', { name: 'Al' }, 'not allowed'],
+    ['name "Al"', { name: 'Al' }, 'Alias rejected'],
+    ['name "Jo"', { name: 'Jo' }, 'job queued, journal full'],
+    ['name "Ño"', { name: 'Ño' }, 'Ñoño rejected'],
+    ['company "Ana"', { company: 'Ana' }, 'analysis: banana'],
+  ])("keeps Cloudflare's wording intact for %s: %j", (_label, fields, message) => {
+    expect(log(message, fields)).toBe(message);
+  });
+
+  it.each([
+    ['company "AI"', { company: 'AI' }, 'bad company: AI', `bad company: ${REDACTED}`],
+    ['name "Al" in another case', { name: 'Al' }, 'from "AL" rejected', `from "${REDACTED}" rejected`],
+    ['name "Jo" at the very end', { name: 'Jo' }, 'name Jo', `name ${REDACTED}`],
+    ['name "Jo" at the very start', { name: 'Jo' }, 'Jo: invalid', `${REDACTED}: invalid`],
+    ['company "Ñu" with ñ', { company: 'Ñu' }, 'company=ñu;', `company=${REDACTED};`],
+    ['company "C&A" with a symbol', { company: 'C&A' }, 'bad C&A header', `bad ${REDACTED} header`],
+  ])('still redacts %s as a whole word', (_label, fields, message, expected) => {
+    expect(log(message, fields)).toBe(expected);
+  });
+
+  it(`still redacts a cut-off prefix of a value of ${MIN_SHARED}+ characters, mid-word`, () => {
+    expect(log('subject: [Hércules] Bot · Juana Pé', {})).toBe(`subject: [Hércules] Bot · ${REDACTED}`);
+  });
+});
