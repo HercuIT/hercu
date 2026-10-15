@@ -23,7 +23,7 @@ function setup(opts: {
   const secret = (value: string, fails = false) => ({ get: vi.fn(async () => (fails ? Promise.reject(new Error('missing')) : value)) });
   const apiKeySecret = secret('sk-test', opts.apiKeyFails);
   const turnstileSecret = secret('ts-secret', opts.secretFails);
-  const send = vi.fn(async () => ({}));
+  const send = vi.fn(async (_msg?: unknown) => ({}));
   const env = {
     ASSETS: { fetch: assets },
     ANTHROPIC_API_KEY: apiKeySecret,

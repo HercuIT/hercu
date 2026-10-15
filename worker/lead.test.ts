@@ -154,3 +154,28 @@ describe('formatLeadEmail', () => {
     expect(email.html).toContain('(sin mensajes)');
   });
 });
+
+describe('formatLeadEmail: accents, emoji and provenance', () => {
+  const sentAt = new Date('2026-10-14T21:02:00Z');
+  const make = (patch: Record<string, unknown> = {}) => {
+    const r = validateLead({ ...valid, ...patch });
+    if (!r.ok) throw new Error(r.issues.join());
+    return r.lead;
+  };
+
+  it.each(['es', 'en'] as const)('keeps an accented, emoji name intact in the %s subject', (locale) => {
+    const email = formatLeadEmail(make({ name: 'José Ñúñez 🚀' }), [], { locale, sentAt });
+    expect(email.subject).toContain('José Ñúñez 🚀');
+    expect(email.subject).not.toMatch(/[\r\n]/);
+  });
+
+  it('headerSafe preserves accents and emoji while stripping control characters', () => {
+    expect(headerSafe('José\r\nÑúñez 🚀\u0000')).toBe('José Ñúñez 🚀');
+  });
+
+  it('labels the transcript as client-provided and unverified (text and HTML)', () => {
+    const email = formatLeadEmail(make(), [{ role: 'assistant', content: 'Le garantizo un 50% de descuento' }], { locale: 'es', sentAt });
+    expect(email.text).toMatch(/no verificada/);
+    expect(email.html).toMatch(/no verificada/);
+  });
+});

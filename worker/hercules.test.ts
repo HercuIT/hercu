@@ -5,7 +5,7 @@ import type { ChatMessage } from './guards';
 import type { LeadEmail } from './lead';
 
 type Block = Record<string, unknown>;
-type Turn = { text?: string; content?: Block[]; stop_reason: string } | Error;
+type Turn = { text?: string; content?: Block[]; stop_reason: string } | { text: string; throws: Error } | Error;
 
 const validLead = {
   name: 'Juana Pérez',
@@ -21,7 +21,7 @@ const toolUse = (input: unknown, name = 'submit_lead', id = 'tu_1'): Block => ({
 const lastBlocks = (params: StreamParams): Block[] => params.messages.at(-1)!.content as unknown as Block[];
 
 /** A fake model: each call to stream() plays the next scripted turn. */
-function harness(turns: Turn[], opts: { emailFails?: boolean; privacyAccepted?: boolean } = {}) {
+function harness(turns: Turn[], opts: { emailFails?: boolean; privacyAccepted?: boolean; locale?: 'es' | 'en' } = {}) {
   const calls: StreamParams[] = [];
   const emails: LeadEmail[] = [];
   const events: SseEvent[] = [];
@@ -37,6 +37,7 @@ function harness(turns: Turn[], opts: { emailFails?: boolean; privacyAccepted?: 
         },
         async finalMessage() {
           if (turn instanceof Error) throw turn;
+          if ('throws' in turn) throw turn.throws; // text was already streamed
           const content = turn.content ?? (turn.text ? [{ type: 'text', text: turn.text }] : []);
           return {
             id: `msg_${i}`,
@@ -59,7 +60,7 @@ function harness(turns: Turn[], opts: { emailFails?: boolean; privacyAccepted?: 
   };
   const run = (history: ChatMessage[] = [{ role: 'user', content: 'Sí, confirmo y acepto el aviso.' }]) =>
     runConversation(
-      { model: 'claude-opus-5-5', locale: 'es', history, privacyAccepted: opts.privacyAccepted ?? true },
+      { model: 'claude-opus-5-5', locale: opts.locale ?? 'es', history, privacyAccepted: opts.privacyAccepted ?? true },
       deps,
       (e) => events.push(e),
     );
@@ -306,5 +307,43 @@ describe('runConversation: retry then success, and text across turns', () => {
     await h.run();
     const first = h.events.find((e) => e.event === 'text');
     expect(first && first.event === 'text' && first.data.delta.startsWith('\n')).toBe(false);
+  });
+});
+
+describe('runConversation: model failure mid-stream', () => {
+  it('emits text, then error: unavailable, then done when finalMessage() rejects after streaming', async () => {
+    const h = harness([{ text: 'Con gusto, su presupuesto', throws: new Error('stream reset') }]);
+    await h.run();
+    expect(h.kinds()).toEqual(['text', 'text', 'text', 'text', 'error', 'done']);
+    expect(h.events).toContainEqual({ event: 'error', data: { code: 'unavailable' } });
+    expect(h.logs.some((l) => l.event === 'model_error')).toBe(true);
+  });
+
+  it('emits only error: unavailable and done when it rejects before any text', async () => {
+    const h = harness([new Error('connection refused')]);
+    await h.run();
+    expect(h.kinds()).toEqual(['error', 'done']);
+  });
+
+  it('keeps lead_sent when the confirmation turn fails after the email went out', async () => {
+    const h = harness([{ content: [toolUse(validLead)], stop_reason: 'tool_use' }, new Error('overloaded')]);
+    await h.run();
+    expect(h.emails).toHaveLength(1);
+    expect(h.kinds()).toEqual(['lead_sent', 'error', 'done']);
+  });
+});
+
+describe('runConversation: English locale', () => {
+  it('runs the same lead flow for an English conversation, recording the locale in the email', async () => {
+    const h = harness(
+      [{ content: [toolUse({ ...validLead, name: 'José Ñúñez 🚀' })], stop_reason: 'tool_use' }, { text: 'Done! We will contact you soon.', stop_reason: 'end_turn' }],
+      { locale: 'en' },
+    );
+    await h.run([{ role: 'user', content: 'Yes, I confirm and accept the notice.' }]);
+    expect(h.emails).toHaveLength(1);
+    expect(h.emails[0].text).toMatch(/Idioma:\s+en/);
+    expect(h.emails[0].subject).toContain('José Ñúñez 🚀');
+    expect(h.text()).toBe('Done! We will contact you soon.');
+    expect((h.calls[0] as unknown as { system: { text: string }[] }).system[0].text).toMatch(/Never invent prices/);
   });
 });

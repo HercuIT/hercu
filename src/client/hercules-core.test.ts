@@ -8,6 +8,7 @@ import {
   parseSse,
   prepareUserMessage,
   saveConversation,
+  settleReply,
   TurnstileGate,
 } from './hercules-core';
 
@@ -230,5 +231,42 @@ describe('TurnstileGate', () => {
     const gate = new TurnstileGate(1000);
     expect(() => gate.resolveToken('stray')).not.toThrow();
     expect(() => gate.rejectToken()).not.toThrow();
+  });
+});
+
+describe('settleReply (keep or roll back after a stream)', () => {
+  const base = { reply: 'Con gusto le ayudo.', sawDone: true, error: null, leadSent: false };
+
+  it('keeps a complete reply: text + done', () => {
+    expect(settleReply(base)).toEqual({ keep: true, stored: 'Con gusto le ayudo.', error: null, leadSent: false });
+  });
+
+  it('rolls back a partial reply cut off by an error: text + error + done', () => {
+    expect(settleReply({ ...base, reply: 'Con gusto, su presupu', error: 'unavailable' })).toMatchObject({ keep: false, stored: '', error: 'unavailable' });
+  });
+
+  it('rolls back with the server error when nothing was streamed: error + done', () => {
+    expect(settleReply({ ...base, reply: '', error: 'refused' })).toMatchObject({ keep: false, error: 'refused' });
+  });
+
+  it('treats a stream that ended without done as unavailable, even with text', () => {
+    expect(settleReply({ ...base, sawDone: false })).toMatchObject({ keep: false, error: 'unavailable' });
+  });
+
+  it('reports the lead as sent even when the confirmation reply then fails: lead_sent + error', () => {
+    expect(settleReply({ ...base, reply: 'Lis', error: 'unavailable', leadSent: true })).toEqual({
+      keep: false,
+      stored: '',
+      error: 'unavailable',
+      leadSent: true,
+    });
+  });
+
+  it('does not keep a blank reply, and shows no error for it', () => {
+    expect(settleReply({ ...base, reply: '  \n ' })).toMatchObject({ keep: false, error: null });
+  });
+
+  it('caps a kept reply at 4000 characters', () => {
+    expect(settleReply({ ...base, reply: 'x'.repeat(5000) }).stored).toHaveLength(4000);
   });
 });
