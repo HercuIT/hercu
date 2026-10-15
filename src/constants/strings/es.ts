@@ -154,6 +154,9 @@ export const es = {
   },
   hercules: {
     open: "Hablar con Hércules",
+    /** Bubble next to the launcher on the first page of a session (specs/hercules-launcher-intro). */
+    teaser: "¿Tiene un proyecto en mente? Pregúntele a Hércules",
+    teaserDismiss: "Cerrar aviso",
     heroLink: "o hable con Hércules, nuestro asistente virtual",
     title: "Hércules",
     subtitle: "Asistente virtual de HércuIT",

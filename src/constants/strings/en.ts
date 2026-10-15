@@ -143,6 +143,8 @@ export const en = {
   },
   hercules: {
     open: "Chat with Hercules",
+    teaser: "Got a project in mind? Ask Hercules",
+    teaserDismiss: "Dismiss",
     heroLink: "or chat with Hercules, our virtual assistant",
     title: "Hercules",
     subtitle: "HércuIT's virtual assistant",
