@@ -278,3 +278,40 @@ describe('underscores are never formatting (emails and identifiers stay intact)'
     expect(parseChatText('- **Correo:** _ana_@mail.com')).toEqual([{ kind: 'list', items: [[bold('Correo:'), plain(' _ana_@mail.com')]] }]);
   });
 });
+
+describe('">" is a quote marker only when followed by a space', () => {
+  it.each([
+    ['es', 'Atendemos >1000 usuarios al día'],
+    ['en', 'We serve >50 users a day'],
+  ])('"%s": keeps ">" + number mid-sentence', (_locale, text) => {
+    expect(parseChatText(text)).toEqual([{ kind: 'paragraph', lines: [[plain(text)]] }]);
+  });
+
+  it.each([
+    ['es', '>1000 usuarios'],
+    ['en', '>50 users'],
+  ])('"%s": keeps ">" + number at the start of a line (not a quote)', (_locale, text) => {
+    expect(parseChatText(text)).toEqual([{ kind: 'paragraph', lines: [[plain(text)]] }]);
+    expect(chatToSpeech(text)).toBe(text);
+  });
+
+  it.each([
+    ['es', '- **Escala:** >1000 usuarios'],
+    ['en', '- **Scale:** >50 users'],
+  ])('"%s": keeps ">" + number inside a list item', (_locale, text) => {
+    const [label, rest] = text.slice(2).split('** ');
+    expect(parseChatText(text)).toEqual([{ kind: 'list', items: [[bold(label.replace('**', '')), plain(` ${rest}`)]] }]);
+  });
+
+  it('keeps a bare ">" line as text instead of dropping it', () => {
+    expect(parseChatText('>')).toEqual([{ kind: 'paragraph', lines: [[plain('>')]] }]);
+    expect(parseChatText('Uno\n>\nDos')).toEqual([{ kind: 'paragraph', lines: [[plain('Uno')], [plain('>')], [plain('Dos')]] }]);
+  });
+
+  it.each([
+    ['es', '> Una cita', 'Una cita'],
+    ['en', '> A quote', 'A quote'],
+  ])('"%s": still removes the marker of a real quote ("> " + text)', (_locale, text, expected) => {
+    expect(visible(parseChatText(text))).toBe(expected);
+  });
+});
