@@ -218,3 +218,40 @@ describe('parseInline: bold italic (***x*** / ___x___)', () => {
     expect(parseInline('a *** b')).toEqual([plain('a *** b')]);
   });
 });
+
+describe('parseInline: code spans keep their contents literal', () => {
+  it.each([
+    ['`**not bold**`', '**not bold**'],
+    ['`__init__`', '__init__'],
+    ['`*x*`', '*x*'],
+  ])('%s shows %j as plain text', (input, expected) => {
+    expect(parseInline(`Use ${input} here`)).toEqual([plain(`Use ${expected} here`)]);
+  });
+
+  it('still reads bold outside a code span on the same line', () => {
+    expect(parseInline('**Ojo:** `a*b`')).toEqual([bold('Ojo:'), plain(' a*b')]);
+  });
+});
+
+describe('parseInline: link destinations never leak', () => {
+  it.each([
+    ['nested parentheses', '[Pague](https://evil.example/a(b(c)))'],
+    ['parentheses then a path', '[Pague](https://evil.example/x_(y)/z?q=(1))'],
+    ['an unbalanced destination', '[Pague](https://evil.example/a(b'],
+    ['a title', '[Pague](https://evil.example "Título")'],
+  ])('keeps only the label with %s', (_label, link) => {
+    const line = parseInline(`Antes ${link} después`);
+    const text = line.map((p) => p.text).join('');
+    expect(text).toContain('Pague');
+    expect(text).not.toContain('evil.example');
+    expect(text).not.toContain('](');
+  });
+
+  it('keeps text after a closed link', () => {
+    expect(parseInline('[A](https://x.example/(1)) y **B**')).toEqual([plain('A y '), bold('B')]);
+  });
+
+  it('leaves brackets that are not a link alone', () => {
+    expect(parseInline('[nota] (ver abajo)')).toEqual([plain('[nota] (ver abajo)')]);
+  });
+});
