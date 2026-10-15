@@ -248,3 +248,35 @@ describe('privacy notice structure: lists follow their lead-ins, in order', () =
     expect(shape('en')).toEqual(shape('es'));
   });
 });
+
+describe('privacy notice: leads are sent from info@hercuit.com to a Gmail inbox (specs/lead-email-routing)', () => {
+  const textOf = (s: Section) => [s.heading, ...s.blocks.flat()].join(' ');
+
+  it.each(locales)('"%s": §4 says the lead is sent from info@hercuit.com to the Gmail inbox', (locale) => {
+    const s4 = textOf(strings[locale].privacy.sections[3]);
+    expect(s4).toMatch(locale === 'es' ? /desde la dirección institucional info@hercuit\.com/ : /from the corporate address info@hercuit\.com/);
+    expect(s4).toContain('Gmail (Google LLC)');
+    // The old wording named info@hercuit.com as the destination.
+    expect(s4).not.toMatch(locale === 'es' ? /hacia info@hercuit\.com/ : /to info@hercuit\.com upon/);
+  });
+
+  it.each(locales)('"%s": §7 lists Google LLC (Gmail) as a processor, next to Cloudflare and Anthropic', (locale) => {
+    const items = itemsOf(strings[locale].privacy.sections[6]);
+    expect(items).toHaveLength(3);
+    const providers = items.map((i) => i.match(/\((Cloudflare|Anthropic|Google)[^)]*\)/)?.[1]);
+    expect([...providers].sort()).toEqual(['Anthropic', 'Cloudflare', 'Google']);
+    expect(items[providers.indexOf('Google')]).toMatch(/Gmail/);
+  });
+
+  it.each(locales)('"%s": the simplified notice names the Gmail inbox, and info@hercuit.com stays the ARCO channel', (locale) => {
+    const notice = strings[locale].privacy.simplifiedNotice.paragraphs.join(' ');
+    expect(notice).toContain('Gmail (Google LLC)');
+    expect(notice).toMatch(locale === 'es' ? /derechos ARCO enviando un correo a info@hercuit\.com/ : /ARCO rights by emailing info@hercuit\.com/);
+  });
+
+  it.each(locales)('"%s": never mentions the Gmail address itself (contact stays info@hercuit.com)', (locale) => {
+    const p = strings[locale].privacy;
+    const all = [p.introduction, ...p.sections.map(textOf), ...p.simplifiedNotice.paragraphs].join(' ');
+    expect(all).not.toContain('hercuitmx@gmail.com');
+  });
+});
