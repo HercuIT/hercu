@@ -194,8 +194,8 @@ const isWordChar = (c: string | undefined) => c !== undefined && /[\p{L}\p{N}]/u
  * "ender" inside "sender" is just a word the summary happens to share.
  *  - A value of MIN_SHARED+ characters: any such stretch of MIN_SHARED+ characters, which may end
  *    mid-word (a header or quote cut short).
- *  - A shorter value: only the whole value, and only as a whole word, so a name like "Al" never
- *    turns "not allowed" into "not [redacted]lowed".
+ *  - A shorter value, down to one character: only the whole value, and only as a whole word, so a
+ *    name like "Al" never turns "not allowed" into "not [redacted]lowed", nor a company "X" "Xenon".
  * Dynamic programming over common suffixes: for each message position, the longest shared stretch
  * ending there is trimmed to its first word start, and marked if it still qualifies.
  */
@@ -238,7 +238,8 @@ export function emailFailureLog(err: unknown, lead?: Lead): { event: 'email_fail
   const mask = chars.map(() => false);
   for (const field of [lead?.summary, lead?.email, lead?.name, lead?.company, lead?.phone]) {
     const value = Array.from(headerSafe(field ?? '', Infinity));
-    if (value.length >= 2) markShared(chars, value, mask);
+    // No length floor: company may be one character ("X"), and whole-word matching keeps that safe.
+    if (value.length > 0) markShared(chars, value, mask);
   }
   const redacted = chars.map((c, i) => (!mask[i] ? c : mask[i - 1] ? '' : REDACTED)).join('');
   const message = redacted.replace(/[^\s@<>"'(),;:]+@[^\s@<>"'(),;:]+/gu, (address) =>
