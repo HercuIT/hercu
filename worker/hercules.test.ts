@@ -1,8 +1,8 @@
 import Anthropic from '@anthropic-ai/sdk';
 import { describe, expect, it, vi } from 'vitest';
-import { buildParams, EMAIL_ERROR_MAX, emailFailureLog, formatSse, MAX_ITERATIONS, MIN_SHARED, REDACTED, runConversation, type Deps, type SseEvent, type StreamParams } from './hercules';
+import { buildParams, emailFailureLog, formatSse, MAX_ITERATIONS, runConversation, type Deps, type SseEvent, type StreamParams } from './hercules';
 import type { ChatMessage } from './guards';
-import { formatLeadEmail, LEAD_SERVICES, validateLead, type Lead, type LeadEmail } from './lead';
+import type { LeadEmail } from './lead';
 
 type Block = Record<string, unknown>;
 type Turn = { text?: string; content?: Block[]; stop_reason: string } | { text: string; throws: Error } | Error;
@@ -163,7 +163,7 @@ describe('runConversation: negative cases (no email is sent)', () => {
     await h.run();
     expect(h.kinds()).not.toContain('lead_sent');
     expect(lastBlocks(h.calls[1])[0]).toMatchObject({ is_error: true, content: expect.stringMatching(/Could not send/) });
-    expect(h.logs).toContainEqual({ event: 'email_failed', kind: 'Error', message: 'send failed' });
+    expect(h.logs).toContainEqual({ event: 'email_failed', kind: 'Error', reason: 'other', length: 'send failed'.length });
     // The reason is logged, the visitor's data is not.
     const logged = JSON.stringify(h.logs);
     expect(logged).not.toContain(validLead.name);
@@ -352,411 +352,111 @@ describe('runConversation: English locale', () => {
   });
 });
 
-describe('emailFailureLog', () => {
-  it("keeps Cloudflare's reason and the error type", () => {
-    expect(emailFailureLog(new Error('destination address not verified'))).toEqual({
-      event: 'email_failed',
-      kind: 'Error',
-      message: 'destination address not verified',
-    });
+describe('emailFailureLog: a fixed reason category, never the error text', () => {
+  it.each([
+    ['destination address not verified', 'destination_not_verified'],
+    ['Destination Address NOT VERIFIED', 'destination_not_verified'],
+    ['email to unverified destination', 'destination_not_verified'],
+    ['sender info@hercuit.com is not allowed', 'not_allowed'],
+    ['403 Forbidden', 'not_allowed'],
+    ['Unauthorized', 'not_allowed'],
+    ['unauthorised sender', 'not_allowed'],
+    ['permission denied', 'not_allowed'],
+    ['Rate limit exceeded', 'rate_limited'],
+    ['rate_limited', 'rate_limited'],
+    ['Too many requests', 'rate_limited'],
+    ['daily quota reached', 'rate_limited'],
+    ['Request timed out', 'timeout'],
+    ['upstream timeout', 'timeout'],
+    ['time-out while sending', 'timeout'],
+    ['invalid Reply-To header', 'invalid_message'],
+    ['malformed MIME body', 'invalid_message'],
+    ['message too large', 'invalid_message'],
+  ] as const)('%j → %s', (message, reason) => {
+    expect(emailFailureLog(new Error(message))).toEqual({ event: 'email_failed', kind: 'Error', reason, length: message.length });
   });
 
-  it('keeps the name of an Error subclass', () => {
-    expect(emailFailureLog(new TypeError('bad sender')).kind).toBe('TypeError');
+  it('uses the first matching category when several apply', () => {
+    expect(emailFailureLog(new Error('invalid request: destination not verified')).reason).toBe('destination_not_verified');
+    expect(emailFailureLog(new Error('rate limit: request timed out')).reason).toBe('rate_limited');
+  });
+
+  it.each(['send failed', 'internal error', '', '   ', 'Fehler beim Senden 🚫', 'timeouts', 'notallowed'])(
+    'logs "other" for %j (no known reason, or only a look-alike word)',
+    (message) => {
+      expect(emailFailureLog(new Error(message)).reason).toBe('other');
+    },
+  );
+
+  it('keeps the error class name, including subclasses', () => {
+    expect(emailFailureLog(new TypeError('x')).kind).toBe('TypeError');
+    class EmailSendError extends Error {
+      override name = 'EmailSendError';
+    }
+    expect(emailFailureLog(new EmailSendError('x')).kind).toBe('EmailSendError');
+  });
+
+  it.each([
+    ['visitor data', 'Juana Pérez'],
+    ['an email address', 'juana@empresa.com'],
+    ['spaces', 'Send Error'],
+    ['a very long name', 'E'.repeat(41)],
+    ['an empty name', ''],
+  ])('logs kind "unknown" when the error name holds %s (it is free text too)', (_label, name) => {
+    const err = new Error('x');
+    err.name = name;
+    expect(emailFailureLog(err).kind).toBe('unknown');
   });
 
   it.each([
     ['a string', 'boom'],
     ['null', null],
     ['undefined', undefined],
-    ['a plain object', { message: 'not an Error' }],
-  ])('logs "unknown" with no message for a thrown non-Error (%s)', (_label, thrown) => {
-    expect(emailFailureLog(thrown)).toEqual({ event: 'email_failed', kind: 'unknown', message: '' });
+    ['a plain object', { message: 'destination address not verified' }],
+  ])('logs kind "unknown", reason "other" and length 0 for a thrown non-Error (%s)', (_label, thrown) => {
+    expect(emailFailureLog(thrown)).toEqual({ event: 'email_failed', kind: 'unknown', reason: 'other', length: 0 });
   });
 
-  it('logs an empty message as empty', () => {
-    expect(emailFailureLog(new Error('')).message).toBe('');
-  });
-
-  it(`caps the message at ${EMAIL_ERROR_MAX} characters`, () => {
-    expect(emailFailureLog(new Error('x'.repeat(5000))).message).toHaveLength(EMAIL_ERROR_MAX);
-    expect(emailFailureLog(new Error('x'.repeat(EMAIL_ERROR_MAX))).message).toHaveLength(EMAIL_ERROR_MAX);
-  });
-
-  it('flattens newlines and strips control characters so one failure is one log line', () => {
-    expect(emailFailureLog(new Error('line one\r\nline two\u0000\u001b[31m')).message).toBe('line one line two [31m');
-  });
-
-  it('keeps accents and emoji', () => {
-    expect(emailFailureLog(new Error('Dirección no verificada: info@hercuit.com 🚫')).message).toBe(
-      'Dirección no verificada: info@hercuit.com 🚫',
-    );
+  it('logs the length of the message (UTF-16 units), not its content', () => {
+    expect(emailFailureLog(new Error('x'.repeat(5000))).length).toBe(5000);
+    expect(emailFailureLog(new Error('é🚀')).length).toBe(3);
   });
 });
 
-describe('emailFailureLog redacts visitor data from the error message', () => {
-  const lead = {
-    name: 'Juana Pérez',
-    email: 'juana@empresa.com',
-    phone: '+52 871 123 4567',
-    company: 'Ñandú & Cía 🚀',
-    service: 'ai-bot',
-    summary: 'Necesitamos un bot para atender pedidos por WhatsApp.',
-    preferredContact: 'email',
-    consent: true,
-  } as unknown as Lead;
-  const log = (message: string, withLead: Lead | undefined = lead) => emailFailureLog(new Error(message), withLead).message;
+describe('emailFailureLog: no visitor data can reach the log, however the error encodes it', () => {
+  const b64 = (text: string) => btoa(String.fromCharCode(...new TextEncoder().encode(text)));
+  // Every leak found in review while the log still carried redacted free text.
+  const echoes = [
+    ['the Reply-To address', 'invalid Reply-To: juana@empresa.com', ['juana', 'empresa']],
+    ['a percent-encoded address', 'invalid Reply-To: juana%40empresa.com', ['juana', 'empresa']],
+    ['a Q-encoded name', 'invalid From: =?UTF-8?Q?Juana_P=C3=A9rez?=', ['Juana', 'P=C3=A9rez']],
+    ['a B-encoded name', `invalid From: =?UTF-8?B?${b64('Juana Pérez')}?=`, [b64('Juana Pérez')]],
+    ['underscores for spaces', 'name=Juana_Pérez', ['Juana', 'Pérez']],
+    ['a truncated long name', 'subject rejected: [Hércules] QA · María José Fernández de la Gar', ['María', 'Fernández']],
+    ['a phone in another format', 'bad phone (871) 123-4567', ['871', '4567']],
+    ['a transcript line with a CURP and address', '[Visitante] Mi CURP es GOMJ800101MDFRRN09 y vivo en Calle Hidalgo 123', ['GOMJ800101MDFRRN09', 'Hidalgo']],
+    ['an HTML-escaped name', 'body rejected: <td>Juana O&#39;Brien &amp; Cía</td>', ['Brien', 'Cía']],
+    ['a quoted-printable body', 'body rejected: Mi nombre es Juana P=C3=A9rez', ['Juana', 'P=C3=A9rez']],
+  ] as const;
 
-  it("redacts the visitor's Reply-To address (the reported case)", () => {
-    expect(log('invalid Reply-To: juana@empresa.com')).toBe(`invalid Reply-To: ${REDACTED}`);
+  it.each(echoes)('%s: only the fixed fields are logged', (_label, message, fragments) => {
+    const entry = emailFailureLog(new Error(message));
+    expect(Object.keys(entry).sort()).toEqual(['event', 'kind', 'length', 'reason']);
+    expect(['destination_not_verified', 'not_allowed', 'rate_limited', 'timeout', 'invalid_message', 'other']).toContain(entry.reason);
+    const logged = JSON.stringify(entry);
+    for (const fragment of fragments) expect(logged).not.toContain(fragment);
   });
 
-  it('redacts the address even without the lead, and in angle brackets or with a display name', () => {
-    expect(log('invalid Reply-To: juana@empresa.com', undefined)).toBe(`invalid Reply-To: ${REDACTED}`);
-    expect(log('bad header: "Ana" <ana.lopez+web@sub.example.mx>', undefined)).toBe(`bad header: "Ana" <${REDACTED}>`);
-  });
-
-  it.each([
-    ['name', 'Juana Pérez'],
-    ['name in another case', 'JUANA PÉREZ'],
-    ['phone', '+52 871 123 4567'],
-    ['company with ñ, & and emoji', 'Ñandú & Cía 🚀'],
-    ['summary', 'Necesitamos un bot para atender pedidos por WhatsApp.'],
-  ])("redacts the visitor's %s", (_label, value) => {
-    const message = log(`rejected value: ${value}; retry later`);
-    expect(message).toBe(`rejected value: ${REDACTED}; retry later`);
-  });
-
-  it('redacts a value that the error split across lines', () => {
-    expect(log('subject rejected: [Hércules] Bot · Juana\r\nPérez')).toBe(`subject rejected: [Hércules] Bot · ${REDACTED}`);
-  });
-
-  it('redacts before capping, so a value near the cap cannot leak in part', () => {
-    const message = log(`${'x'.repeat(EMAIL_ERROR_MAX - 5)} juana@empresa.com`);
-    expect(message).toHaveLength(EMAIL_ERROR_MAX);
-    expect(message).not.toContain('juana');
-  });
-
-  it("keeps hercuit.com addresses and Cloudflare's own wording", () => {
-    expect(log('sender info@hercuit.com is not allowed')).toBe('sender info@hercuit.com is not allowed');
-    expect(log('destination address not verified')).toBe('destination address not verified');
-  });
-
-  it('redacts every other address, including the Gmail destination', () => {
-    expect(log('destination hercuitmx@gmail.com not verified')).toBe(`destination ${REDACTED} not verified`);
-  });
-
-  it('does not let a look-alike domain through', () => {
-    expect(log('from info@hercuit.com.evil.io')).toBe(`from ${REDACTED}`);
-  });
-
-  it('ignores a blank optional field, and matches a short name only as a whole word', () => {
-    const sparse = { ...lead, company: ' ', phone: undefined, name: 'Jo' } as unknown as Lead;
-    expect(log('a b c Jo', sparse)).toBe(`a b c ${REDACTED}`);
-  });
-
-  it('treats regex characters in visitor values literally', () => {
-    const tricky = { ...lead, company: 'A.B (C) [x]*' } as unknown as Lead;
-    expect(log('bad company A.B (C) [x]* and AxB C x', tricky)).toBe(`bad company ${REDACTED} and AxB C x`);
-  });
-
-  it('returns an empty message unchanged', () => {
-    expect(log('')).toBe('');
-  });
-});
-
-describe('runConversation logs no visitor data when the email binding echoes it', () => {
-  it('redacts the Reply-To and name from email_failed', async () => {
+  it('a full conversation whose email error echoes the visitor and transcript logs none of it', async () => {
     const h = harness([{ content: [toolUse(validLead)], stop_reason: 'tool_use' }, { text: 'Lo siento.', stop_reason: 'end_turn' }]);
     h.deps.sendEmail = vi.fn(async () => {
-      throw new Error(`invalid Reply-To: ${validLead.email} (${validLead.name})`);
+      throw new Error(`invalid Reply-To: ${validLead.email} (${validLead.name}) [Visitante] ${validLead.summary}`);
     });
     await h.run();
+    expect(h.logs).toContainEqual({ event: 'email_failed', kind: 'Error', reason: 'invalid_message', length: expect.any(Number) });
     const logged = JSON.stringify(h.logs);
-    expect(logged).toContain('email_failed');
-    expect(logged).toContain('invalid Reply-To');
-    expect(logged).not.toContain(validLead.email);
-    expect(logged).not.toContain(validLead.name);
-  });
-});
-
-describe('emailFailureLog redacts partial echoes of visitor data', () => {
-  const longName = 'María José Fernández de la Garza Ñúñez Villarreal Montemayor Treviño Cárdenas Elizondo Sepúlveda Río';
-  const lead = {
-    name: longName,
-    email: 'maria.jose@empresa.com',
-    service: 'ai-whatsapp-automation',
-    summary: 'Queremos automatizar la atención por WhatsApp para nuestra cadena de farmacias en Saltillo y Monterrey.',
-    preferredContact: 'email',
-    consent: true,
-  } as unknown as Lead;
-  const log = (message: string) => emailFailureLog(new Error(message), lead).message;
-
-  it('test setup: the name is 100 characters and the real subject cuts it short', () => {
-    expect(longName).toHaveLength(100);
-    const { subject } = formatLeadEmail(lead, [], { locale: 'es', sentAt: new Date('2026-10-15T12:00:00Z') });
-    expect(subject.length).toBeLessThanOrEqual(150);
-    expect(subject).not.toContain(longName);
-    expect(subject).toContain('María José');
-  });
-
-  it('redacts the truncated name when the error echoes the real subject (the reported case)', () => {
-    const { subject } = formatLeadEmail(lead, [], { locale: 'es', sentAt: new Date('2026-10-15T12:00:00Z') });
-    const message = log(`subject rejected: ${subject}`);
-    // The label's "Automatiza…" and "WhatsApp" are redacted too: the summary shares them. Over-redacting is the safe side.
-    expect(message).toBe(`subject rejected: [Hércules] ${REDACTED}ción de ${REDACTED}Business con IA · ${REDACTED}`);
-    expect(message.endsWith(REDACTED)).toBe(true);
-    for (const word of ['María', 'Fernández', 'Garza', 'Ñúñez']) expect(message).not.toContain(word);
-  });
-
-  it('redacts a part of the summary quoted from the middle, in another case', () => {
-    const message = log('body rejected near "CADENA DE FARMACIAS EN SALTILLO" (line 3)');
-    expect(message).toBe(`body rejected near "${REDACTED}" (line 3)`);
-  });
-
-  it('redacts a cut-off email address with no domain left', () => {
-    expect(log('invalid Reply-To: maria.jose@empr')).toBe(`invalid Reply-To: ${REDACTED}`);
-    expect(log('invalid Reply-To: maria.jos…')).toBe(`invalid Reply-To: ${REDACTED}…`);
-  });
-
-  it(`redacts a shared stretch of exactly ${MIN_SHARED} characters, and keeps one of ${MIN_SHARED - 1}`, () => {
-    // "Saltil" (6) is part of the summary; "Salti" (5) alone is too short to say it came from it.
-    expect(log('near Saltil x')).toBe(`near ${REDACTED} x`);
-    expect(log('near Salti x')).toBe('near Salti x');
-  });
-
-  it('merges adjacent redacted stretches into one marker', () => {
-    expect(log('María José Fernández maria.jose@empresa.com')).toBe(REDACTED);
-  });
-
-  it("keeps Cloudflare's wording that the visitor's values don't share", () => {
-    expect(log('destination address not verified')).toBe('destination address not verified');
-  });
-
-  it('handles a very long error (only the first part is examined and logged)', () => {
-    const message = log(`${'x'.repeat(5000)} ${longName}`);
-    expect(message).toHaveLength(EMAIL_ERROR_MAX);
-    expect(message).not.toContain('María');
-  });
-});
-
-describe(`emailFailureLog: values shorter than ${MIN_SHARED} characters only match as whole words`, () => {
-  const base = {
-    name: 'Juana Pérez',
-    email: 'juana@empresa.com',
-    service: 'ai-bot',
-    summary: 'Necesitamos un bot para atender pedidos.',
-    preferredContact: 'email',
-    consent: true,
-  };
-  const log = (message: string, fields: Record<string, unknown>) =>
-    emailFailureLog(new Error(message), { ...base, ...fields } as unknown as Lead).message;
-
-  it.each([
-    ['company "AI"', { company: 'AI' }, 'send failed'],
-    ['company "AI"', { company: 'AI' }, 'domain not allowed'],
-    ['name "Al"', { name: 'Al' }, 'not allowed'],
-    ['name "Al"', { name: 'Al' }, 'Alias rejected'],
-    ['name "Jo"', { name: 'Jo' }, 'job queued, journal full'],
-    ['name "Ño"', { name: 'Ño' }, 'Ñoño rejected'],
-    ['company "Ana"', { company: 'Ana' }, 'analysis: banana'],
-  ])("keeps Cloudflare's wording intact for %s: %j", (_label, fields, message) => {
-    expect(log(message, fields)).toBe(message);
-  });
-
-  it.each([
-    ['company "AI"', { company: 'AI' }, 'bad company: AI', `bad company: ${REDACTED}`],
-    ['name "Al" in another case', { name: 'Al' }, 'from "AL" rejected', `from "${REDACTED}" rejected`],
-    ['name "Jo" at the very end', { name: 'Jo' }, 'name Jo', `name ${REDACTED}`],
-    ['name "Jo" at the very start', { name: 'Jo' }, 'Jo: invalid', `${REDACTED}: invalid`],
-    ['company "Ñu" with ñ', { company: 'Ñu' }, 'company=ñu;', `company=${REDACTED};`],
-    ['company "C&A" with a symbol', { company: 'C&A' }, 'bad C&A header', `bad ${REDACTED} header`],
-  ])('still redacts %s as a whole word', (_label, fields, message, expected) => {
-    expect(log(message, fields)).toBe(expected);
-  });
-
-  it(`still redacts a cut-off prefix of a value of ${MIN_SHARED}+ characters, mid-word`, () => {
-    expect(log('subject: [Hércules] Bot · Juana Pé', {})).toBe(`subject: [Hércules] Bot · ${REDACTED}`);
-  });
-});
-
-describe('emailFailureLog: an echoed subject with a truncated long name leaks no part of the name', () => {
-  // 100 characters (the schema maximum), with accents and ñ, sharing no 4-letter run with any service label.
-  const longName = 'Xóchitl Quetzalli Ñúñez Tlazohtzin Yaotl Itzpapalotl Cuetlachtli Huitzilihuitl Ocelotli Tototl Zyany';
-  const lead = (service: string) =>
-    ({
-      name: longName,
-      email: 'xochitl@empresa.mx',
-      service,
-      summary: 'Buscamos apoyo para un proyecto nuevo.',
-      preferredContact: 'email',
-      consent: true,
-    }) as unknown as Lead;
-  const subjectFor = (service: string) =>
-    formatLeadEmail(lead(service), [], { locale: 'es', sentAt: new Date('2026-10-15T12:00:00Z') }).subject;
-  /** Every run of 4+ characters of the name (case-insensitive): "any part" that could identify it. */
-  const nameParts = Array.from({ length: longName.length - 3 }, (_, i) => longName.slice(i, i + 4).toLowerCase()).filter(
-    (part) => /\p{L}{4}/u.test(part),
-  );
-
-  it('test setup: the name is 100 characters, and at least one real service label truncates it in the subject', () => {
-    expect(longName).toHaveLength(100);
-    const truncating = LEAD_SERVICES.filter((service) => !subjectFor(service).includes(longName));
-    expect(truncating.length).toBeGreaterThan(0);
-  });
-
-  it.each(LEAD_SERVICES)('service "%s": the logged echo of the subject keeps the label and contains no part of the name', (service) => {
-    const subject = subjectFor(service);
-    const message = emailFailureLog(new Error(`subject rejected: ${subject}`), lead(service)).message;
-    expect(message).toBe(`subject rejected: ${subject.slice(0, subject.indexOf(' · ') + 3)}${REDACTED}`);
-    const lower = message.toLowerCase();
-    expect(nameParts.filter((part) => lower.includes(part))).toEqual([]);
-  });
-
-  it('also when the error itself cuts the echo short, mid-name', () => {
-    const subject = subjectFor('ai-whatsapp-automation');
-    const cut = subject.slice(0, subject.indexOf(' · ') + 3 + 9); // "… · Xóchitl Q"
-    const message = emailFailureLog(new Error(`rejected: ${cut}…`), lead('ai-whatsapp-automation')).message;
-    expect(message.endsWith(`· ${REDACTED}…`)).toBe(true);
-    expect(message).not.toMatch(/Xóchitl|Xóch/i);
-  });
-});
-
-describe('emailFailureLog: short names and companies leave ordinary Cloudflare wording intact', () => {
-  const cloudflareMessages = [
-    'send failed',
-    'not allowed',
-    'domain not allowed',
-    'destination address not verified',
-    'sender address is not allowed to send from this domain',
-    'internal error: all retries failed, try again later',
-    'Alerting: journal full, job aborted',
-    'Analysis failed: malformed headers',
-  ];
-  const shortValues = [
-    ['company', 'AI'],
-    ['company', 'Al'],
-    ['name', 'Al'],
-    ['name', 'Jo'],
-    ['name', 'Ana'],
-    ['company', 'Ño'],
-  ] as const;
-  const cases = shortValues.flatMap(([field, value]) => cloudflareMessages.map((message) => [field, value, message] as const));
-
-  it.each(cases)('%s %j: %j is logged unchanged', (field, value, message) => {
-    const lead = {
-      name: field === 'name' ? value : 'Juana Pérez',
-      company: field === 'company' ? value : undefined,
-      email: 'juana@empresa.com',
-      service: 'ai-bot',
-      summary: 'Necesitamos un bot.',
-      preferredContact: 'email',
-      consent: true,
-    } as unknown as Lead;
-    expect(emailFailureLog(new Error(message), lead).message).toBe(message);
-  });
-
-  it('both at once: name "Al" and company "AI" keep "send failed" and "not allowed" intact, and still redact the values themselves', () => {
-    const lead = { name: 'Al', company: 'AI', email: 'al@empresa.com', service: 'ai-bot', summary: 'Necesitamos un bot.', preferredContact: 'email', consent: true } as unknown as Lead;
-    expect(emailFailureLog(new Error('send failed: not allowed'), lead).message).toBe('send failed: not allowed');
-    expect(emailFailureLog(new Error('send failed for Al at AI'), lead).message).toBe(`send failed for ${REDACTED} at ${REDACTED}`);
-  });
-});
-
-describe('emailFailureLog: a one-character company (valid in the schema) is redacted as a whole word', () => {
-  const log = (message: string, company: string | undefined) =>
-    emailFailureLog(
-      new Error(message),
-      { name: 'Juana Pérez', company, email: 'juana@empresa.com', service: 'ai-bot', summary: 'Necesitamos un bot.', preferredContact: 'email', consent: true } as unknown as Lead,
-    ).message;
-
-  it('test setup: the schema accepts a one-character company', () => {
-    const result = validateLead({ ...validLead, company: 'X' });
-    expect(result.ok).toBe(true);
-  });
-
-  it.each([
-    ['X', 'bad company: X', `bad company: ${REDACTED}`],
-    ['X', 'company "x" rejected', `company "${REDACTED}" rejected`],
-    ['Ñ', 'company=ñ;', `company=${REDACTED};`],
-    ['7', 'org 7 blocked', `org ${REDACTED} blocked`],
-    ['X', 'X', REDACTED],
-  ])('company %j: %j is logged as %j', (company, message, expected) => {
-    expect(log(message, company)).toBe(expected);
-  });
-
-  it.each(['send failed', 'not allowed', 'destination address not verified', 'Xenon relay: max retries'])(
-    'company "X" or "A" leaves %j intact (the letter inside a word is not the value)',
-    (message) => {
-      expect(log(message, 'X')).toBe(message);
-      expect(log(message, 'A')).toBe(message);
-    },
-  );
-
-  it('ignores a blank company', () => {
-    expect(log('a b c', ' ')).toBe('a b c');
-    expect(log('a b c', undefined)).toBe('a b c');
-  });
-});
-
-describe('emailFailureLog: encoded echoes of visitor data are decoded, then redacted', () => {
-  const lead = {
-    name: 'Juana Pérez',
-    email: 'juana@empresa.com',
-    phone: '+52 871 123 4567',
-    service: 'ai-bot',
-    summary: 'Necesitamos un bot para atender pedidos.',
-    preferredContact: 'email',
-    consent: true,
-  } as unknown as Lead;
-  const log = (message: string) => emailFailureLog(new Error(message), lead).message;
-  const b64 = (text: string) => btoa(String.fromCharCode(...new TextEncoder().encode(text)));
-
-  it.each([
-    ['a Q-encoded header (RFC 2047)', 'invalid From: =?UTF-8?Q?Juana_P=C3=A9rez?=', `invalid From: ${REDACTED}`],
-    ['a lower-case q-encoded header', 'invalid From: =?utf-8?q?juana_p=c3=a9rez?=', `invalid From: ${REDACTED}`],
-    ['a B-encoded (base64) header', `invalid From: =?UTF-8?B?${b64('Juana Pérez')}?=`, `invalid From: ${REDACTED}`],
-    ['two encoded words split mid-name', 'From: =?UTF-8?Q?Juana_P?= =?UTF-8?Q?=C3=A9rez?=', `From: ${REDACTED}`],
-    ['underscores for spaces', 'name=Juana_Pérez', `name=${REDACTED}`],
-    ['a percent-encoded address', 'invalid Reply-To: juana%40empresa.com', `invalid Reply-To: ${REDACTED}`],
-    ['a percent-encoded name', 'name=Juana%20P%C3%A9rez', `name=${REDACTED}`],
-    ['form encoding (+ for spaces)', 'name=Juana+P%C3%A9rez&x=1', `name=${REDACTED}&x=1`],
-    ['a decomposed accent (NFD)', 'name: Juana Pérez', `name: ${REDACTED}`],
-  ])('redacts %s', (_label, message, expected) => {
-    expect(log(message)).toBe(expected);
-  });
-
-  it.each([
-    ['digits only, with country code', 'bad phone 528711234567', `bad phone ${REDACTED}`],
-    ['digits only, local', 'bad phone 8711234567.', `bad phone ${REDACTED}.`],
-    ['with parentheses and a dash', 'bad phone (871) 123-4567', `bad phone ${REDACTED}`],
-    ['with dots', 'bad phone 871.123.4567', `bad phone ${REDACTED}`],
-    ['with dashes and +', 'bad phone +52-871-123-4567', `bad phone ${REDACTED}`],
-    ['percent-encoded', 'tel=%2B52%20871%20123%204567', `tel=${REDACTED}`],
-  ])('redacts the phone written %s', (_label, message, expected) => {
-    expect(log(message)).toBe(expected);
-  });
-
-  it.each([
-    'retry in 30 seconds',
-    'SMTP 550 5.7.1 rejected',
-    'limit 1000000 bytes exceeded',
-    '100% of quota used',
-    'destination address not verified',
-  ])("keeps numbers and wording that aren't the visitor's: %j", (message) => {
-    expect(log(message)).toBe(message);
-  });
-
-  it.each([
-    ['an encoded word in an unknown charset', 'From: =?x-unknown?Q?abc?=', `From: ${REDACTED}`],
-    ['an encoded word with broken UTF-8', 'From: =?UTF-8?Q?=C3?=', `From: ${REDACTED}`],
-    ['broken base64', 'From: =?UTF-8?B?***?=', `From: ${REDACTED}`],
-    ['a percent run that is not valid UTF-8', 'name=%E0%A4', `name=${REDACTED}`],
-  ])('redacts %s that cannot be decoded, rather than log it encoded', (_label, message, expected) => {
-    expect(log(message)).toBe(expected);
-  });
-
-  it('decodes and keeps encoded text that is not visitor data', () => {
-    expect(log('sender =?UTF-8?Q?H=C3=A9rcules?= <info@hercuit.com> not allowed')).toBe('sender Hércules <info@hercuit.com> not allowed');
+    for (const value of [validLead.email, validLead.name, validLead.summary, 'Juana', 'empresa']) {
+      expect(logged).not.toContain(value);
+    }
   });
 });
