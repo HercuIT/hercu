@@ -698,3 +698,65 @@ describe('emailFailureLog: a one-character company (valid in the schema) is reda
     expect(log('a b c', undefined)).toBe('a b c');
   });
 });
+
+describe('emailFailureLog: encoded echoes of visitor data are decoded, then redacted', () => {
+  const lead = {
+    name: 'Juana Pérez',
+    email: 'juana@empresa.com',
+    phone: '+52 871 123 4567',
+    service: 'ai-bot',
+    summary: 'Necesitamos un bot para atender pedidos.',
+    preferredContact: 'email',
+    consent: true,
+  } as unknown as Lead;
+  const log = (message: string) => emailFailureLog(new Error(message), lead).message;
+  const b64 = (text: string) => btoa(String.fromCharCode(...new TextEncoder().encode(text)));
+
+  it.each([
+    ['a Q-encoded header (RFC 2047)', 'invalid From: =?UTF-8?Q?Juana_P=C3=A9rez?=', `invalid From: ${REDACTED}`],
+    ['a lower-case q-encoded header', 'invalid From: =?utf-8?q?juana_p=c3=a9rez?=', `invalid From: ${REDACTED}`],
+    ['a B-encoded (base64) header', `invalid From: =?UTF-8?B?${b64('Juana Pérez')}?=`, `invalid From: ${REDACTED}`],
+    ['two encoded words split mid-name', 'From: =?UTF-8?Q?Juana_P?= =?UTF-8?Q?=C3=A9rez?=', `From: ${REDACTED}`],
+    ['underscores for spaces', 'name=Juana_Pérez', `name=${REDACTED}`],
+    ['a percent-encoded address', 'invalid Reply-To: juana%40empresa.com', `invalid Reply-To: ${REDACTED}`],
+    ['a percent-encoded name', 'name=Juana%20P%C3%A9rez', `name=${REDACTED}`],
+    ['form encoding (+ for spaces)', 'name=Juana+P%C3%A9rez&x=1', `name=${REDACTED}&x=1`],
+    ['a decomposed accent (NFD)', 'name: Juana Pérez', `name: ${REDACTED}`],
+  ])('redacts %s', (_label, message, expected) => {
+    expect(log(message)).toBe(expected);
+  });
+
+  it.each([
+    ['digits only, with country code', 'bad phone 528711234567', `bad phone ${REDACTED}`],
+    ['digits only, local', 'bad phone 8711234567.', `bad phone ${REDACTED}.`],
+    ['with parentheses and a dash', 'bad phone (871) 123-4567', `bad phone ${REDACTED}`],
+    ['with dots', 'bad phone 871.123.4567', `bad phone ${REDACTED}`],
+    ['with dashes and +', 'bad phone +52-871-123-4567', `bad phone ${REDACTED}`],
+    ['percent-encoded', 'tel=%2B52%20871%20123%204567', `tel=${REDACTED}`],
+  ])('redacts the phone written %s', (_label, message, expected) => {
+    expect(log(message)).toBe(expected);
+  });
+
+  it.each([
+    'retry in 30 seconds',
+    'SMTP 550 5.7.1 rejected',
+    'limit 1000000 bytes exceeded',
+    '100% of quota used',
+    'destination address not verified',
+  ])("keeps numbers and wording that aren't the visitor's: %j", (message) => {
+    expect(log(message)).toBe(message);
+  });
+
+  it.each([
+    ['an encoded word in an unknown charset', 'From: =?x-unknown?Q?abc?=', `From: ${REDACTED}`],
+    ['an encoded word with broken UTF-8', 'From: =?UTF-8?Q?=C3?=', `From: ${REDACTED}`],
+    ['broken base64', 'From: =?UTF-8?B?***?=', `From: ${REDACTED}`],
+    ['a percent run that is not valid UTF-8', 'name=%E0%A4', `name=${REDACTED}`],
+  ])('redacts %s that cannot be decoded, rather than log it encoded', (_label, message, expected) => {
+    expect(log(message)).toBe(expected);
+  });
+
+  it('decodes and keeps encoded text that is not visitor data', () => {
+    expect(log('sender =?UTF-8?Q?H=C3=A9rcules?= <info@hercuit.com> not allowed')).toBe('sender Hércules <info@hercuit.com> not allowed');
+  });
+});
