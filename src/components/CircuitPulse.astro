@@ -1,0 +1,163 @@
+---
+// Decorative "Circuit Pulse" behind the hero (specs/circuit-animation): traces draw in, three rounds of
+// signals run to ring nodes, then everything rests (≤ 5 s, WCAG 2.2.2). Pure CSS + inline SVG, no JS.
+import { DRAW_MS, PING_MS, SIGNAL_MS, VIEWBOX, traces, validateTraces } from '../constants/circuit-traces';
+
+validateTraces(traces); // a bad geometry/timing edit fails the build
+
+const ms = (value: number) => `${value}ms`;
+---
+
+<div class="circuit-pulse pointer-events-none absolute inset-0" aria-hidden="true">
+  <div class="aura absolute -top-32 -right-32 w-[36rem] h-[36rem]"></div>
+  <svg
+    class="circuit absolute inset-y-0 right-0 h-full w-full md:w-3/5 opacity-50 md:opacity-100"
+    viewBox={`0 0 ${VIEWBOX.width} ${VIEWBOX.height}`}
+    preserveAspectRatio="xMaxYMid slice"
+    focusable="false"
+    style={`--draw-ms:${ms(DRAW_MS)};--signal-ms:${ms(SIGNAL_MS)};--ping-ms:${ms(PING_MS)}`}
+  >
+    {traces.map((trace, index) => (
+      <g class:list={['trace', !trace.mobile && 'hidden md:inline']} style={`--i:${index}`}>
+        <path class="track" d={trace.d} pathLength="100" style={`--draw-delay:${ms(trace.drawDelayMs)}`} />
+        <g class="signals">
+          {trace.signalDelaysMs.map((delay, run) => (
+            <path
+              class:list={['signal', `signal-${run + 1}`]}
+              d={trace.d}
+              pathLength="100"
+              style={`--signal-delay:${ms(delay)}`}
+            />
+          ))}
+        </g>
+        {trace.signalDelaysMs.map((delay) => (
+          <circle
+            class="ping"
+            cx={trace.end[0]}
+            cy={trace.end[1]}
+            r="4"
+            style={`--ping-delay:${ms(delay + SIGNAL_MS)}`}
+          />
+        ))}
+        <circle
+          class="node"
+          cx={trace.end[0]}
+          cy={trace.end[1]}
+          r="4"
+          style={`--node-delay:${ms(trace.drawDelayMs + DRAW_MS * 0.8)}`}
+        />
+      </g>
+    ))}
+  </svg>
+</div>
+
+<style>
+  /* Track: faint line that draws itself in once. */
+  .track {
+    fill: none;
+    stroke: var(--color-brand-500);
+    stroke-opacity: 0.18;
+    stroke-width: 1.5;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    stroke-dasharray: 100;
+    animation: trace-draw var(--draw-ms) ease-out var(--draw-delay) both;
+  }
+
+  /* Signal: an 8%-long bright dash that travels from the edge to the node. */
+  .signals {
+    filter: drop-shadow(0 0 4px var(--color-brand-400));
+  }
+  .signal {
+    fill: none;
+    stroke: var(--color-brand-400);
+    stroke-width: 2;
+    stroke-linecap: round;
+    stroke-dasharray: 8 92;
+    stroke-dashoffset: 100;
+    opacity: 0;
+    animation: signal-run var(--signal-ms) cubic-bezier(0.4, 0, 0.2, 1) var(--signal-delay) 1 none;
+  }
+
+  /* Node: the logo's ring node; appears as its trace finishes drawing. */
+  .node {
+    fill: #fff;
+    stroke: var(--color-brand-500);
+    stroke-width: 2;
+    animation: node-in 300ms ease-out var(--node-delay) both;
+  }
+
+  /* Ping: an expanding ring each time a signal arrives. */
+  .ping {
+    fill: none;
+    stroke: var(--color-brand-400);
+    stroke-width: 2;
+    opacity: 0;
+    transform-box: fill-box;
+    transform-origin: center;
+    animation: node-ping var(--ping-ms) ease-out var(--ping-delay) 1 none;
+  }
+
+  /* AI aura: soft conic glow that turns into place once (@property makes the angle animatable). */
+  .aura {
+    border-radius: 9999px;
+    filter: blur(60px);
+    background: conic-gradient(
+      from var(--aura-angle),
+      color-mix(in oklab, var(--color-brand-400) 22%, transparent),
+      color-mix(in oklab, var(--color-brand-300) 10%, transparent),
+      transparent 60%,
+      color-mix(in oklab, var(--color-brand-500) 18%, transparent)
+    );
+    animation: aura-in 2400ms ease-out both;
+  }
+
+  /* Replay one round on hover (user-initiated, so outside WCAG 2.2.2). Pointer devices only. */
+  @media (hover: hover) {
+    :global(.hero:hover) .signal-1 {
+      animation: signal-replay var(--signal-ms) cubic-bezier(0.4, 0, 0.2, 1) calc(var(--i) * 110ms) 1 none;
+    }
+  }
+
+  @keyframes trace-draw {
+    from { stroke-dashoffset: 100; }
+    to { stroke-dashoffset: 0; }
+  }
+  @keyframes signal-run {
+    from { stroke-dashoffset: 100; opacity: 1; }
+    to { stroke-dashoffset: -8; opacity: 1; }
+  }
+  @keyframes signal-replay {
+    from { stroke-dashoffset: 100; opacity: 1; }
+    to { stroke-dashoffset: -8; opacity: 1; }
+  }
+  @keyframes node-in {
+    from { opacity: 0; }
+    to { opacity: 1; }
+  }
+  @keyframes node-ping {
+    from { opacity: 0.9; transform: scale(1); }
+    to { opacity: 0; transform: scale(2.4); }
+  }
+  @keyframes aura-in {
+    from { opacity: 0; --aura-angle: -60deg; }
+    to { opacity: 1; --aura-angle: 0deg; }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .circuit-pulse *,
+    .aura {
+      animation: none !important;
+    }
+    .signals,
+    .ping {
+      display: none;
+    }
+  }
+
+  @media print {
+    .circuit-pulse {
+      display: none;
+    }
+  }
+</style>

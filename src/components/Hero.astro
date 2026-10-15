@@ -1,11 +1,13 @@
 ---
+import CircuitPulse from './CircuitPulse.astro';
 import { useStrings } from '../i18n/utils';
 
 const t = useStrings(Astro.currentLocale);
 ---
 
-<section class="relative py-20 overflow-hidden bg-white">
-  <div class="container mx-auto px-4 relative">
+<section class="hero relative isolate py-20 overflow-hidden bg-white">
+  <CircuitPulse />
+  <div class="container mx-auto px-4 relative z-10">
     <div class="max-w-3xl">
       <h1 class="text-5xl md:text-6xl font-display font-bold tracking-wordmark text-ink mb-6">
         {t.hero.title}
@@ -22,6 +24,4 @@ const t = useStrings(Astro.currentLocale);
     </div>
   </div>
   
-  <!-- Subtle decorative element -->
-  <div class="absolute top-0 right-0 -translate-y-1/2 translate-x-1/2 w-96 h-96 bg-brand-500/10 rounded-full blur-3xl opacity-50"></div>
 </section>

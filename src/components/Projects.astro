@@ -37,7 +37,7 @@ const images: Record<ProjectId, ImageMetadata> = {
 
     <div class="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-5xl mx-auto">
       {cards.map((card) => (
-        <article aria-labelledby={`project-${card.id}`} class="flex flex-col rounded-2xl border border-ink/10 bg-mist overflow-hidden shadow-sm">
+        <article aria-labelledby={`project-${card.id}`} class="reveal flex flex-col rounded-2xl border border-ink/10 bg-mist overflow-hidden shadow-sm">
           <Image
             src={images[card.id]}
             alt={card.imageAlt}
