@@ -1,8 +1,8 @@
 import Anthropic from '@anthropic-ai/sdk';
 import { describe, expect, it, vi } from 'vitest';
-import { buildParams, EMAIL_ERROR_MAX, emailFailureLog, formatSse, MAX_ITERATIONS, runConversation, type Deps, type SseEvent, type StreamParams } from './hercules';
+import { buildParams, EMAIL_ERROR_MAX, emailFailureLog, formatSse, MAX_ITERATIONS, REDACTED, runConversation, type Deps, type SseEvent, type StreamParams } from './hercules';
 import type { ChatMessage } from './guards';
-import type { LeadEmail } from './lead';
+import type { Lead, LeadEmail } from './lead';
 
 type Block = Record<string, unknown>;
 type Turn = { text?: string; content?: Block[]; stop_reason: string } | { text: string; throws: Error } | Error;
@@ -388,8 +388,94 @@ describe('emailFailureLog', () => {
   });
 
   it('keeps accents and emoji', () => {
-    expect(emailFailureLog(new Error('Dirección no verificada: hercuitmx@gmail.com 🚫')).message).toBe(
-      'Dirección no verificada: hercuitmx@gmail.com 🚫',
+    expect(emailFailureLog(new Error('Dirección no verificada: info@hercuit.com 🚫')).message).toBe(
+      'Dirección no verificada: info@hercuit.com 🚫',
     );
+  });
+});
+
+describe('emailFailureLog redacts visitor data from the error message', () => {
+  const lead = {
+    name: 'Juana Pérez',
+    email: 'juana@empresa.com',
+    phone: '+52 871 123 4567',
+    company: 'Ñandú & Cía 🚀',
+    service: 'ai-bot',
+    summary: 'Necesitamos un bot para atender pedidos por WhatsApp.',
+    preferredContact: 'email',
+    consent: true,
+  } as unknown as Lead;
+  const log = (message: string, withLead: Lead | undefined = lead) => emailFailureLog(new Error(message), withLead).message;
+
+  it("redacts the visitor's Reply-To address (the reported case)", () => {
+    expect(log('invalid Reply-To: juana@empresa.com')).toBe(`invalid Reply-To: ${REDACTED}`);
+  });
+
+  it('redacts the address even without the lead, and in angle brackets or with a display name', () => {
+    expect(log('invalid Reply-To: juana@empresa.com', undefined)).toBe(`invalid Reply-To: ${REDACTED}`);
+    expect(log('bad header: "Ana" <ana.lopez+web@sub.example.mx>', undefined)).toBe(`bad header: "Ana" <${REDACTED}>`);
+  });
+
+  it.each([
+    ['name', 'Juana Pérez'],
+    ['name in another case', 'JUANA PÉREZ'],
+    ['phone', '+52 871 123 4567'],
+    ['company with ñ, & and emoji', 'Ñandú & Cía 🚀'],
+    ['summary', 'Necesitamos un bot para atender pedidos por WhatsApp.'],
+  ])("redacts the visitor's %s", (_label, value) => {
+    const message = log(`rejected value: ${value}; retry later`);
+    expect(message).toBe(`rejected value: ${REDACTED}; retry later`);
+  });
+
+  it('redacts a value that the error split across lines', () => {
+    expect(log('subject rejected: [Hércules] Bot · Juana\r\nPérez')).toBe(`subject rejected: [Hércules] Bot · ${REDACTED}`);
+  });
+
+  it('redacts before capping, so a value near the cap cannot leak in part', () => {
+    const message = log(`${'x'.repeat(EMAIL_ERROR_MAX - 5)} juana@empresa.com`);
+    expect(message).toHaveLength(EMAIL_ERROR_MAX);
+    expect(message).not.toContain('juana');
+  });
+
+  it("keeps hercuit.com addresses and Cloudflare's own wording", () => {
+    expect(log('sender info@hercuit.com is not allowed')).toBe('sender info@hercuit.com is not allowed');
+    expect(log('destination address not verified')).toBe('destination address not verified');
+  });
+
+  it('redacts every other address, including the Gmail destination', () => {
+    expect(log('destination hercuitmx@gmail.com not verified')).toBe(`destination ${REDACTED} not verified`);
+  });
+
+  it('does not let a look-alike domain through', () => {
+    expect(log('from info@hercuit.com.evil.io')).toBe(`from ${REDACTED}`);
+  });
+
+  it('ignores blank and one-character optional fields instead of redacting every letter', () => {
+    const sparse = { ...lead, company: ' ', phone: undefined, name: 'Jo' } as unknown as Lead;
+    expect(log('a b c Jo', sparse)).toBe(`a b c ${REDACTED}`);
+  });
+
+  it('treats regex characters in visitor values literally', () => {
+    const tricky = { ...lead, company: 'A.B (C) [x]*' } as unknown as Lead;
+    expect(log('bad company A.B (C) [x]* and AxB C x', tricky)).toBe(`bad company ${REDACTED} and AxB C x`);
+  });
+
+  it('returns an empty message unchanged', () => {
+    expect(log('')).toBe('');
+  });
+});
+
+describe('runConversation logs no visitor data when the email binding echoes it', () => {
+  it('redacts the Reply-To and name from email_failed', async () => {
+    const h = harness([{ content: [toolUse(validLead)], stop_reason: 'tool_use' }, { text: 'Lo siento.', stop_reason: 'end_turn' }]);
+    h.deps.sendEmail = vi.fn(async () => {
+      throw new Error(`invalid Reply-To: ${validLead.email} (${validLead.name})`);
+    });
+    await h.run();
+    const logged = JSON.stringify(h.logs);
+    expect(logged).toContain('email_failed');
+    expect(logged).toContain('invalid Reply-To');
+    expect(logged).not.toContain(validLead.email);
+    expect(logged).not.toContain(validLead.name);
   });
 });
