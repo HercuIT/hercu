@@ -28,7 +28,12 @@
   "send_email": [{ "name": "LEADS_EMAIL", "destination_address": "info@hercuit.com" }],
   // 20 requests per minute per visitor IP for /api/hercules.
   "ratelimits": [{ "name": "CHAT_LIMITER", "namespace_id": "1001", "simple": { "limit": 20, "period": 60 } }],
-  // Secrets (never in the repo): ANTHROPIC_API_KEY, TURNSTILE_SECRET -> `wrangler secret put <NAME>`.
+  // Secrets live in the account-level Cloudflare Secrets Store (never in the repo). The Worker reads
+  // them with `await env.<BINDING>.get()`; the store ID is an identifier, not a secret.
+  "secrets_store_secrets": [
+    { "binding": "ANTHROPIC_API_KEY", "store_id": "0086f10401674b139c72e268df0bd4a0", "secret_name": "ANTHROPIC_API_KEY" },
+    { "binding": "TURNSTILE_SECRET", "store_id": "0086f10401674b139c72e268df0bd4a0", "secret_name": "TURNSTILE_SECRET" }
+  ],
   // Required by `wrangler preview` (Cloudflare's preview-branch deploy command). Empty = defaults.
   "previews": {}
 }

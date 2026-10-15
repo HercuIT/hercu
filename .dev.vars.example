@@ -1,7 +1,9 @@
-# Copy to .dev.vars (git-ignored) for `wrangler dev`. Never commit real values.
-# Production: `wrangler secret put ANTHROPIC_API_KEY` and `wrangler secret put TURNSTILE_SECRET`.
-ANTHROPIC_API_KEY=sk-ant-api03-REPLACE_ME
-# Secret of the Hercules Turnstile widget (site key 0x4AAAAAAFXMST0WMhwPPQv6).
-TURNSTILE_SECRET=REPLACE_ME
-# Local only: the widget must list localhost among its domains for dev tokens to verify.
+# Local `wrangler dev` notes. Never commit real values.
+# ANTHROPIC_API_KEY and TURNSTILE_SECRET are Cloudflare Secrets Store bindings (see wrangler.jsonc),
+# so they are NOT read from this file. For local dev, create them in the local secrets store:
+#   wrangler secrets-store secret create 0086f10401674b139c72e268df0bd4a0 --name ANTHROPIC_API_KEY --scopes workers
+#   wrangler secrets-store secret create 0086f10401674b139c72e268df0bd4a0 --name TURNSTILE_SECRET --scopes workers
+# (add --remote to target the production store instead).
+#
+# Plain vars can be overridden here. Local only: the widget must list localhost among its domains.
 TURNSTILE_HOSTNAMES=localhost,127.0.0.1
