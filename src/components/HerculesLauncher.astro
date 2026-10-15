@@ -56,8 +56,9 @@ const nodes = [
   </button>
 
   <div class="hl-teaser" hidden>
-    <!-- Not a live region and hidden from screen readers: the launcher's own label says what it does. -->
-    <span class="hl-teaser-text" aria-hidden="true">{t.hercules.teaser}</span>
+    <!-- Read in normal reading order (it gives "Dismiss" its context) but not a live region, so it is
+         never announced on its own when it appears. -->
+    <span class="hl-teaser-text">{t.hercules.teaser}</span>
     <button type="button" class="hl-teaser-close" aria-label={t.hercules.teaserDismiss}>
       <svg viewBox="0 0 16 16" class="size-3.5" aria-hidden="true" focusable="false">
         <path d="M4 4l8 8M12 4l-8 8" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" />
@@ -441,7 +442,7 @@ const nodes = [
 </style>
 
 <script>
-  import { introMode, markIntroSeen, teaserStartsAt, TEASER_VISIBLE_MS, timelineFor, timelineVars } from '../client/launcher-intro';
+  import { createTeaser, introMode, markIntroSeen, teaserStartsAt, timelineFor, timelineVars } from '../client/launcher-intro';
   import { createWidgetLoader } from '../client/widget-loader';
 
   /** sessionStorage, or null when the browser blocks it (the getter itself can throw). */
@@ -464,34 +465,41 @@ const nodes = [
     wrap.dataset.intro = mode;
 
     const teaser = wrap.querySelector<HTMLElement>('.hl-teaser');
-    const timers: number[] = [];
-    const hideTeaser = () => {
-      timers.forEach((id) => window.clearTimeout(id));
-      if (!teaser || teaser.hidden) return;
-      teaser.dataset.state = 'out';
-      window.setTimeout(() => (teaser.hidden = true), 200);
-    };
+    // Show/hide rules (never hide under the pointer or focus; move focus out first) are tested in
+    // launcher-intro.test.ts; this only maps them to the DOM.
+    const bubble = createTeaser({
+      show: () => {
+        if (!teaser) return;
+        teaser.hidden = false;
+        teaser.dataset.state = 'in';
+      },
+      hide: () => {
+        if (!teaser) return;
+        teaser.dataset.state = 'out';
+        window.setTimeout(() => (teaser.hidden = true), 200);
+      },
+      isEngaged: () => teaser?.matches(':hover, :focus-within') ?? false,
+      hasFocus: () => teaser?.contains(document.activeElement) ?? false,
+      focusLauncher: () => launcher.focus(),
+    });
     if (mode === 'full') {
       // Seen as soon as it starts, so navigating away mid-sequence doesn't replay it in full.
       markIntroSeen(storage, 'played');
-      if (teaser) {
-        timers.push(
-          window.setTimeout(() => {
-            teaser.hidden = false;
-            teaser.dataset.state = 'in';
-            timers.push(window.setTimeout(hideTeaser, TEASER_VISIBLE_MS));
-          }, teaserStartsAt(timeline)),
-        );
-      }
+      if (teaser) bubble.start(teaserStartsAt(timeline));
     }
-    teaser?.querySelector('.hl-teaser-close')?.addEventListener('click', () => {
+    const dismissTeaser = () => {
       markIntroSeen(storage, 'dismissed');
-      hideTeaser();
+      bubble.dismiss();
+    };
+    teaser?.querySelector('.hl-teaser-close')?.addEventListener('click', dismissTeaser);
+    // WCAG 1.4.13: dismissible without moving the pointer or focus.
+    document.addEventListener('keydown', (event) => {
+      if (event.key === 'Escape' && bubble.visible()) dismissTeaser();
     });
     teaser?.querySelector('.hl-teaser-text')?.addEventListener('click', () => launcher.click());
     const chatOpened = () => {
       markIntroSeen(storage, 'opened');
-      hideTeaser();
+      bubble.dismiss();
     };
 
     const config = JSON.parse(launcher.dataset.config ?? '{}');
