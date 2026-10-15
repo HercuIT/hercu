@@ -116,6 +116,10 @@ export function validateTraces(list: readonly Trace[]): void {
     const [lx, ly] = points[points.length - 1];
     if (lx !== t.end[0] || ly !== t.end[1]) throw new Error(`Trace "${t.id}" end must equal its last point`);
 
+    // Finite first: NaN fails every < / > comparison, so later checks (and the budget) would pass it.
+    if (![t.drawDelayMs, ...t.signalDelaysMs].every(Number.isFinite)) {
+      throw new Error(`Trace "${t.id}" delays must be finite numbers`);
+    }
     if (t.drawDelayMs < 0) throw new Error(`Trace "${t.id}" has a negative draw delay`);
     const [a, b, c] = t.signalDelaysMs;
     if (a < t.drawDelayMs + DRAW_MS / 2) throw new Error(`Trace "${t.id}" signals start before it is drawn`);
@@ -123,7 +127,8 @@ export function validateTraces(list: readonly Trace[]): void {
   }
 
   const total = totalMotionMs(list);
-  if (total > MOTION_BUDGET_MS) {
+  // Fail closed: `!(total <= budget)` is also true for NaN, unlike `total > budget`.
+  if (!(total <= MOTION_BUDGET_MS)) {
     throw new Error(`Automatic motion lasts ${total} ms; the budget is ${MOTION_BUDGET_MS} ms (WCAG 2.2.2)`);
   }
 }

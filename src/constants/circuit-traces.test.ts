@@ -142,6 +142,24 @@ describe('validateTraces: negative cases', () => {
   it('rejects a negative draw delay', () => {
     expect(() => validateTraces(withTrace(0, { drawDelayMs: -1 }))).toThrow(/negative draw delay/);
   });
+
+  it.each([NaN, Infinity, -Infinity])('rejects a non-finite draw delay (%s)', (value) => {
+    expect(() => validateTraces(withTrace(0, { drawDelayMs: value }))).toThrow(/finite/);
+  });
+
+  it.each([
+    ['NaN first', [NaN, 2000, 2500]],
+    ['NaN last', [1300, 2000, NaN]],
+    ['Infinity last', [1300, 2000, Infinity]],
+  ])('rejects non-finite signal delays (%s)', (_label, delays) => {
+    expect(() => validateTraces(withTrace(0, { signalDelaysMs: delays as [number, number, number] }))).toThrow(/finite/);
+  });
+
+  it('never lets totalMotionMs fail open: a NaN anywhere makes it NaN, which validation rejects', () => {
+    const list = withTrace(0, { drawDelayMs: NaN });
+    expect(Number.isNaN(totalMotionMs(list))).toBe(true);
+    expect(() => validateTraces(list)).toThrow();
+  });
 });
 
 describe('validateTraces: edge cases', () => {
