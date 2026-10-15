@@ -36,7 +36,31 @@ function log(entry: Record<string, unknown>): void {
   console.log(JSON.stringify({ app: 'hercules', ...entry }));
 }
 
-async function handleHercules(request: Request, env: Env, ctx: ExecutionContext): Promise<Response> {
+/** Outbound dependencies, injectable so the handler is unit-testable without network. */
+export type HandlerDeps = {
+  /** fetch used for Turnstile siteverify. */
+  fetch: typeof fetch;
+  /** Builds the model stream for a request, given the API key read from the Secrets Store. */
+  makeStream(apiKey: string): (params: StreamParams) => ModelStream;
+};
+
+const defaultDeps: HandlerDeps = {
+  fetch: (input, init) => fetch(input, init),
+  makeStream(apiKey) {
+    const client = new Anthropic({ apiKey });
+    return (params) => {
+      const s = client.beta.messages.stream(params);
+      return { onText: (listener) => void s.on('text', listener), finalMessage: () => s.finalMessage() };
+    };
+  },
+};
+
+export async function handleHercules(
+  request: Request,
+  env: Env,
+  ctx: ExecutionContext,
+  deps: HandlerDeps = defaultDeps,
+): Promise<Response> {
   const ip = request.headers.get('CF-Connecting-IP');
 
   let parsed;
@@ -65,21 +89,17 @@ async function handleHercules(request: Request, env: Env, ctx: ExecutionContext)
   }
 
   const expected = { action: TURNSTILE_ACTION, hostnames: parseHostnames(env.TURNSTILE_HOSTNAMES) };
-  if (!(await verifyTurnstile(parsed.turnstileToken, turnstileSecret, ip, expected))) {
+  if (!(await verifyTurnstile(parsed.turnstileToken, turnstileSecret, ip, expected, deps.fetch))) {
     log({ event: 'rejected', reason: 'turnstile' });
     return sseError('invalid_request', 403);
   }
 
-  const client = new Anthropic({ apiKey });
   const { readable, writable } = new TransformStream<Uint8Array, Uint8Array>();
   const writer = writable.getWriter();
   const encoder = new TextEncoder();
   const emit = (e: SseEvent) => void writer.write(encoder.encode(formatSse(e))).catch(() => {});
 
-  const stream = (params: StreamParams): ModelStream => {
-    const s = client.beta.messages.stream(params);
-    return { onText: (listener) => void s.on('text', listener), finalMessage: () => s.finalMessage() };
-  };
+  const stream = deps.makeStream(apiKey);
 
   const sendEmail = async (email: LeadEmail) => {
     await env.LEADS_EMAIL.send({
