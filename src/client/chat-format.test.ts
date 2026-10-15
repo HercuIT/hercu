@@ -200,3 +200,21 @@ describe('chatToSpeech (what screen readers announce)', () => {
     expect(chatToSpeech('**Capacita')).toBe('**Capacita');
   });
 });
+
+describe('parseInline: bold italic (***x*** / ___x___)', () => {
+  it.each([
+    ['***', 'Es ***muy*** importante'],
+    ['___', 'Es ___muy___ importante'],
+  ])('reads %s as bold, with no stray markers', (_d, text) => {
+    expect(parseInline(text)).toEqual([plain('Es '), bold('muy'), plain(' importante')]);
+  });
+
+  it('handles a bold-italic label at the start of a list item', () => {
+    expect(parseChatText('- ***QA:*** pruebas')).toEqual([{ kind: 'list', items: [[bold('QA:'), plain(' pruebas')]] }]);
+  });
+
+  it('leaves an unclosed *** literal, and a lone *** stays text', () => {
+    expect(parseInline('***abierto')).toEqual([plain('***abierto')]);
+    expect(parseInline('a *** b')).toEqual([plain('a *** b')]);
+  });
+});
