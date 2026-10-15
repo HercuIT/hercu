@@ -1,7 +1,7 @@
 ---
 import { shared } from '../constants/strings';
 import { getLocale, privacyPaths, useStrings } from '../i18n/utils';
-import { whatsappHref } from '../constants/whatsapp';
+import { whatsappAriaLabel, whatsappHref } from '../constants/whatsapp';
 import Logo from './brand/Logo.astro';
 import WhatsAppIcon from './icons/WhatsAppIcon.astro';
 
@@ -35,7 +35,7 @@ const currentYear = new Date().getFullYear();
             href={whatsappLink}
             target="_blank"
             rel="noopener noreferrer"
-            aria-label={`${t.contact.whatsappAria.prefix} ${shared.phone.display} ${t.contact.whatsappAria.suffix}`}
+            aria-label={whatsappAriaLabel(t.contact.whatsappAria, shared.phone.display)}
             class="py-2 inline-flex items-center gap-1.5 text-steel hover:text-ink whitespace-nowrap"
           >
             <WhatsAppIcon class="w-4 h-4" tone="current" />

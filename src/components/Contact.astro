@@ -2,7 +2,7 @@
 import { shared } from '../constants/strings';
 import { useStrings } from '../i18n/utils';
 import { buildServiceOptions } from '../constants/contact-services';
-import { whatsappHref } from '../constants/whatsapp';
+import { whatsappAriaLabel, whatsappHref } from '../constants/whatsapp';
 import WhatsAppIcon from './icons/WhatsAppIcon.astro';
 
 const t = useStrings(Astro.currentLocale);
@@ -60,7 +60,7 @@ const serviceOptions = buildServiceOptions(t.contact.service);
                   href={whatsappLink}
                   target="_blank"
                   rel="noopener noreferrer"
-                  aria-label={`${t.contact.whatsappAria.prefix} ${shared.phone.display} ${t.contact.whatsappAria.suffix}`}
+                  aria-label={whatsappAriaLabel(t.contact.whatsappAria, shared.phone.display)}
                   class="inline-block py-2 -my-2 text-mist/80 hover:text-white underline-offset-4 hover:underline"
                 >
                   {t.contact.whatsappCta}
