@@ -65,7 +65,7 @@ describe('CircuitPulse CSS timing is bound to circuit-traces.ts', () => {
   it('assigns in the markup every CSS variable the animations read', () => {
     const read = new Set([...animationValues.join(' ').matchAll(/var\((--[\w-]+)\)/g)].map((m) => m[1]));
     const assigned = new Set([...markup.matchAll(/(--[\w-]+):\$\{/g)].map((m) => m[1]));
-    assigned.add('--i'); // set as `--i:${index}` (a unitless number, not a duration)
+expect(assigned.has('--i')).toBe(true);
     expect([...read].filter((v) => !assigned.has(v))).toEqual([]);
   });
 });
