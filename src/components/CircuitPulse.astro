@@ -11,7 +11,7 @@ const ms = (value: number) => `${value}ms`;
 <div class="circuit-pulse pointer-events-none absolute inset-0" aria-hidden="true">
   <div class="aura absolute -top-32 -right-32 w-[36rem] h-[36rem]"></div>
   <svg
-    class="circuit absolute inset-y-0 right-0 h-full w-full md:w-3/5 opacity-50 md:opacity-100"
+    class="circuit absolute inset-y-0 right-0 h-full w-full md:w-3/5 opacity-35 md:opacity-100"
     viewBox={`0 0 ${VIEWBOX.width} ${VIEWBOX.height}`}
     preserveAspectRatio="xMaxYMid slice"
     focusable="false"
@@ -51,9 +51,16 @@ const ms = (value: number) => `${value}ms`;
   </svg>
 </div>
 
-<style>
+<!-- is:global with every selector under .circuit-pulse: no per-element scoping attributes in the HTML. -->
+<style is:global>
+  /* Fade the circuit out toward the headline column so it never competes with the text. */
+  .circuit-pulse .circuit {
+    -webkit-mask-image: linear-gradient(to left, black 35%, transparent 90%);
+    mask-image: linear-gradient(to left, black 35%, transparent 90%);
+  }
+
   /* Track: faint line that draws itself in once. */
-  .track {
+  .circuit-pulse .track {
     fill: none;
     stroke: var(--color-brand-500);
     stroke-opacity: 0.18;
@@ -65,10 +72,10 @@ const ms = (value: number) => `${value}ms`;
   }
 
   /* Signal: an 8%-long bright dash that travels from the edge to the node. */
-  .signals {
+  .circuit-pulse .signals {
     filter: drop-shadow(0 0 4px var(--color-brand-400));
   }
-  .signal {
+  .circuit-pulse .signal {
     fill: none;
     stroke: var(--color-brand-400);
     stroke-width: 2;
@@ -80,15 +87,15 @@ const ms = (value: number) => `${value}ms`;
   }
 
   /* Node: the logo's ring node; appears as its trace finishes drawing. */
-  .node {
-    fill: #fff;
+  .circuit-pulse .node {
+    fill: var(--color-white);
     stroke: var(--color-brand-500);
     stroke-width: 2;
     animation: node-in 300ms ease-out var(--node-delay) both;
   }
 
   /* Ping: an expanding ring each time a signal arrives. */
-  .ping {
+  .circuit-pulse .ping {
     fill: none;
     stroke: var(--color-brand-400);
     stroke-width: 2;
@@ -99,7 +106,7 @@ const ms = (value: number) => `${value}ms`;
   }
 
   /* AI aura: soft conic glow that turns into place once (@property makes the angle animatable). */
-  .aura {
+  .circuit-pulse .aura {
     border-radius: 9999px;
     filter: blur(60px);
     background: conic-gradient(
@@ -114,7 +121,7 @@ const ms = (value: number) => `${value}ms`;
 
   /* Replay one round on hover (user-initiated, so outside WCAG 2.2.2). Pointer devices only. */
   @media (hover: hover) {
-    :global(.hero:hover) .signal-1 {
+    .hero:hover .circuit-pulse .signal-1 {
       animation: signal-replay var(--signal-ms) cubic-bezier(0.4, 0, 0.2, 1) calc(var(--i) * 110ms) 1 none;
     }
   }
@@ -145,12 +152,11 @@ const ms = (value: number) => `${value}ms`;
   }
 
   @media (prefers-reduced-motion: reduce) {
-    .circuit-pulse *,
-    .aura {
+    .circuit-pulse * {
       animation: none !important;
     }
-    .signals,
-    .ping {
+    .circuit-pulse .signals,
+    .circuit-pulse .ping {
       display: none;
     }
   }
