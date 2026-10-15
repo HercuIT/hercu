@@ -126,6 +126,17 @@ function mergeBold(blocks: Block[]): Block[] {
   return blocks.map((b) => (b.kind === 'list' ? { kind: 'list', items: b.items.map(merge) } : { kind: 'paragraph', lines: b.lines.map(merge) }));
 }
 
+/**
+ * What a screen reader should hear for a reply: the words only. No "**", and no "- " either (read
+ * aloud as "guion" / "dash"); each list item and paragraph ends up on its own line.
+ */
+export function chatToSpeech(text: string): string {
+  const lineText = (line: Line) => line.map((piece) => piece.text).join('');
+  return parseChatText(text)
+    .flatMap((b) => (b.kind === 'list' ? b.items : b.lines).map(lineText))
+    .join('\n');
+}
+
 /** Plain text for the email's text part: no markers; list items keep a leading "- ". */
 export function chatToPlainText(blocks: Block[]): string {
   const lineText = (line: Line) => line.map((piece) => piece.text).join('');

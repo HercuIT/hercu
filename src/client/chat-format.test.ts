@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { chatToPlainText, parseChatText, parseInline, type Block } from './chat-format';
+import { chatToPlainText, chatToSpeech, parseChatText, parseInline, type Block } from './chat-format';
 
 const plain = (text: string) => ({ text, bold: false });
 const bold = (text: string) => ({ text, bold: true });
@@ -167,5 +167,36 @@ describe('chatToPlainText', () => {
 
   it('gives an empty string for no blocks', () => {
     expect(chatToPlainText([])).toBe('');
+  });
+});
+
+describe('chatToSpeech (what screen readers announce)', () => {
+  it('announces the reported reply with no "*" and no leading "- "', () => {
+    const speech = chatToSpeech(REPORTED);
+    expect(speech).not.toContain('*');
+    expect(speech.split('\n')).toHaveLength(4);
+    for (const line of speech.split('\n')) expect(line).not.toMatch(/^\s*[-*•]/);
+    expect(speech.startsWith('Inteligencia artificial: consultoría')).toBe(true);
+  });
+
+  it('reads "- **QA:** pruebas" as "QA: pruebas"', () => {
+    expect(chatToSpeech('- **QA:** pruebas')).toBe('QA: pruebas');
+  });
+
+  it('puts paragraphs and list items on their own lines, in order', () => {
+    expect(chatToSpeech('Ofrecemos:\n\n- **QA**\n1. IA\n\n¿Le interesa?')).toBe('Ofrecemos:\nQA\nIA\n¿Le interesa?');
+  });
+
+  it('keeps plain text, accents and emoji unchanged, and drops link URLs', () => {
+    expect(chatToSpeech('¡Hola! ¿Qué tal? 🚀')).toBe('¡Hola! ¿Qué tal? 🚀');
+    expect(chatToSpeech('Vea [el sitio](https://evil.example)')).toBe('Vea el sitio');
+  });
+
+  it.each(['', '   ', '\n\n'])('gives an empty announcement for %j', (text) => {
+    expect(chatToSpeech(text)).toBe('');
+  });
+
+  it('keeps an unclosed "**" (an incomplete reply) as written rather than guessing', () => {
+    expect(chatToSpeech('**Capacita')).toBe('**Capacita');
   });
 });

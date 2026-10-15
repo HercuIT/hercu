@@ -3,7 +3,7 @@
 // visitor and model text is only ever inserted as text nodes (never innerHTML). Replies are formatted
 // (bold, bullet lists) by building elements from chat-format.ts, still with text nodes only.
 import type { Dictionary } from '../constants/strings';
-import { parseChatText } from './chat-format';
+import { chatToSpeech, parseChatText } from './chat-format';
 import {
   clearConversation,
   isConversationFull,
@@ -445,7 +445,7 @@ class HerculesPanel {
     failed = outcome.error;
     if (outcome.keep) {
       this.conversation.push({ role: 'assistant', content: outcome.stored });
-      this.say(outcome.stored); // announce the completed reply once
+      this.say(chatToSpeech(outcome.stored)); // announce the completed reply once, without Markdown markers
     } else {
       // No reply: drop the unanswered message so the history still alternates, and give it back.
       this.conversation.pop();
