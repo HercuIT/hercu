@@ -77,3 +77,22 @@ describe('assistant name in the prompts', () => {
     expect(buildSystemPrompt('en')).toMatch(/^You are Hercules,/);
   });
 });
+
+describe('formatting rule (specs/hercules-chat-formatting)', () => {
+  it.each(locales)('"%s": allows only bold and "- " lists, and rules out headings, tables, links, code and italics', (locale) => {
+    const rule = buildSystemPrompt(locale)
+      .split('\n')
+      .find((line) => line.startsWith(locale === 'es' ? '- Formato:' : '- Formatting:'));
+    expect(rule).toBeDefined();
+    expect(rule).toContain('**');
+    expect(rule).toContain('"- "');
+    for (const banned of locale === 'es' ? ['encabezados', 'tablas', 'enlaces', 'código', 'cursivas'] : ['headings', 'tables', 'links', 'code', 'italics']) {
+      expect(rule).toContain(banned);
+    }
+  });
+
+  it.each(locales)('"%s": the rule appears exactly once', (locale) => {
+    const prompt = buildSystemPrompt(locale);
+    expect(prompt.split(locale === 'es' ? '- Formato:' : '- Formatting:')).toHaveLength(2);
+  });
+});

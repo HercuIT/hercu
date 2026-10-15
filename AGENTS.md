@@ -21,6 +21,16 @@ Consult these guides before working on related tasks:
 - [Adding styles or using Tailwind](https://docs.astro.build/en/guides/styling/)
 - [Supporting multiple languages](https://docs.astro.build/en/guides/internationalization/)
 
+## Project rules
+
+Full standards: [GEMINI.md](GEMINI.md). The essentials:
+
+- Every UI string goes in **both** `src/constants/strings/es.ts` and `en.ts`; no hardcoded text in components.
+- Spanish is the default locale (`/`) and uses formal *usted*; English is at `/en/`.
+- Spelling: the company is **HércuIT**; the assistant is **Hércules** (es) / **Hercules** (en).
+- Never log visitor data. Changes to collected data, its destination or its processors need a privacy notice update (both locales) and a new "last updated" date.
+- Keep logic in plain TypeScript modules (`src/client/`, `worker/`) and only wire it to the DOM in components, so it can be unit-tested.
+
 ## Testing
 
 Every change that adds or modifies code must include unit tests. Cover as many scenarios as practical:

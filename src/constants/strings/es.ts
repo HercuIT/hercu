@@ -44,7 +44,7 @@ export const es = {
     intro: "De la idea a producción: inteligencia artificial, calidad de software, desarrollo de aplicaciones y capacitación para su equipo.",
     cta: "Platiquemos de esto",
     groupDescriptions: {
-      ai: "Le ayudamos a identificar dónde la IA aporta valor, a diseñar la arquitectura correcta y a llevar a producción bots confiables, incluida la atención automatizada por WhatsApp Business.",
+      ai: "Le ayudamos a identificar dónde la IA aporta valor, a diseñar la arquitectura correcta y a llevar a producción bots confiables, incluida la atención automatizada por WhatsApp Business y la extracción de datos con IA para generar automáticamente reportes y dashboards en Excel o CSV.",
       qa: "Nuestra especialidad: pruebas y automatización para apps web, móviles y generadas con IA, para que lleguen a producción sin sorpresas.",
       development: "Construimos su aplicación desde cero, o adaptamos a su negocio una plataforma de reservas probada, como BinKleaner o Nopalito Limpio.",
       training: "Capacitación práctica en IA y QA, y dinámicas de team building pensadas para equipos remotos."
@@ -132,6 +132,7 @@ export const es = {
         "ai-architecture": "Arquitectura de soluciones con IA",
         "ai-bot": "Bot con IA",
         "ai-whatsapp-automation": "Automatización de WhatsApp Business con IA",
+        "ai-data-reports": "Extracción de datos con IA y reportes automatizados (Excel, CSV y dashboards)",
         "qa-web-app": "QA para aplicaciones web",
         "qa-mobile-app": "QA para aplicaciones móviles",
         "qa-ai-automation": "QA + automatización con IA",
@@ -154,6 +155,9 @@ export const es = {
   },
   hercules: {
     open: "Hablar con Hércules",
+    /** Bubble next to the launcher on the first page of a session (specs/hercules-launcher-intro). */
+    teaser: "¿Tiene un proyecto en mente? Pregúntele a Hércules",
+    teaserDismiss: "Cerrar aviso",
     heroLink: "o hable con Hércules, nuestro asistente virtual",
     title: "Hércules",
     subtitle: "Asistente virtual de HércuIT",

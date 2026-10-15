@@ -12,6 +12,8 @@
   --color-brand-400: #5E86B0;
   --color-brand-500: #4F6F94;
   --color-brand-600: #3E5A7A;
+  /* Cyan "signal" accent (Hércules launcher). 8.7:1 on ink, but 1.7:1 on mist: never text, never alone on light. */
+  --color-signal: #22D3EE;
 
   /* --font-sora / --font-jetbrains-mono are injected by Astro's <Font /> (astro.config.mjs) */
   --font-sans: var(--font-sora), ui-sans-serif, system-ui, sans-serif;
@@ -53,6 +55,13 @@
     background-color: var(--color-ink);
     color: #fff;
   }
+}
+
+/* Hércules launcher sweep (HerculesLauncher.astro): animatable angle for the conic boot ring. */
+@property --hl-sweep {
+  syntax: '<angle>';
+  inherits: false;
+  initial-value: 0deg;
 }
 
 /* Hero aura angle (CircuitPulse.astro): registering it makes the conic gradient animatable. */

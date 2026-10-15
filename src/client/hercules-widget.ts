@@ -1,7 +1,10 @@
 // Hercules chat panel (specs/hercules-assistant/03). Loaded on demand (dynamic import) the first time
 // the visitor opens the assistant, so pages ship no widget JS until then. Vanilla DOM, no framework;
-// visitor and model text is only ever inserted as text nodes (never innerHTML).
+// visitor and model text is only ever inserted as text nodes (never innerHTML). Replies are formatted
+// (bold, bullet lists) by chat-render.ts, which builds elements and text nodes only.
 import type { Dictionary } from '../constants/strings';
+import { chatToSpeech } from './chat-format';
+import { renderReply } from './chat-render';
 import {
   clearConversation,
   isConversationFull,
@@ -198,7 +201,9 @@ class HerculesPanel {
       assistant: 'mr-auto max-w-[85%] rounded-2xl rounded-bl-sm bg-mist px-3.5 py-2.5 text-sm text-ink',
       notice: 'mx-auto max-w-[90%] rounded-lg border border-ink/10 px-3 py-2 text-center text-xs text-steel',
     } as const;
-    const node = el('p', `${styles[role]} whitespace-pre-wrap break-words`, text);
+    // Replies are formatted (block elements, so a div); the visitor's text and notices stay exactly as typed.
+    const node = role === 'assistant' ? el('div', `${styles[role]} break-words`) : el('p', `${styles[role]} whitespace-pre-wrap break-words`, text);
+    if (role === 'assistant') renderReply(node, text);
     this.log.append(node);
     this.log.scrollTop = this.log.scrollHeight;
     return node;
@@ -390,7 +395,7 @@ class HerculesPanel {
               replyNode = this.bubble('assistant', '');
             }
             reply += event.delta;
-            replyNode.textContent = reply;
+            renderReply(replyNode, reply);
             this.log.scrollTop = this.log.scrollHeight;
           } else if (event.event === 'lead_sent') {
             leadSent = true;
@@ -410,7 +415,7 @@ class HerculesPanel {
     failed = outcome.error;
     if (outcome.keep) {
       this.conversation.push({ role: 'assistant', content: outcome.stored });
-      this.say(outcome.stored); // announce the completed reply once
+      this.say(chatToSpeech(outcome.stored)); // announce the completed reply once, without Markdown markers
     } else {
       // No reply: drop the unanswered message so the history still alternates, and give it back.
       this.conversation.pop();

@@ -136,3 +136,26 @@ describe('consent wording is identical in the checkbox and the short privacy not
     expect(label).toMatch(locale === 'es' ? /correo electrónico/ : /email/);
   });
 });
+
+describe('launcher teaser copy (specs/hercules-launcher-intro)', () => {
+  it.each(['es', 'en'] as const)('"%s": teaser and dismiss label are non-blank, and the teaser is at most 60 characters', (locale) => {
+    // A length bound only: whether it fits two lines at 360 px depends on the font and the bubble's
+    // width, so that is checked visually (quality-test-plan.md §6), not here.
+    const h = strings[locale].hercules;
+    expect(h.teaser.trim()).not.toBe('');
+    expect(h.teaserDismiss.trim()).not.toBe('');
+    expect(charLength(h.teaser)).toBeLessThanOrEqual(60);
+  });
+
+  it('names the assistant with the right spelling in each language', () => {
+    expect(strings.es.hercules.teaser).toContain('Hércules');
+    expect(strings.en.hercules.teaser).toContain('Hercules');
+    expect(strings.en.hercules.teaser).not.toContain('Hércules');
+  });
+
+  it('uses the formal "usted" register in Spanish', () => {
+    expect(strings.es.hercules.teaser).toMatch(/Pregúntele/);
+    expect(usesTu(strings.es.hercules.teaser)).toBe(false);
+    expect(usesTu(strings.es.hercules.teaserDismiss)).toBe(false);
+  });
+});

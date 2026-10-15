@@ -1,5 +1,15 @@
 # Website Implementation Plan: Hércuit, S. de R.L. de C.V.
 
+> **Status (October 2026):** this is the original planning document, kept for reference. It has
+> been implemented, with these differences. For the current state, see [README.md](README.md) and
+> [GEMINI.md](GEMINI.md).
+> - The brand is spelled **HércuIT**.
+> - E-commerce was removed from the services. The offer is now AI (including WhatsApp Business
+>   automation and AI data extraction with automated Excel/CSV reports and dashboards), software
+>   quality (QA), app development, and training.
+> - The site is bilingual (Spanish at `/`, English at `/en/`) and hosted on Cloudflare Workers.
+> - It includes **Hércules**, an AI assistant that sends leads by email.
+
 ## 1. Project Overview
 Planning a professional, informative website for **Hércuit**, a technology solutions firm based in Torreón, Coahuila. The site will serve as a digital storefront highlighting their expertise in software development, engineering, and technological consultancy.
 

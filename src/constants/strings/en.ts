@@ -35,7 +35,7 @@ export const en = {
     intro: "From idea to production: artificial intelligence, software quality, app development and training for your team.",
     cta: "Let's talk about this",
     groupDescriptions: {
-      ai: "We help you find where AI adds value, design the right architecture and take reliable bots to production, including automated customer service on WhatsApp Business.",
+      ai: "We help you find where AI adds value, design the right architecture and take reliable bots to production, including automated customer service on WhatsApp Business and AI data extraction that builds Excel or CSV reports and dashboards automatically.",
       qa: "Our specialty: testing and automation for web, mobile and AI-generated apps, so they reach production without surprises.",
       development: "We build your app from scratch, or adapt a proven booking platform, like BinKleaner or Nopalito Limpio, to your business.",
       training: "Hands-on AI and QA training, plus team building designed for remote teams."
@@ -121,6 +121,7 @@ export const en = {
         "ai-architecture": "AI Architecture",
         "ai-bot": "AI Bot",
         "ai-whatsapp-automation": "WhatsApp Business Automation with AI",
+        "ai-data-reports": "AI Data Extraction and Automated Reports (Excel, CSV and Dashboards)",
         "qa-web-app": "QA for Web Apps",
         "qa-mobile-app": "QA for Mobile Apps",
         "qa-ai-automation": "QA + AI Automation",
@@ -143,6 +144,8 @@ export const en = {
   },
   hercules: {
     open: "Chat with Hercules",
+    teaser: "Got a project in mind? Ask Hercules",
+    teaserDismiss: "Dismiss",
     heroLink: "or chat with Hercules, our virtual assistant",
     title: "Hercules",
     subtitle: "HércuIT's virtual assistant",
