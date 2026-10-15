@@ -12,7 +12,10 @@ const t = useStrings(locale);
 // `||` (not `??`) so an empty CI variable still falls back. The secret lives in the Cloudflare Secrets
 // Store (TURNSTILE_SECRET binding, see wrangler.jsonc), never in the repo or in .dev.vars.
 const SITE_KEY = '0x4AAAAAAFXMST0WMhwPPQv6';
-const siteKey = import.meta.env.PUBLIC_TURNSTILE_SITE_KEY || SITE_KEY;
+const siteKey: string = import.meta.env.PUBLIC_TURNSTILE_SITE_KEY || SITE_KEY;
+if (!siteKey.trim()) {
+  throw new Error('HerculesLauncher: the Turnstile site key is empty; the chat could not verify visitors.');
+}
 
 const config = { locale, siteKey, strings: t.hercules, privacyHref: privacyPaths[locale], phone: shared.phone };
 ---

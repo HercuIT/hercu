@@ -115,7 +115,11 @@ export class TurnstileGate {
   private api: TurnstileApi | null = null;
   private widgetId: string | null = null;
   private markReady!: () => void;
-  private readonly ready = new Promise<void>((resolve) => (this.markReady = resolve));
+  private markFailed!: (err: Error) => void;
+  private readonly ready = new Promise<void>((resolve, reject) => {
+    this.markReady = resolve;
+    this.markFailed = reject;
+  });
   private pending: { resolve(token: string): void; reject(err: Error): void } | null = null;
 
   constructor(private readonly timeoutMs = TURNSTILE_TIMEOUT_MS) {}
@@ -125,6 +129,15 @@ export class TurnstileGate {
     this.api = api;
     this.widgetId = widgetId;
     this.markReady();
+  }
+
+  /**
+   * The widget can never become ready (missing site key, render threw). Every waiting and future
+   * token() rejects immediately with `err` instead of hanging until the timeout.
+   */
+  fail(err: Error): void {
+    this.ready.catch(() => {}); // no unhandled rejection if nobody is waiting yet
+    this.markFailed(err);
   }
 
   /** Wire to the widget's `callback`. */

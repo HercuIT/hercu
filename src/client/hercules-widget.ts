@@ -267,14 +267,25 @@ class HerculesPanel {
 
   private renderTurnstile(): void {
     if (!window.turnstile || this.turnstileId) return;
-    this.turnstileId = window.turnstile.render(this.turnstileBox, {
-      sitekey: this.config.siteKey,
-      action: TURNSTILE_ACTION, // the Worker rejects tokens without this exact action
-      execution: 'execute',
-      appearance: 'interaction-only',
-      callback: (token: string) => this.gate.resolveToken(token),
-      'error-callback': () => this.gate.rejectToken(),
-    });
+    if (!this.config.siteKey) {
+      // A misconfigured build must degrade to "unavailable", not an uncaught TurnstileError.
+      this.gate.fail(new Error('turnstile site key missing'));
+      return;
+    }
+    try {
+      this.turnstileId = window.turnstile.render(this.turnstileBox, {
+        sitekey: this.config.siteKey,
+        action: TURNSTILE_ACTION, // the Worker rejects tokens without this exact action
+        execution: 'execute',
+        appearance: 'interaction-only',
+        callback: (token: string) => this.gate.resolveToken(token),
+        'error-callback': () => this.gate.rejectToken(),
+      });
+    } catch (err) {
+      // Turnstile throws synchronously on invalid parameters (e.g. a bad site key).
+      this.gate.fail(err instanceof Error ? err : new Error('turnstile render failed'));
+      return;
+    }
     this.gate.setReady(window.turnstile, this.turnstileId);
   }
 

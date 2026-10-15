@@ -292,3 +292,31 @@ describe('errorNotice (spoken + visible error text)', () => {
     expect(errorNotice('refused', e, 'x').urgent).toBe(true);
   });
 });
+
+describe('TurnstileGate.fail (misconfigured widget)', () => {
+  it('rejects a waiting token() immediately instead of after the timeout', async () => {
+    vi.useFakeTimers();
+    try {
+      const gate = new TurnstileGate(15_000);
+      const token = gate.token();
+      const assertion = expect(token).rejects.toThrow('turnstile site key missing');
+      gate.fail(new Error('turnstile site key missing'));
+      await vi.advanceTimersByTimeAsync(0); // no 15 s wait needed
+      await assertion;
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it('rejects every later token() too', async () => {
+    const gate = new TurnstileGate(1000);
+    gate.fail(new Error('render failed'));
+    await expect(gate.token()).rejects.toThrow('render failed');
+    await expect(gate.token()).rejects.toThrow('render failed');
+  });
+
+  it('does not raise an unhandled rejection when nobody is waiting', async () => {
+    const gate = new TurnstileGate(1000);
+    expect(() => gate.fail(new Error('x'))).not.toThrow();
+  });
+});
