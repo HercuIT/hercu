@@ -110,6 +110,12 @@ export const es = {
     locationLabel: "Ubicación",
     phoneLabel: "Teléfono",
     callPrefix: "Llámenos al",
+    whatsappLabel: "WhatsApp",
+    whatsappCta: "Escríbanos por WhatsApp",
+    /** Screen-reader label; the phone number goes between prefix and suffix. */
+    whatsappAria: { prefix: "Escríbanos por WhatsApp al", suffix: "(se abre en una pestaña nueva)" },
+    /** Pre-filled text of the chat the link opens. */
+    whatsappMessage: "Hola, HércuIT. Me gustaría información sobre sus servicios.",
     formName: "Nombre completo",
     formEmail: "Correo electrónico",
     service: {

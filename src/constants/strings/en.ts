@@ -101,6 +101,10 @@ export const en = {
     locationLabel: "Location",
     phoneLabel: "Phone",
     callPrefix: "Call us at",
+    whatsappLabel: "WhatsApp",
+    whatsappCta: "Message us on WhatsApp",
+    whatsappAria: { prefix: "Message us on WhatsApp at", suffix: "(opens in a new tab)" },
+    whatsappMessage: "Hello, HércuIT. I'd like information about your services.",
     formName: "Full name",
     formEmail: "Email",
     service: {

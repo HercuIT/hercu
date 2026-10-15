@@ -9,6 +9,8 @@ export const shared = {
   location: "Torreón, Coahuila, México",
   phone: {
     display: "+52 33 1713 3469",
+    /** E.164 form: the single source for the tel: and WhatsApp links. */
+    e164: "+523317133469",
     href: "tel:+523317133469"
   },
   brand: {
