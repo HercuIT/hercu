@@ -34,11 +34,11 @@
 
 ## Testing
 
-Every change that adds or modifies code must include unit tests. Cover as many scenarios as practical:
+After adding or modifying code, add unit tests for all applicable positive, negative and edge scenarios. Each new function, branch and rule gets tests for:
 
-- **Happy path:** the expected, valid behavior.
-- **Negative scenarios:** invalid input, missing or unknown values, and failure paths. Assert that the code rejects them or falls back as intended.
-- **Edge cases:** empty values, boundaries (first/last, min/max, zero, one, many), unusual characters (accents such as `é`/`ñ`, emoji, very long strings), and every supported locale (`es`, `en`).
+- **Positive (happy path):** the expected, valid behavior.
+- **Negative:** invalid input, missing or unknown values, and failure paths. Assert that the code rejects them or falls back as intended.
+- **Edge:** empty values, boundaries (first/last, min/max, zero, one, many), unusual characters (accents such as `é`/`ñ`, emoji, very long strings), and every supported locale (`es`, `en`).
 
 Rules:
 - Keep tests next to the code they cover or under `tests/`, named `*.test.ts`.
