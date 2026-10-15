@@ -9,6 +9,8 @@ export const DRAW_STAGGER_MS = 80;
 export const SIGNAL_MS = 1400; // one signal run, start → node
 export const PING_MS = 600; // node ping when a signal arrives
 export const AURA_MS = 2400; // aura fade/turn-in
+export const NODE_IN_MS = 300; // ring node fade-in
+export const REPLAY_STAGGER_MS = 110; // hover replay stagger (user-initiated, outside the budget)
 export const MOTION_BUDGET_MS = 5000;
 
 export type Trace = {
@@ -44,11 +46,21 @@ export const traces: Trace[] = geometry.map((g, i) => {
   return { ...g, drawDelayMs, signalDelaysMs: [first, first + 450, first + 900] };
 });
 
+/** When a trace's ring node starts fading in: as its trace finishes drawing. */
+export function nodeDelayMs(trace: Pick<Trace, 'drawDelayMs'>): number {
+  return trace.drawDelayMs + Math.round(DRAW_MS * 0.8);
+}
+
 /** Last moment any automatic animation is still running, in ms from page load. */
 export function totalMotionMs(list: readonly Trace[]): number {
   let end = AURA_MS;
   for (const t of list) {
-    end = Math.max(end, t.drawDelayMs + DRAW_MS, ...t.signalDelaysMs.map((s) => s + SIGNAL_MS + PING_MS));
+    end = Math.max(
+      end,
+      t.drawDelayMs + DRAW_MS,
+      nodeDelayMs(t) + NODE_IN_MS,
+      ...t.signalDelaysMs.map((s) => s + SIGNAL_MS + PING_MS),
+    );
   }
   return end;
 }

@@ -1,14 +1,33 @@
 ---
 // Decorative "Circuit Pulse" behind the hero (specs/circuit-animation): traces draw in, three rounds of
 // signals run to ring nodes, then everything rests (≤ 5 s, WCAG 2.2.2). Pure CSS + inline SVG, no JS.
-import { DRAW_MS, PING_MS, SIGNAL_MS, VIEWBOX, traces, validateTraces } from '../constants/circuit-traces';
+import {
+  AURA_MS,
+  DRAW_MS,
+  NODE_IN_MS,
+  PING_MS,
+  REPLAY_STAGGER_MS,
+  SIGNAL_MS,
+  VIEWBOX,
+  nodeDelayMs,
+  traces,
+  validateTraces,
+} from '../constants/circuit-traces';
 
 validateTraces(traces); // a bad geometry/timing edit fails the build
+// Every animation duration below comes from circuit-traces.ts (as CSS variables), so the motion
+// budget checker measures exactly what renders. Never hard-code a duration in the <style>.
+// The <style> is is:global with every selector under .circuit-pulse, so Astro adds no per-element
+// scoping attributes to the ~75 SVG nodes.
 
 const ms = (value: number) => `${value}ms`;
 ---
 
-<div class="circuit-pulse pointer-events-none absolute inset-0" aria-hidden="true">
+<div
+  class="circuit-pulse pointer-events-none absolute inset-0"
+  aria-hidden="true"
+  style={`--aura-ms:${ms(AURA_MS)};--node-in-ms:${ms(NODE_IN_MS)};--replay-stagger:${ms(REPLAY_STAGGER_MS)}`}
+>
   <div class="aura absolute -top-32 -right-32 w-[36rem] h-[36rem]"></div>
   <svg
     class="circuit absolute inset-y-0 right-0 h-full w-full md:w-3/5 opacity-35 md:opacity-100"
@@ -44,14 +63,13 @@ const ms = (value: number) => `${value}ms`;
           cx={trace.end[0]}
           cy={trace.end[1]}
           r="4"
-          style={`--node-delay:${ms(trace.drawDelayMs + DRAW_MS * 0.8)}`}
+          style={`--node-delay:${ms(nodeDelayMs(trace))}`}
         />
       </g>
     ))}
   </svg>
 </div>
 
-<!-- is:global with every selector under .circuit-pulse: no per-element scoping attributes in the HTML. -->
 <style is:global>
   /* Fade the circuit out toward the headline column so it never competes with the text. */
   .circuit-pulse .circuit {
@@ -91,7 +109,7 @@ const ms = (value: number) => `${value}ms`;
     fill: var(--color-white);
     stroke: var(--color-brand-500);
     stroke-width: 2;
-    animation: node-in 300ms ease-out var(--node-delay) both;
+    animation: node-in var(--node-in-ms) ease-out var(--node-delay) both;
   }
 
   /* Ping: an expanding ring each time a signal arrives. */
@@ -116,13 +134,18 @@ const ms = (value: number) => `${value}ms`;
       transparent 60%,
       color-mix(in oklab, var(--color-brand-500) 18%, transparent)
     );
-    animation: aura-in 2400ms ease-out both;
+    animation: aura-in var(--aura-ms) ease-out both;
   }
 
-  /* Replay one round on hover (user-initiated, so outside WCAG 2.2.2). Pointer devices only. */
+  /* Replay one round on hover (user-initiated, so outside WCAG 2.2.2). Pointer devices only.
+     The base `signal-run` stays FIRST in the list, byte-identical to its declaration above, so the
+     browser keeps it as the same (already finished) animation. Replacing the whole list would make
+     it a new animation on hover-out and replay the intro signals after their delays. */
   @media (hover: hover) {
     .hero:hover .circuit-pulse .signal-1 {
-      animation: signal-replay var(--signal-ms) cubic-bezier(0.4, 0, 0.2, 1) calc(var(--i) * 110ms) 1 none;
+      animation:
+        signal-run var(--signal-ms) cubic-bezier(0.4, 0, 0.2, 1) var(--signal-delay) 1 none,
+        signal-replay var(--signal-ms) cubic-bezier(0.4, 0, 0.2, 1) calc(var(--i) * var(--replay-stagger)) 1 none;
     }
   }
 
