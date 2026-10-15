@@ -1,8 +1,8 @@
 import Anthropic from '@anthropic-ai/sdk';
 import { describe, expect, it, vi } from 'vitest';
-import { buildParams, EMAIL_ERROR_MAX, emailFailureLog, formatSse, MAX_ITERATIONS, REDACTED, runConversation, type Deps, type SseEvent, type StreamParams } from './hercules';
+import { buildParams, EMAIL_ERROR_MAX, emailFailureLog, formatSse, MAX_ITERATIONS, MIN_SHARED, REDACTED, runConversation, type Deps, type SseEvent, type StreamParams } from './hercules';
 import type { ChatMessage } from './guards';
-import type { Lead, LeadEmail } from './lead';
+import { formatLeadEmail, type Lead, type LeadEmail } from './lead';
 
 type Block = Record<string, unknown>;
 type Turn = { text?: string; content?: Block[]; stop_reason: string } | { text: string; throws: Error } | Error;
@@ -477,5 +477,64 @@ describe('runConversation logs no visitor data when the email binding echoes it'
     expect(logged).toContain('invalid Reply-To');
     expect(logged).not.toContain(validLead.email);
     expect(logged).not.toContain(validLead.name);
+  });
+});
+
+describe('emailFailureLog redacts partial echoes of visitor data', () => {
+  const longName = 'María José Fernández de la Garza Ñúñez Villarreal Montemayor Treviño Cárdenas Elizondo Sepúlveda Río';
+  const lead = {
+    name: longName,
+    email: 'maria.jose@empresa.com',
+    service: 'ai-whatsapp-automation',
+    summary: 'Queremos automatizar la atención por WhatsApp para nuestra cadena de farmacias en Saltillo y Monterrey.',
+    preferredContact: 'email',
+    consent: true,
+  } as unknown as Lead;
+  const log = (message: string) => emailFailureLog(new Error(message), lead).message;
+
+  it('test setup: the name is 100 characters and the real subject cuts it short', () => {
+    expect(longName).toHaveLength(100);
+    const { subject } = formatLeadEmail(lead, [], { locale: 'es', sentAt: new Date('2026-10-15T12:00:00Z') });
+    expect(subject.length).toBeLessThanOrEqual(150);
+    expect(subject).not.toContain(longName);
+    expect(subject).toContain('María José');
+  });
+
+  it('redacts the truncated name when the error echoes the real subject (the reported case)', () => {
+    const { subject } = formatLeadEmail(lead, [], { locale: 'es', sentAt: new Date('2026-10-15T12:00:00Z') });
+    const message = log(`subject rejected: ${subject}`);
+    expect(message.startsWith('subject rejected: [Hércules] ')).toBe(true);
+    expect(message.endsWith(REDACTED)).toBe(true);
+    for (const word of ['María', 'Fernández', 'Garza', 'Ñúñez']) expect(message).not.toContain(word);
+  });
+
+  it('redacts a part of the summary quoted from the middle, in another case', () => {
+    const message = log('body rejected near "CADENA DE FARMACIAS EN SALTILLO" (line 3)');
+    expect(message).toBe(`body rejected near "${REDACTED}" (line 3)`);
+  });
+
+  it('redacts a cut-off email address with no domain left', () => {
+    expect(log('invalid Reply-To: maria.jose@empr')).toBe(`invalid Reply-To: ${REDACTED}`);
+    expect(log('invalid Reply-To: maria.jos…')).toBe(`invalid Reply-To: ${REDACTED}…`);
+  });
+
+  it(`redacts a shared stretch of exactly ${MIN_SHARED} characters, and keeps one of ${MIN_SHARED - 1}`, () => {
+    // "Saltil" (6) is part of the summary; "Salti" (5) alone is too short to say it came from it.
+    expect(log('near Saltil x')).toBe(`near ${REDACTED} x`);
+    expect(log('near Salti x')).toBe('near Salti x');
+  });
+
+  it('merges adjacent redacted stretches into one marker', () => {
+    expect(log('María José Fernández maria.jose@empresa.com')).toBe(REDACTED);
+  });
+
+  it("keeps Cloudflare's wording that the visitor's values don't share", () => {
+    expect(log('destination address not verified')).toBe('destination address not verified');
+  });
+
+  it('handles a very long error (only the first part is examined and logged)', () => {
+    const message = log(`${'x'.repeat(5000)} ${longName}`);
+    expect(message).toHaveLength(EMAIL_ERROR_MAX);
+    expect(message).not.toContain('María');
   });
 });

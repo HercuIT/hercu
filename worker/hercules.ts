@@ -180,26 +180,60 @@ export const EMAIL_ERROR_MAX = 300;
 
 export const REDACTED = '[redacted]';
 
-const escapeRegExp = (value: string) => value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+/** Shortest stretch shared with a visitor value that is redacted; shorter values must match whole. */
+export const MIN_SHARED = 6;
+
+/** Characters of the raw error examined for redaction (bounds the work; only EMAIL_ERROR_MAX are logged). */
+const REDACT_INPUT_MAX = 1000;
+
+/**
+ * Marks in `mask` every stretch of `message` (case-insensitive, per character) that also appears in
+ * `value`, is at least `min` characters long and starts at a word boundary in the message: an echo
+ * or quote starts at a word, while "ender" inside "sender" is just a word the summary happens to
+ * share. Dynamic programming over common suffixes: for each message position, the longest shared
+ * stretch ending there is trimmed to its first word start, and marked if still long enough.
+ */
+const isWordChar = (c: string) => /[\p{L}\p{N}]/u.test(c);
+
+function markShared(message: string[], value: string[], min: number, mask: boolean[]): void {
+  const a = message.map((c) => c.toLowerCase());
+  const b = value.map((c) => c.toLowerCase());
+  let previous = new Uint16Array(b.length + 1);
+  for (let i = 1; i <= a.length; i++) {
+    const current = new Uint16Array(b.length + 1);
+    let longest = 0;
+    for (let j = 1; j <= b.length; j++) {
+      if (a[i - 1] === b[j - 1]) {
+        current[j] = previous[j - 1] + 1;
+        longest = Math.max(longest, current[j]);
+      }
+    }
+    let start = i - longest;
+    while (start < i && start > 0 && isWordChar(message[start - 1])) start++;
+    if (i - start >= min) mask.fill(true, start, i);
+    previous = current;
+  }
+}
 
 /**
  * Log entry for a failed send. Keeps Cloudflare's reason (e.g. "destination address not verified"),
  * but the binding received the visitor's Reply-To, name and summary, and its error may echo any of
- * them. So the message is redacted before logging: every value the visitor gave (when the lead is
- * known), then every email address not on hercuit.com. It is also single-lined, stripped of control
- * characters and capped, in that order, so a cap can't cut a value in half before it's redacted.
+ * them, whole or cut short (the subject caps the name at 150 characters; an error may quote part
+ * of the body). So before logging, the message is single-lined and stripped of control characters,
+ * then redacted: every stretch of MIN_SHARED+ characters shared with a visitor value (a shorter
+ * value only when it appears whole), then every email address not on hercuit.com. Capping comes
+ * last, so the cap can't cut a value short of being recognized.
  */
 export function emailFailureLog(err: unknown, lead?: Lead): { event: 'email_failed'; kind: string; message: string } {
   if (!(err instanceof Error)) return { event: 'email_failed', kind: 'unknown', message: '' };
-  let message = headerSafe(err.message, Infinity);
-  const visitorValues = [lead?.summary, lead?.email, lead?.name, lead?.company, lead?.phone]
-    .map((value) => headerSafe(value ?? '', Infinity))
-    .filter((value) => value.length >= 2)
-    .sort((a, b) => b.length - a.length);
-  for (const value of visitorValues) {
-    message = message.replace(new RegExp(escapeRegExp(value), 'giu'), REDACTED);
+  const chars = Array.from(headerSafe(err.message, Infinity)).slice(0, REDACT_INPUT_MAX);
+  const mask = chars.map(() => false);
+  for (const field of [lead?.summary, lead?.email, lead?.name, lead?.company, lead?.phone]) {
+    const value = Array.from(headerSafe(field ?? '', Infinity));
+    if (value.length >= 2) markShared(chars, value, Math.min(MIN_SHARED, value.length), mask);
   }
-  message = message.replace(/[^\s@<>"'(),;:]+@[^\s@<>"'(),;:]+/gu, (address) =>
+  const redacted = chars.map((c, i) => (!mask[i] ? c : mask[i - 1] ? '' : REDACTED)).join('');
+  const message = redacted.replace(/[^\s@<>"'(),;:]+@[^\s@<>"'(),;:]+/gu, (address) =>
     /@hercuit\.com\.?$/i.test(address) ? address : REDACTED,
   );
   return { event: 'email_failed', kind: err.name, message: message.slice(0, EMAIL_ERROR_MAX) };
