@@ -1,7 +1,7 @@
 // Worker entry: POST /api/hercules runs the assistant; everything else is the static site.
 // `run_worker_first: ["/api/*"]` in wrangler.jsonc means static pages never reach this code.
 import Anthropic from '@anthropic-ai/sdk';
-import { GuardError, parseHerculesRequest, parseHostnames, TURNSTILE_ACTION, verifyTurnstile } from './guards';
+import { checkRequestShape, GuardError, parseHostnames, readHerculesBody, TURNSTILE_ACTION, verifyTurnstile } from './guards';
 import { formatSse, runConversation, type ModelStream, type SseEvent, type StreamParams } from './hercules';
 import type { LeadEmail } from './lead';
 
@@ -39,12 +39,13 @@ function log(entry: Record<string, unknown>): void {
 async function handleHercules(request: Request, env: Env, ctx: ExecutionContext): Promise<Response> {
   const ip = request.headers.get('CF-Connecting-IP');
 
-  const { success } = await env.CHAT_LIMITER.limit({ key: ip ?? 'unknown' });
-  if (!success) return sseError('rate_limited', 429);
-
   let parsed;
   try {
-    parsed = await parseHerculesRequest(request);
+    // Origin/method/type first: rejected cross-site requests must not consume the visitor's quota.
+    checkRequestShape(request);
+    const { success } = await env.CHAT_LIMITER.limit({ key: ip ?? 'unknown' });
+    if (!success) return sseError('rate_limited', 429);
+    parsed = await readHerculesBody(request);
   } catch (err) {
     if (err instanceof GuardError) {
       log({ event: 'rejected', reason: err.message });
@@ -93,7 +94,7 @@ async function handleHercules(request: Request, env: Env, ctx: ExecutionContext)
 
   ctx.waitUntil(
     runConversation(
-      { model: env.HERCULES_MODEL, locale: parsed.locale, history: parsed.messages },
+      { model: env.HERCULES_MODEL, locale: parsed.locale, history: parsed.messages, privacyAccepted: parsed.privacyAccepted },
       { stream, sendEmail, now: () => new Date(), log },
       emit,
     )

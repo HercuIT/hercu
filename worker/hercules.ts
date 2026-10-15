@@ -11,7 +11,8 @@ type BetaMessageParam = Anthropic.Beta.Messages.BetaMessageParam;
 type BetaToolResultBlockParam = Anthropic.Beta.Messages.BetaToolResultBlockParam;
 export type StreamParams = Parameters<Anthropic['beta']['messages']['stream']>[0];
 
-export const MAX_ITERATIONS = 2;
+// Up to 2 tool rounds plus a reserved final turn (tools off) so the visitor always gets an answer.
+export const MAX_ITERATIONS = 3;
 export const MAX_TOKENS = 4096;
 
 export type SseEvent =
@@ -39,7 +40,12 @@ function systemPrompt(locale: 'es' | 'en'): string {
   return prompt;
 }
 
-export function buildParams(model: string, locale: 'es' | 'en', messages: BetaMessageParam[]): StreamParams {
+export function buildParams(
+  model: string,
+  locale: 'es' | 'en',
+  messages: BetaMessageParam[],
+  options: { allowTools: boolean } = { allowTools: true },
+): StreamParams {
   return {
     model,
     max_tokens: MAX_TOKENS,
@@ -49,7 +55,9 @@ export function buildParams(model: string, locale: 'es' | 'en', messages: BetaMe
     fallbacks: 'default',
     system: [{ type: 'text', text: systemPrompt(locale), cache_control: { type: 'ephemeral' } }],
     tools: [submitLeadTool],
-    tool_choice: { type: 'auto' },
+    // 'none' on the reserved last turn: the model must reply in text. (Forced choices are not
+    // supported on this model; 'auto' and 'none' are.)
+    tool_choice: { type: options.allowTools ? 'auto' : 'none' },
     messages,
   };
 }
@@ -63,7 +71,7 @@ function failureKind(err: unknown): string {
 }
 
 export async function runConversation(
-  input: { model: string; locale: 'es' | 'en'; history: ChatMessage[] },
+  input: { model: string; locale: 'es' | 'en'; history: ChatMessage[]; privacyAccepted: boolean },
   deps: Deps,
   emit: (e: SseEvent) => void,
 ): Promise<void> {
@@ -72,7 +80,8 @@ export async function runConversation(
 
   try {
     for (let iteration = 0; iteration < MAX_ITERATIONS; iteration++) {
-      const stream = deps.stream(buildParams(input.model, input.locale, messages));
+      const finalTurn = iteration === MAX_ITERATIONS - 1;
+      const stream = deps.stream(buildParams(input.model, input.locale, messages, { allowTools: !finalTurn }));
       stream.onText((delta) => emit({ event: 'text', data: { delta } }));
 
       let message: BetaMessage;
@@ -98,6 +107,7 @@ export async function runConversation(
         return;
       }
       if (message.stop_reason !== 'tool_use') return; // end_turn, max_tokens, …: the reply is complete
+      if (finalTurn) return; // never execute a tool whose result no later turn could explain
 
       // Replay the full assistant turn (thinking blocks included, unchanged), then the tool results.
       messages.push({ role: 'assistant', content: message.content });
@@ -116,7 +126,7 @@ export async function runConversation(
 
 async function handleToolUse(
   block: { id: string; name: string; input: unknown },
-  input: { locale: 'es' | 'en'; history: ChatMessage[] },
+  input: { locale: 'es' | 'en'; history: ChatMessage[]; privacyAccepted: boolean },
   deps: Deps,
   leadSent: boolean,
   emit: (e: SseEvent) => void,
@@ -130,6 +140,14 @@ async function handleToolUse(
 
   if (block.name !== SUBMIT_LEAD) return result(`Unknown tool "${block.name}".`, true);
   if (leadSent) return result('The request was already sent in this conversation; do not send it again.', true);
+
+  // Consent is authorized by the visitor's own checkbox (sent by the widget), never by the model's say-so.
+  if (!input.privacyAccepted) {
+    return result(
+      'Not sent: the visitor has not ticked the "accept the privacy notice" checkbox below the chat. Ask them to tick it and confirm again.',
+      true,
+    );
+  }
 
   const validation = validateLead(block.input);
   if (!validation.ok) {

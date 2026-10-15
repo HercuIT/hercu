@@ -7,7 +7,13 @@ export const MAX_USER_CHARS = 2000;
 export const MAX_ASSISTANT_CHARS = 4000;
 
 export type ChatMessage = { role: 'user' | 'assistant'; content: string };
-export type HerculesRequest = { locale: 'es' | 'en'; turnstileToken: string; messages: ChatMessage[] };
+export type HerculesRequest = {
+  locale: 'es' | 'en';
+  turnstileToken: string;
+  /** True only while the visitor has ticked the privacy-notice checkbox in the widget. */
+  privacyAccepted: boolean;
+  messages: ChatMessage[];
+};
 
 export class GuardError extends Error {
   constructor(
@@ -19,8 +25,11 @@ export class GuardError extends Error {
   }
 }
 
-/** Checks method, origin, content type and size, then parses and validates the body. */
-export async function parseHerculesRequest(request: Request): Promise<HerculesRequest> {
+/**
+ * Cheap header-only checks (method, origin, content type, declared size). Runs BEFORE the rate
+ * limiter, so a hostile page's cross-origin form posts can't burn a visitor's per-IP quota.
+ */
+export function checkRequestShape(request: Request): void {
   if (request.method !== 'POST') throw new GuardError('invalid_request', 'method not allowed', 405);
   const origin = request.headers.get('Origin');
   if (!origin || origin !== new URL(request.url).origin) throw new GuardError('invalid_request', 'cross-origin request', 403);
@@ -29,9 +38,39 @@ export async function parseHerculesRequest(request: Request): Promise<HerculesRe
   }
   const declared = Number(request.headers.get('Content-Length') ?? '0');
   if (declared > MAX_BODY_BYTES) throw new GuardError('invalid_request', 'body too large', 413);
-  const raw = await request.text();
-  if (new TextEncoder().encode(raw).length > MAX_BODY_BYTES) throw new GuardError('invalid_request', 'body too large', 413);
+}
 
+/**
+ * Reads the body incrementally and cancels as soon as it exceeds MAX_BODY_BYTES, so a missing or
+ * false Content-Length can't make the Worker buffer an unbounded body.
+ */
+export async function readCappedBody(request: Request, maxBytes = MAX_BODY_BYTES): Promise<string> {
+  if (!request.body) return '';
+  const reader = request.body.getReader();
+  const chunks: Uint8Array[] = [];
+  let total = 0;
+  for (;;) {
+    const { done, value } = await reader.read();
+    if (done) break;
+    total += value.byteLength;
+    if (total > maxBytes) {
+      await reader.cancel();
+      throw new GuardError('invalid_request', 'body too large', 413);
+    }
+    chunks.push(value);
+  }
+  const bytes = new Uint8Array(total);
+  let offset = 0;
+  for (const chunk of chunks) {
+    bytes.set(chunk, offset);
+    offset += chunk.byteLength;
+  }
+  return new TextDecoder().decode(bytes);
+}
+
+/** Reads (capped) and validates the body. Call after checkRequestShape. */
+export async function readHerculesBody(request: Request): Promise<HerculesRequest> {
+  const raw = await readCappedBody(request);
   let body: unknown;
   try {
     body = JSON.parse(raw);
@@ -41,14 +80,21 @@ export async function parseHerculesRequest(request: Request): Promise<HerculesRe
   return validateBody(body);
 }
 
+/** Shape checks, then the capped body read and validation (no rate limiting in between). */
+export async function parseHerculesRequest(request: Request): Promise<HerculesRequest> {
+  checkRequestShape(request);
+  return readHerculesBody(request);
+}
+
 export function validateBody(body: unknown): HerculesRequest {
   if (typeof body !== 'object' || body === null || Array.isArray(body)) throw new GuardError('invalid_request', 'body must be an object');
-  const { locale, turnstileToken, messages } = body as Record<string, unknown>;
+  const { locale, turnstileToken, privacyAccepted, messages } = body as Record<string, unknown>;
   if (locale !== 'es' && locale !== 'en') throw new GuardError('invalid_request', 'unknown locale');
+  if (typeof privacyAccepted !== 'boolean') throw new GuardError('invalid_request', 'privacyAccepted must be a boolean');
   if (typeof turnstileToken !== 'string' || turnstileToken.length === 0 || turnstileToken.length > 2048) {
     throw new GuardError('invalid_request', 'missing turnstile token');
   }
-  return { locale, turnstileToken, messages: validateHistory(messages) };
+  return { locale, turnstileToken, privacyAccepted, messages: validateHistory(messages) };
 }
 
 /**
