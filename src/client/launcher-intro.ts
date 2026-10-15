@@ -134,3 +134,51 @@ export function timelineVars(t: Timeline): Record<string, string> {
     '--hl-teaser-in': `${t.teaserIn}ms`,
   };
 }
+
+export type LauncherIntroDeps = {
+  storage: Pick<Storage, 'getItem' | 'setItem'> | null;
+  /** Sets data-intro and the timing custom properties on the launcher wrapper. */
+  applyIntro: (mode: IntroMode, vars: Record<string, string>) => void;
+  /** The teaser bubble's DOM operations, or null when the page has no teaser. */
+  teaser: TeaserDeps | null;
+  /** Opens the chat the same way the launcher does (launcher.click()). */
+  clickLauncher: () => void;
+};
+
+/**
+ * Everything HerculesLauncher.astro's script does, minus the DOM: picks and applies the intro,
+ * starts the teaser on the first page, and returns one handler per event. The script only attaches
+ * them (launcher and [data-hercules-open] clicks → chatOpened, teaser text → teaserTextClicked,
+ * close button → teaserClosed, document keydown → keydown), so this is unit-tested with fakes.
+ */
+export function wireLauncherIntro(deps: LauncherIntroDeps) {
+  const mode = introMode(deps.storage);
+  const timeline = timelineFor(mode);
+  deps.applyIntro(mode, timelineVars(timeline));
+
+  const noTeaser: TeaserDeps = { show() {}, hide() {}, isEngaged: () => false, hasFocus: () => false, focusLauncher() {} };
+  const bubble = createTeaser(deps.teaser ?? noTeaser);
+  if (mode === 'full') {
+    // Seen as soon as it starts, so navigating away mid-sequence doesn't replay it in full.
+    markIntroSeen(deps.storage, 'played');
+    if (deps.teaser) bubble.start(teaserStartsAt(timeline));
+  }
+
+  const teaserClosed = () => {
+    markIntroSeen(deps.storage, 'dismissed');
+    bubble.dismiss();
+  };
+  return {
+    mode,
+    chatOpened: () => {
+      markIntroSeen(deps.storage, 'opened');
+      bubble.dismiss();
+    },
+    teaserTextClicked: () => deps.clickLauncher(),
+    teaserClosed,
+    /** WCAG 1.4.13: Escape dismisses the teaser, but only while it is visible. */
+    keydown: (key: string) => {
+      if (key === 'Escape' && bubble.visible()) teaserClosed();
+    },
+  };
+}

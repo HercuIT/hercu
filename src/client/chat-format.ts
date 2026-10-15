@@ -18,14 +18,11 @@ const TABLE_ROW = /^\|(.*)\|$/;
 
 const CODE = /`([^`\n]+)`/g;
 
-/** Stand-ins for "*" and "_" inside code spans, so bold/italic parsing can't see them. */
-const CODE_STAR = '';
-const CODE_UNDERSCORE = '';
+/** Stand-in for "*" inside code spans, so bold/italic parsing can't see it. */
+const CODE_STAR = '\uE000';
 const protectCode = (text: string) =>
-  text
-    .replace(/[]/g, '')
-    .replace(CODE, (_m, code: string) => code.replaceAll('*', CODE_STAR).replaceAll('_', CODE_UNDERSCORE));
-const restoreCode = (text: string) => text.replaceAll(CODE_STAR, '*').replaceAll(CODE_UNDERSCORE, '_');
+  text.replace(/\uE000/g, '').replace(CODE, (_m, code: string) => code.replaceAll('*', CODE_STAR));
+const restoreCode = (text: string) => text.replaceAll(CODE_STAR, '*');
 
 /** Longest link destination scanned for its closing ")" (keeps the scan linear on hostile input). */
 const MAX_LINK_DESTINATION = 2048;
@@ -58,23 +55,30 @@ export function stripLinks(text: string): string {
   }
   return out + text.slice(from);
 }
-/** *italic* / _italic_ → text, only when the markers hug a word (so "2*3*4" and snake_case stay). */
+
+/*
+ * Underscores are never formatting: no __bold__, _italic_ or ___bold italic___. They are common in
+ * real data (ana__m__x@mail.com, _ana_@mail.com, __init__, snake_case) and rare as formatting, and the
+ * prompt asks the model for ** only. Reading them as markup would corrupt the visitor's address in
+ * the bubble, the screen-reader announcement and the lead email.
+ */
+
+/** *italic* → text, only when the markers hug a word (so "2*3*4" stays). */
 const ITALIC_STAR = /(^|[^\p{L}\p{N}*])\*(?![\s*])([^*\n]*?[^\s*])\*(?![\p{L}\p{N}*])/gu;
-const ITALIC_UNDERSCORE = /(^|[^\p{L}\p{N}_])_(?![\s_])([^_\n]*?[^\s_])_(?![\p{L}\p{N}_])/gu;
 
-const stripItalics = (text: string) => text.replace(ITALIC_STAR, '$1$2').replace(ITALIC_UNDERSCORE, '$1$2');
+const stripItalics = (text: string) => text.replace(ITALIC_STAR, '$1$2');
 
-/** ***x*** / ___x___ (bold italic) → **x** / __x__: italics are dropped, so no stray marker is left. */
-const BOLD_ITALIC = /(\*\*\*|___)(?=[^\s*_])([^*_\n]*?[^\s*_])\1/g;
+/** ***x*** (bold italic) → **x**: the italic is dropped, so no stray marker is left. */
+const BOLD_ITALIC = /\*\*\*(?=[^\s*])([^*\n]*?[^\s*])\*\*\*/g;
 
 /**
- * Splits a line into plain and bold pieces. `**x**` / `__x__` is bold when the opener is followed
- * by a non-space and the closer preceded by one. An unclosed opener (e.g. mid-stream) stays literal.
+ * Splits a line into plain and bold pieces. `**x**` is bold when the opener is followed by a
+ * non-space and the closer preceded by one. An unclosed opener (e.g. mid-stream) stays literal.
  * One pass over the delimiter tokens: linear, even for thousands of asterisks.
  */
 export function parseInline(raw: string): Line {
-  const text = stripLinks(protectCode(raw)).replace(BOLD_ITALIC, (_m, marker: string, inner: string) => `${marker.slice(1)}${inner}${marker.slice(1)}`);
-  const tokens = text.split(/(\*\*|__)/);
+  const text = stripLinks(protectCode(raw)).replace(BOLD_ITALIC, '**$1**');
+  const tokens = text.split(/(\*\*)/);
   const bold = new Array<boolean>(tokens.length).fill(false);
   const literal = new Array<boolean>(tokens.length).fill(true);
   let open = -1;

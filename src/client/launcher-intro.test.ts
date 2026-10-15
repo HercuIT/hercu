@@ -15,6 +15,7 @@ import {
   timelineFor,
   timelineVars,
   type Timeline,
+  wireLauncherIntro,
 } from './launcher-intro';
 
 /** In-memory sessionStorage stand-in. */
@@ -249,5 +250,104 @@ describe('maxPingsInAnySecond (WCAG 2.3.1: fewer than 3 flashes in any 1 s windo
   it('lists each ping start, from the start of the ping phase', () => {
     expect(pingStarts(FULL)).toEqual([0, 300]);
     expect(pingStarts(SHORT)).toEqual([0]);
+  });
+});
+
+describe('wireLauncherIntro (the launcher script, with fakes)', () => {
+  function setup(stored: Record<string, string> = {}) {
+    vi.useFakeTimers();
+    const storage = memoryStorage(stored);
+    const log: string[] = [];
+    const applied: { mode?: string; vars?: Record<string, string> } = {};
+    const state = { hovered: false, focusInside: false };
+    const wiring = wireLauncherIntro({
+      storage,
+      applyIntro: (mode, vars) => Object.assign(applied, { mode, vars }),
+      teaser: {
+        show: () => log.push('show'),
+        hide: () => log.push('hide'),
+        isEngaged: () => state.hovered || state.focusInside,
+        hasFocus: () => state.focusInside,
+        focusLauncher: () => log.push('focus-launcher'),
+      },
+      clickLauncher: () => log.push('click-launcher'),
+    });
+    const showTeaser = () => vi.advanceTimersByTime(teaserStartsAt(FULL));
+    return { wiring, storage, log, applied, state, showTeaser };
+  }
+  afterEach(() => vi.useRealTimers());
+
+  it('first page: applies the full intro, marks it played, and shows the teaser on time', () => {
+    const { wiring, storage, log, applied, showTeaser } = setup();
+    expect(wiring.mode).toBe('full');
+    expect(applied).toEqual({ mode: 'full', vars: timelineVars(FULL) });
+    expect(storage.data.get(INTRO_KEY)).toBe('played');
+    showTeaser();
+    expect(log).toEqual(['show']);
+  });
+
+  it('later pages: applies the short intro and never shows the teaser', () => {
+    const { wiring, log, applied } = setup({ [INTRO_KEY]: 'played' });
+    expect(wiring.mode).toBe('short');
+    expect(applied.vars).toEqual(timelineVars(SHORT));
+    vi.advanceTimersByTime(60_000);
+    expect(log).toEqual([]);
+  });
+
+  it('opening the chat (launcher or [data-hercules-open] link) marks the intro opened and dismisses the teaser', () => {
+    const { wiring, storage, log, showTeaser } = setup();
+    showTeaser();
+    wiring.chatOpened();
+    expect(storage.data.get(INTRO_KEY)).toBe('opened');
+    expect(log).toEqual(['show', 'hide']);
+  });
+
+  it('opening the chat before the teaser shows cancels it', () => {
+    const { wiring, log } = setup();
+    wiring.chatOpened();
+    vi.advanceTimersByTime(60_000);
+    expect(log).toEqual([]);
+  });
+
+  it('clicking the teaser text opens the chat through the launcher', () => {
+    const { wiring, log, showTeaser } = setup();
+    showTeaser();
+    wiring.teaserTextClicked();
+    expect(log).toEqual(['show', 'click-launcher']);
+  });
+
+  it('the close button marks the intro dismissed, moves focus out first, and hides the teaser', () => {
+    const { wiring, storage, log, state, showTeaser } = setup();
+    showTeaser();
+    state.focusInside = true;
+    wiring.teaserClosed();
+    expect(storage.data.get(INTRO_KEY)).toBe('dismissed');
+    expect(log).toEqual(['show', 'focus-launcher', 'hide']);
+  });
+
+  it('Escape dismisses only while the teaser is visible', () => {
+    const { wiring, storage, log, showTeaser } = setup();
+    wiring.keydown('Escape'); // not shown yet
+    expect(storage.data.get(INTRO_KEY)).toBe('played');
+    showTeaser();
+    wiring.keydown('Enter');
+    expect(log).toEqual(['show']);
+    wiring.keydown('Escape');
+    expect(log).toEqual(['show', 'hide']);
+    expect(storage.data.get(INTRO_KEY)).toBe('dismissed');
+    wiring.keydown('Escape'); // already hidden: nothing more
+    expect(log).toEqual(['show', 'hide']);
+  });
+
+  it('works without a teaser element, and with blocked storage', () => {
+    vi.useFakeTimers();
+    const wiring = wireLauncherIntro({ storage: null, applyIntro: () => {}, teaser: null, clickLauncher: () => {} });
+    expect(wiring.mode).toBe('short');
+    expect(() => {
+      wiring.chatOpened();
+      wiring.teaserClosed();
+      wiring.keydown('Escape');
+      vi.advanceTimersByTime(60_000);
+    }).not.toThrow();
   });
 });

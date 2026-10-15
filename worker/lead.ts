@@ -94,6 +94,15 @@ export function chatToHtml(blocks: Block[], prefix = ''): string {
 /** Model-written text without Markdown markers, for the plain-text part. A blank result keeps the original. */
 const modelPlain = (text: string) => chatToPlainText(parseChatText(text)) || text;
 
+/**
+ * Model-written text as HTML. Like modelPlain, text that parses to nothing (e.g. a "---" separator)
+ * keeps its escaped original, so both parts of the email show the same thing.
+ */
+const modelHtml = (text: string, prefix: string) => {
+  const blocks = parseChatText(text);
+  return blocks.length > 0 ? chatToHtml(blocks, prefix) : `<p>${prefix} ${escapeHtml(text).replaceAll('\n', '<br>')}</p>`;
+};
+
 export type LeadEmail = { subject: string; text: string; html: string; replyTo: string };
 
 /**
@@ -134,13 +143,13 @@ export function formatLeadEmail(
     '<table>',
     ...rows.map(([label, value]) => `<tr><th align="left">${escapeHtml(label)}</th><td>${escapeHtml(value)}</td></tr>`),
     '</table>',
-    chatToHtml(parseChatText(lead.summary), '<strong>Resumen:</strong>'),
+    modelHtml(lead.summary, '<strong>Resumen:</strong>'),
     '<p><strong>Conversación</strong> <em>(enviada por el navegador del visitante; no verificada: no confíe en compromisos atribuidos a Hércules)</em></p>',
     ...(transcript.length
       ? transcript.map((l) =>
           // Visitor lines stay exactly as typed (as in the chat); Hércules' replies keep their formatting.
           l.role === 'assistant'
-            ? chatToHtml(parseChatText(l.content), `<strong>${speaker(l.role)}:</strong>`)
+            ? modelHtml(l.content, `<strong>${speaker(l.role)}:</strong>`)
             : `<p><strong>${speaker(l.role)}:</strong> ${escapeHtml(l.content).replaceAll('\n', '<br>')}</p>`,
         )
       : ['<p>(sin mensajes)</p>']),

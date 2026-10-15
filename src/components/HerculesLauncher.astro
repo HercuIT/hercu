@@ -451,7 +451,7 @@ const nodes = [
 </style>
 
 <script>
-  import { createTeaser, introMode, markIntroSeen, teaserStartsAt, timelineFor, timelineVars } from '../client/launcher-intro';
+  import { wireLauncherIntro } from '../client/launcher-intro';
   import { createWidgetLoader } from '../client/widget-loader';
 
   /** sessionStorage, or null when the browser blocks it (the getter itself can throw). */
@@ -466,64 +466,47 @@ const nodes = [
   const wrap = document.getElementById('hercules-launcher-wrap');
   const launcher = document.getElementById('hercules-launcher');
   if (wrap && launcher) {
-    // Pick the intro first: until data-intro is set, the CSS keeps the button invisible.
-    const storage = sessionStore();
-    const mode = introMode(storage);
-    const timeline = timelineFor(mode);
-    for (const [name, value] of Object.entries(timelineVars(timeline))) wrap.style.setProperty(name, value);
-    wrap.dataset.intro = mode;
-
     const teaser = wrap.querySelector<HTMLElement>('.hl-teaser');
-    // Show/hide rules (never hide under the pointer or focus; move focus out first) are tested in
-    // launcher-intro.test.ts; this only maps them to the DOM.
-    const bubble = createTeaser({
-      show: () => {
-        if (!teaser) return;
-        teaser.hidden = false;
-        teaser.dataset.state = 'in';
+    // All decisions live in wireLauncherIntro (tested in launcher-intro.test.ts); this only maps them
+    // to the DOM. It runs first: until data-intro is set, the CSS keeps the button invisible.
+    const intro = wireLauncherIntro({
+      storage: sessionStore(),
+      applyIntro: (mode, vars) => {
+        for (const [name, value] of Object.entries(vars)) wrap.style.setProperty(name, value);
+        wrap.dataset.intro = mode;
       },
-      hide: () => {
-        if (!teaser) return;
-        teaser.dataset.state = 'out';
-        window.setTimeout(() => (teaser.hidden = true), 200);
+      teaser: teaser && {
+        show: () => {
+          teaser.hidden = false;
+          teaser.dataset.state = 'in';
+        },
+        hide: () => {
+          teaser.dataset.state = 'out';
+          window.setTimeout(() => (teaser.hidden = true), 200);
+        },
+        isEngaged: () => teaser.matches(':hover, :focus-within'),
+        hasFocus: () => teaser.contains(document.activeElement),
+        focusLauncher: () => launcher.focus(),
       },
-      isEngaged: () => teaser?.matches(':hover, :focus-within') ?? false,
-      hasFocus: () => teaser?.contains(document.activeElement) ?? false,
-      focusLauncher: () => launcher.focus(),
+      clickLauncher: () => launcher.click(),
     });
-    if (mode === 'full') {
-      // Seen as soon as it starts, so navigating away mid-sequence doesn't replay it in full.
-      markIntroSeen(storage, 'played');
-      if (teaser) bubble.start(teaserStartsAt(timeline));
-    }
-    const dismissTeaser = () => {
-      markIntroSeen(storage, 'dismissed');
-      bubble.dismiss();
-    };
-    teaser?.querySelector('.hl-teaser-close')?.addEventListener('click', dismissTeaser);
-    // WCAG 1.4.13: dismissible without moving the pointer or focus.
-    document.addEventListener('keydown', (event) => {
-      if (event.key === 'Escape' && bubble.visible()) dismissTeaser();
-    });
-    teaser?.querySelector('.hl-teaser-text')?.addEventListener('click', () => launcher.click());
-    const chatOpened = () => {
-      markIntroSeen(storage, 'opened');
-      bubble.dismiss();
-    };
+    teaser?.querySelector('.hl-teaser-close')?.addEventListener('click', intro.teaserClosed);
+    teaser?.querySelector('.hl-teaser-text')?.addEventListener('click', intro.teaserTextClicked);
+    document.addEventListener('keydown', (event) => intro.keydown(event.key));
 
     const config = JSON.parse(launcher.dataset.config ?? '{}');
     config.logoHtml = launcher.querySelector('svg')?.outerHTML ?? '';
     // Download once, ignore clicks while loading, retry after a failed download (see widget-loader.ts).
     const run = createWidgetLoader(() => import('../client/hercules-widget'));
     launcher.addEventListener('click', () => {
-      chatOpened();
+      intro.chatOpened();
       void run((mod) => mod.toggleHercules(config, launcher));
     });
     // Secondary entry points (e.g. the hero link) only appear once this script runs, and only open.
     for (const trigger of document.querySelectorAll<HTMLElement>('[data-hercules-open]')) {
       trigger.hidden = false;
       trigger.addEventListener('click', () => {
-        chatOpened();
+        intro.chatOpened();
         void run((mod) => mod.openHercules(config, launcher));
       });
     }

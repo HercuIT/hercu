@@ -268,3 +268,34 @@ describe('chatToHtml', () => {
     expect(chatToHtml([{ kind: 'paragraph', lines: [[{ text: 'a', bold: false }], [{ text: 'b', bold: true }]] }])).toBe('<p>a<br><strong>b</strong></p>');
   });
 });
+
+describe('lead email: model text that parses oddly', () => {
+  const ok = (patch: Record<string, unknown> = {}) => {
+    const r = lead(patch);
+    if (!r.ok) throw new Error(r.issues.join());
+    return r.lead as Lead;
+  };
+  const sentAt = new Date('2026-10-15T12:00:00Z');
+
+  it('puts the prefix before a heading that opens the reply (the heading is a bold line)', () => {
+    const { html } = formatLeadEmail(ok(), [{ role: 'assistant', content: '## Servicios\n- QA' }], { locale: 'es', sentAt });
+    expect(html).toContain('<p><strong>Hércules:</strong> <strong>Servicios</strong></p><ul><li>QA</li></ul>');
+  });
+
+  it('shows a summary that parses to nothing (a "----------" separator) the same way in both parts', () => {
+    const email = formatLeadEmail(ok({ summary: '----------' }), [], { locale: 'es', sentAt });
+    expect(email.text).toContain('Resumen:\n----------');
+    expect(email.html).toContain('<p><strong>Resumen:</strong> ----------</p>');
+  });
+
+  it('shows a Hércules line that parses to nothing as its escaped original, not an empty label', () => {
+    const { html } = formatLeadEmail(ok(), [{ role: 'assistant', content: '---' }], { locale: 'es', sentAt });
+    expect(html).toContain('<p><strong>Hércules:</strong> ---</p>');
+  });
+
+  it('escapes the fallback text', () => {
+    const { html } = formatLeadEmail(ok({ summary: '<script>__________' }), [], { locale: 'es', sentAt });
+    expect(html).toContain('&lt;script&gt;');
+    expect(html).not.toContain('<script>');
+  });
+});
