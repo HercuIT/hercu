@@ -186,16 +186,22 @@ export const MIN_SHARED = 6;
 /** Characters of the raw error examined for redaction (bounds the work; only EMAIL_ERROR_MAX are logged). */
 const REDACT_INPUT_MAX = 1000;
 
+const isWordChar = (c: string | undefined) => c !== undefined && /[\p{L}\p{N}]/u.test(c);
+
 /**
  * Marks in `mask` every stretch of `message` (case-insensitive, per character) that also appears in
- * `value`, is at least `min` characters long and starts at a word boundary in the message: an echo
- * or quote starts at a word, while "ender" inside "sender" is just a word the summary happens to
- * share. Dynamic programming over common suffixes: for each message position, the longest shared
- * stretch ending there is trimmed to its first word start, and marked if still long enough.
+ * `value` and starts at a word boundary in the message: an echo or quote starts at a word, while
+ * "ender" inside "sender" is just a word the summary happens to share.
+ *  - A value of MIN_SHARED+ characters: any such stretch of MIN_SHARED+ characters, which may end
+ *    mid-word (a header or quote cut short).
+ *  - A shorter value: only the whole value, and only as a whole word, so a name like "Al" never
+ *    turns "not allowed" into "not [redacted]lowed".
+ * Dynamic programming over common suffixes: for each message position, the longest shared stretch
+ * ending there is trimmed to its first word start, and marked if it still qualifies.
  */
-const isWordChar = (c: string) => /[\p{L}\p{N}]/u.test(c);
-
-function markShared(message: string[], value: string[], min: number, mask: boolean[]): void {
+function markShared(message: string[], value: string[], mask: boolean[]): void {
+  const wholeWordOnly = value.length < MIN_SHARED;
+  const min = Math.min(MIN_SHARED, value.length);
   const a = message.map((c) => c.toLowerCase());
   const b = value.map((c) => c.toLowerCase());
   let previous = new Uint16Array(b.length + 1);
@@ -211,7 +217,8 @@ function markShared(message: string[], value: string[], min: number, mask: boole
     let start = i - longest;
     while (start < i && start > 0 && isWordChar(message[start - 1])) start++;
     while (start < i && message[start] === ' ') start++;
-    if (i - start >= min) mask.fill(true, start, i);
+    const endsWord = !isWordChar(message[i]);
+    if (i - start >= min && (endsWord || !wholeWordOnly)) mask.fill(true, start, i);
     previous = current;
   }
 }
@@ -222,7 +229,7 @@ function markShared(message: string[], value: string[], min: number, mask: boole
  * them, whole or cut short (the subject caps the name at 150 characters; an error may quote part
  * of the body). So before logging, the message is single-lined and stripped of control characters,
  * then redacted: every stretch of MIN_SHARED+ characters shared with a visitor value (a shorter
- * value only when it appears whole), then every email address not on hercuit.com. Capping comes
+ * value only as a whole word), then every email address not on hercuit.com. Capping comes
  * last, so the cap can't cut a value short of being recognized.
  */
 export function emailFailureLog(err: unknown, lead?: Lead): { event: 'email_failed'; kind: string; message: string } {
@@ -231,7 +238,7 @@ export function emailFailureLog(err: unknown, lead?: Lead): { event: 'email_fail
   const mask = chars.map(() => false);
   for (const field of [lead?.summary, lead?.email, lead?.name, lead?.company, lead?.phone]) {
     const value = Array.from(headerSafe(field ?? '', Infinity));
-    if (value.length >= 2) markShared(chars, value, Math.min(MIN_SHARED, value.length), mask);
+    if (value.length >= 2) markShared(chars, value, mask);
   }
   const redacted = chars.map((c, i) => (!mask[i] ? c : mask[i - 1] ? '' : REDACTED)).join('');
   const message = redacted.replace(/[^\s@<>"'(),;:]+@[^\s@<>"'(),;:]+/gu, (address) =>

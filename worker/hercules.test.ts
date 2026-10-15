@@ -2,7 +2,7 @@ import Anthropic from '@anthropic-ai/sdk';
 import { describe, expect, it, vi } from 'vitest';
 import { buildParams, EMAIL_ERROR_MAX, emailFailureLog, formatSse, MAX_ITERATIONS, MIN_SHARED, REDACTED, runConversation, type Deps, type SseEvent, type StreamParams } from './hercules';
 import type { ChatMessage } from './guards';
-import { formatLeadEmail, type Lead, type LeadEmail } from './lead';
+import { formatLeadEmail, LEAD_SERVICES, validateLead, type Lead, type LeadEmail } from './lead';
 
 type Block = Record<string, unknown>;
 type Turn = { text?: string; content?: Block[]; stop_reason: string } | { text: string; throws: Error } | Error;
@@ -450,7 +450,7 @@ describe('emailFailureLog redacts visitor data from the error message', () => {
     expect(log('from info@hercuit.com.evil.io')).toBe(`from ${REDACTED}`);
   });
 
-  it('ignores blank and one-character optional fields instead of redacting every letter', () => {
+  it('ignores a blank optional field, and matches a short name only as a whole word', () => {
     const sparse = { ...lead, company: ' ', phone: undefined, name: 'Jo' } as unknown as Lead;
     expect(log('a b c Jo', sparse)).toBe(`a b c ${REDACTED}`);
   });
@@ -577,5 +577,124 @@ describe(`emailFailureLog: values shorter than ${MIN_SHARED} characters only mat
 
   it(`still redacts a cut-off prefix of a value of ${MIN_SHARED}+ characters, mid-word`, () => {
     expect(log('subject: [Hércules] Bot · Juana Pé', {})).toBe(`subject: [Hércules] Bot · ${REDACTED}`);
+  });
+});
+
+describe('emailFailureLog: an echoed subject with a truncated long name leaks no part of the name', () => {
+  // 100 characters (the schema maximum), with accents and ñ, sharing no 4-letter run with any service label.
+  const longName = 'Xóchitl Quetzalli Ñúñez Tlazohtzin Yaotl Itzpapalotl Cuetlachtli Huitzilihuitl Ocelotli Tototl Zyany';
+  const lead = (service: string) =>
+    ({
+      name: longName,
+      email: 'xochitl@empresa.mx',
+      service,
+      summary: 'Buscamos apoyo para un proyecto nuevo.',
+      preferredContact: 'email',
+      consent: true,
+    }) as unknown as Lead;
+  const subjectFor = (service: string) =>
+    formatLeadEmail(lead(service), [], { locale: 'es', sentAt: new Date('2026-10-15T12:00:00Z') }).subject;
+  /** Every run of 4+ characters of the name (case-insensitive): "any part" that could identify it. */
+  const nameParts = Array.from({ length: longName.length - 3 }, (_, i) => longName.slice(i, i + 4).toLowerCase()).filter(
+    (part) => /\p{L}{4}/u.test(part),
+  );
+
+  it('test setup: the name is 100 characters, and at least one real service label truncates it in the subject', () => {
+    expect(longName).toHaveLength(100);
+    const truncating = LEAD_SERVICES.filter((service) => !subjectFor(service).includes(longName));
+    expect(truncating.length).toBeGreaterThan(0);
+  });
+
+  it.each(LEAD_SERVICES)('service "%s": the logged echo of the subject keeps the label and contains no part of the name', (service) => {
+    const subject = subjectFor(service);
+    const message = emailFailureLog(new Error(`subject rejected: ${subject}`), lead(service)).message;
+    expect(message).toBe(`subject rejected: ${subject.slice(0, subject.indexOf(' · ') + 3)}${REDACTED}`);
+    const lower = message.toLowerCase();
+    expect(nameParts.filter((part) => lower.includes(part))).toEqual([]);
+  });
+
+  it('also when the error itself cuts the echo short, mid-name', () => {
+    const subject = subjectFor('ai-whatsapp-automation');
+    const cut = subject.slice(0, subject.indexOf(' · ') + 3 + 9); // "… · Xóchitl Q"
+    const message = emailFailureLog(new Error(`rejected: ${cut}…`), lead('ai-whatsapp-automation')).message;
+    expect(message.endsWith(`· ${REDACTED}…`)).toBe(true);
+    expect(message).not.toMatch(/Xóchitl|Xóch/i);
+  });
+});
+
+describe('emailFailureLog: short names and companies leave ordinary Cloudflare wording intact', () => {
+  const cloudflareMessages = [
+    'send failed',
+    'not allowed',
+    'domain not allowed',
+    'destination address not verified',
+    'sender address is not allowed to send from this domain',
+    'internal error: all retries failed, try again later',
+    'Alerting: journal full, job aborted',
+    'Analysis failed: malformed headers',
+  ];
+  const shortValues = [
+    ['company', 'AI'],
+    ['company', 'Al'],
+    ['name', 'Al'],
+    ['name', 'Jo'],
+    ['name', 'Ana'],
+    ['company', 'Ño'],
+  ] as const;
+  const cases = shortValues.flatMap(([field, value]) => cloudflareMessages.map((message) => [field, value, message] as const));
+
+  it.each(cases)('%s %j: %j is logged unchanged', (field, value, message) => {
+    const lead = {
+      name: field === 'name' ? value : 'Juana Pérez',
+      company: field === 'company' ? value : undefined,
+      email: 'juana@empresa.com',
+      service: 'ai-bot',
+      summary: 'Necesitamos un bot.',
+      preferredContact: 'email',
+      consent: true,
+    } as unknown as Lead;
+    expect(emailFailureLog(new Error(message), lead).message).toBe(message);
+  });
+
+  it('both at once: name "Al" and company "AI" keep "send failed" and "not allowed" intact, and still redact the values themselves', () => {
+    const lead = { name: 'Al', company: 'AI', email: 'al@empresa.com', service: 'ai-bot', summary: 'Necesitamos un bot.', preferredContact: 'email', consent: true } as unknown as Lead;
+    expect(emailFailureLog(new Error('send failed: not allowed'), lead).message).toBe('send failed: not allowed');
+    expect(emailFailureLog(new Error('send failed for Al at AI'), lead).message).toBe(`send failed for ${REDACTED} at ${REDACTED}`);
+  });
+});
+
+describe('emailFailureLog: a one-character company (valid in the schema) is redacted as a whole word', () => {
+  const log = (message: string, company: string | undefined) =>
+    emailFailureLog(
+      new Error(message),
+      { name: 'Juana Pérez', company, email: 'juana@empresa.com', service: 'ai-bot', summary: 'Necesitamos un bot.', preferredContact: 'email', consent: true } as unknown as Lead,
+    ).message;
+
+  it('test setup: the schema accepts a one-character company', () => {
+    const result = validateLead({ ...validLead, company: 'X' });
+    expect(result.ok).toBe(true);
+  });
+
+  it.each([
+    ['X', 'bad company: X', `bad company: ${REDACTED}`],
+    ['X', 'company "x" rejected', `company "${REDACTED}" rejected`],
+    ['Ñ', 'company=ñ;', `company=${REDACTED};`],
+    ['7', 'org 7 blocked', `org ${REDACTED} blocked`],
+    ['X', 'X', REDACTED],
+  ])('company %j: %j is logged as %j', (company, message, expected) => {
+    expect(log(message, company)).toBe(expected);
+  });
+
+  it.each(['send failed', 'not allowed', 'destination address not verified', 'Xenon relay: max retries'])(
+    'company "X" or "A" leaves %j intact (the letter inside a word is not the value)',
+    (message) => {
+      expect(log(message, 'X')).toBe(message);
+      expect(log(message, 'A')).toBe(message);
+    },
+  );
+
+  it('ignores a blank company', () => {
+    expect(log('a b c', ' ')).toBe('a b c');
+    expect(log('a b c', undefined)).toBe('a b c');
   });
 });
