@@ -71,6 +71,29 @@ describe('pathPoints', () => {
       [20, 10],
     ]);
   });
+
+  it.each([
+    ['comma without spaces', 'M600,60 H470'],
+    ['comma with spaces around it', 'M600 , 60 H470'],
+    ['decimals', 'M600.5 60.25 H470'],
+  ])('accepts a valid SVG number list: %s', (_label, d) => {
+    expect(() => pathPoints(d)).not.toThrow();
+  });
+
+  it.each([
+    ['repeated commas', 'M600,,60 H470'],
+    ['repeated commas with spaces', 'M600 , , 60 H470'],
+    ['leading comma', 'M,600 60 H470'],
+    ['trailing comma after a pair', 'M600 60, H470'],
+    ['trailing comma after a single number', 'M600 60 H470,'],
+    ['lone comma as the argument', 'M600 60 H,'],
+  ])('rejects malformed comma separators: %s', (_label, d) => {
+    expect(() => pathPoints(d)).toThrow(/malformed number list/);
+  });
+
+  it('does not support exponent notation (deliberate: the parser stays strict)', () => {
+    expect(() => pathPoints('M6e2 60 H470')).toThrow(/only absolute M, H, V, L/);
+  });
 });
 
 describe('validateTraces: negative cases', () => {
