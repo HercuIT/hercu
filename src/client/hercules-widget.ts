@@ -3,7 +3,6 @@
 // visitor and model text is only ever inserted as text nodes (never innerHTML).
 import type { Dictionary } from '../constants/strings';
 import {
-  capAssistantReply,
   clearConversation,
   isConversationFull,
   loadConversation,
