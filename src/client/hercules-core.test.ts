@@ -159,11 +159,11 @@ describe('TurnstileGate', () => {
     const api = fakeApi();
     gate.setReady(api, 'w1');
     const first = gate.token();
-    await Promise.resolve();
+    await vi.waitFor(() => expect(api.execute).toHaveBeenCalledTimes(1)); // Turnstile only calls back after execute()
     gate.resolveToken('t1');
     expect(await first).toBe('t1');
     const second = gate.token();
-    await Promise.resolve();
+    await vi.waitFor(() => expect(api.execute).toHaveBeenCalledTimes(2));
     gate.resolveToken('t2');
     expect(await second).toBe('t2');
     expect(api.reset).toHaveBeenCalledTimes(2);
@@ -218,9 +218,10 @@ describe('TurnstileGate', () => {
 
   it('rejects on the widget error callback', async () => {
     const gate = new TurnstileGate(1000);
-    gate.setReady(fakeApi(), 'w1');
+    const api = fakeApi();
+    gate.setReady(api, 'w1');
     const token = gate.token();
-    await Promise.resolve();
+    await vi.waitFor(() => expect(api.execute).toHaveBeenCalledOnce());
     gate.rejectToken(new Error('challenge failed'));
     await expect(token).rejects.toThrow('challenge failed');
   });
