@@ -32,11 +32,8 @@ describe('parseChatText: happy path', () => {
     expect(visible(blocks)).not.toContain('*');
   });
 
-  it.each([
-    ['**', 'Ofrecemos **QA** y más'],
-    ['__', 'Ofrecemos __QA__ y más'],
-  ])('reads %s as bold mid-sentence', (_d, text) => {
-    expect(parseInline(text)).toEqual([plain('Ofrecemos '), bold('QA'), plain(' y más')]);
+  it('reads ** as bold mid-sentence', () => {
+    expect(parseInline('Ofrecemos **QA** y más')).toEqual([plain('Ofrecemos '), bold('QA'), plain(' y más')]);
   });
 
   it.each(['- ', '* ', '• ', '1. ', '1) ', '12. '])('reads "%s" items as one bullet list', (marker) => {
@@ -86,7 +83,6 @@ describe('parseChatText: left as plain text (negative)', () => {
   it.each([
     ['inline code', 'Use `npm test` aquí', 'Use npm test aquí'],
     ['*italics*', 'Es *muy* rápido', 'Es muy rápido'],
-    ['_italics_', 'Es _muy_ rápido', 'Es muy rápido'],
     ['a quote', '> Una cita', 'Una cita'],
   ])('removes the markers of %s', (_label, text, expected) => {
     expect(visible(parseChatText(text))).toBe(expected);
@@ -200,12 +196,9 @@ describe('chatToSpeech (what screen readers announce)', () => {
   });
 });
 
-describe('parseInline: bold italic (***x*** / ___x___)', () => {
-  it.each([
-    ['***', 'Es ***muy*** importante'],
-    ['___', 'Es ___muy___ importante'],
-  ])('reads %s as bold, with no stray markers', (_d, text) => {
-    expect(parseInline(text)).toEqual([plain('Es '), bold('muy'), plain(' importante')]);
+describe('parseInline: bold italic (***x***)', () => {
+  it('reads *** as bold, with no stray markers', () => {
+    expect(parseInline('Es ***muy*** importante')).toEqual([plain('Es '), bold('muy'), plain(' importante')]);
   });
 
   it('handles a bold-italic label at the start of a list item', () => {
@@ -252,5 +245,36 @@ describe('parseInline: link destinations never leak', () => {
 
   it('leaves brackets that are not a link alone', () => {
     expect(parseInline('[nota] (ver abajo)')).toEqual([plain('[nota] (ver abajo)')]);
+  });
+});
+
+describe('underscores are never formatting (emails and identifiers stay intact)', () => {
+  const replies = {
+    es: (value: string) => `Su correo es ${value}, ¿correcto?`,
+    en: (value: string) => `Your email is ${value}, correct?`,
+  };
+
+  it.each(['es', 'en'] as const)('"%s": keeps addresses and identifiers with "_" / "__" exactly', (locale) => {
+    for (const value of ['ana__m__x@mail.com', 'a__b__c@x.com', '_ana_@mail.com', 'juan_perez_lopez@empresa.mx', '__init__', 'MAX__SIZE', '___x___']) {
+      const reply = replies[locale](value);
+      expect(parseInline(reply), value).toEqual([plain(reply)]);
+      expect(chatToSpeech(reply), value).toBe(reply);
+    }
+  });
+
+  it.each([
+    ['__bold__', 'Ofrecemos __QA__ y más'],
+    ['_italic_', 'Es _muy_ rápido'],
+    ['___both___', 'Es ___muy___ importante'],
+  ])('shows %s literally', (_label, text) => {
+    expect(parseInline(text)).toEqual([plain(text)]);
+  });
+
+  it('still reads ** bold next to an address with underscores', () => {
+    expect(parseInline('**Correo:** ana__m__x@mail.com')).toEqual([bold('Correo:'), plain(' ana__m__x@mail.com')]);
+  });
+
+  it('keeps an address with underscores in a list item', () => {
+    expect(parseChatText('- **Correo:** _ana_@mail.com')).toEqual([{ kind: 'list', items: [[bold('Correo:'), plain(' _ana_@mail.com')]] }]);
   });
 });
