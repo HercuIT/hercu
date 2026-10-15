@@ -8,10 +8,11 @@ import LogoMark from './brand/LogoMark.astro';
 const locale = getLocale(Astro.currentLocale);
 const t = useStrings(locale);
 
-// Turnstile site keys are public by design. PUBLIC_TURNSTILE_SITE_KEY can override it per build.
-// Local dev uses the same widget on localhost (its secret goes in .dev.vars, never in the repo).
+// Turnstile site keys are public by design. PUBLIC_TURNSTILE_SITE_KEY can override it per build;
+// `||` (not `??`) so an empty CI variable still falls back. The secret lives in the Cloudflare Secrets
+// Store (TURNSTILE_SECRET binding, see wrangler.jsonc), never in the repo or in .dev.vars.
 const SITE_KEY = '0x4AAAAAAFXMST0WMhwPPQv6';
-const siteKey = import.meta.env.PUBLIC_TURNSTILE_SITE_KEY ?? SITE_KEY;
+const siteKey = import.meta.env.PUBLIC_TURNSTILE_SITE_KEY || SITE_KEY;
 
 const config = { locale, siteKey, strings: t.hercules, privacyHref: privacyPaths[locale], phone: shared.phone };
 ---

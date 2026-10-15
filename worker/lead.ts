@@ -43,6 +43,11 @@ export function validateLead(input: unknown): { ok: true; lead: Lead } | { ok: f
   return { ok: false, issues: result.error.issues.map((i) => `${i.path.join('.') || 'input'}: ${i.message}`) };
 }
 
+// The lead email is internal and always in Spanish (the team's language), so its labels live here
+// rather than in the visitor-facing locale dictionaries.
+/** Display name of the lead email sender (the assistant's name from the Spanish dictionary). */
+export const LEAD_SENDER_NAME = strings.es.hercules.title;
+
 const CHANNEL_LABEL: Record<Lead['preferredContact'], string> = {
   email: 'Correo electrónico',
   phone: 'Teléfono',

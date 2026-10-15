@@ -124,7 +124,7 @@ class HerculesPanel {
     this.form = el('form', 'flex items-end gap-2 border-t border-ink/10 px-3 py-3');
     const label = el('label', 'sr-only', s.inputLabel);
     label.htmlFor = 'hercules-input';
-    this.input = el('textarea', 'max-h-32 min-h-11 flex-1 resize-none rounded-lg border border-ink/15 px-3 py-2.5 text-sm text-ink placeholder:text-steel/70 focus:border-transparent focus:outline-none focus:ring-2 focus:ring-brand-500');
+    this.input = el('textarea', 'max-h-32 min-h-11 flex-1 resize-none rounded-lg border border-ink/15 px-3 py-2.5 text-sm text-ink placeholder:text-steel focus:border-transparent focus:outline-none focus:ring-2 focus:ring-brand-500');
     this.input.id = 'hercules-input';
     this.input.rows = 1;
     this.input.maxLength = MAX_USER_CHARS;

@@ -3,7 +3,7 @@
 import Anthropic from '@anthropic-ai/sdk';
 import { checkRequestShape, GuardError, parseHostnames, readHerculesBody, TURNSTILE_ACTION, verifyTurnstile } from './guards';
 import { formatSse, runConversation, type ModelStream, type SseEvent, type StreamParams } from './hercules';
-import type { LeadEmail } from './lead';
+import { LEAD_SENDER_NAME, type LeadEmail } from './lead';
 
 export interface Env {
   ASSETS: Fetcher;
@@ -83,7 +83,7 @@ async function handleHercules(request: Request, env: Env, ctx: ExecutionContext)
 
   const sendEmail = async (email: LeadEmail) => {
     await env.LEADS_EMAIL.send({
-      from: { name: 'Hercules', email: env.LEAD_FROM },
+      from: { name: LEAD_SENDER_NAME, email: env.LEAD_FROM },
       to: env.LEAD_TO,
       replyTo: email.replyTo,
       subject: email.subject,

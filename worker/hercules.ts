@@ -77,12 +77,20 @@ export async function runConversation(
 ): Promise<void> {
   const messages: BetaMessageParam[] = input.history.map((m) => ({ role: m.role, content: m.content }));
   let leadSent = false;
+  let textEmitted = false; // any text already sent to the visitor in this request
 
   try {
     for (let iteration = 0; iteration < MAX_ITERATIONS; iteration++) {
       const finalTurn = iteration === MAX_ITERATIONS - 1;
       const stream = deps.stream(buildParams(input.model, input.locale, messages, { allowTools: !finalTurn }));
-      stream.onText((delta) => emit({ event: 'text', data: { delta } }));
+      let firstDeltaOfTurn = true;
+      stream.onText((delta) => {
+        // A later turn's reply starts a new paragraph instead of running into the previous one.
+        const prefix = firstDeltaOfTurn && textEmitted ? '\n\n' : '';
+        firstDeltaOfTurn = false;
+        textEmitted = true;
+        emit({ event: 'text', data: { delta: prefix + delta } });
+      });
 
       let message: BetaMessage;
       try {
