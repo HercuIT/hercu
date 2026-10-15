@@ -74,14 +74,32 @@ export function validateHistory(messages: unknown): ChatMessage[] {
 }
 
 const SITEVERIFY = 'https://challenges.cloudflare.com/turnstile/v0/siteverify';
+const MAX_TOKEN_LENGTH = 2048;
 
-/** Verifies a single-use Turnstile token (one per message, so a forged history can't skip it). */
+/** The action the Hercules widget stamps on every token; siteverify must echo it back. */
+export const TURNSTILE_ACTION = 'hercules';
+
+/** Parses the TURNSTILE_HOSTNAMES var ("a.com, b.com") into a lowercase allowlist. */
+export function parseHostnames(value: string | undefined): string[] {
+  return (value ?? '')
+    .split(',')
+    .map((h) => h.trim().toLowerCase())
+    .filter(Boolean);
+}
+
+/**
+ * Verifies a single-use Turnstile token (one per message, so a forged history can't skip it).
+ * Fails closed: any missing input, network error, non-OK response, failed challenge, wrong action
+ * or hostname outside the allowlist returns false.
+ */
 export async function verifyTurnstile(
   token: string,
   secret: string,
   ip: string | null,
+  expected: { action: string; hostnames: string[] },
   fetchImpl: typeof fetch = fetch,
 ): Promise<boolean> {
+  if (!token || token.length > MAX_TOKEN_LENGTH || !secret || expected.hostnames.length === 0) return false;
   const form = new FormData();
   form.append('secret', secret);
   form.append('response', token);
@@ -89,8 +107,13 @@ export async function verifyTurnstile(
   try {
     const res = await fetchImpl(SITEVERIFY, { method: 'POST', body: form });
     if (!res.ok) return false;
-    const data = (await res.json()) as { success?: unknown };
-    return data.success === true;
+    const data = (await res.json()) as { success?: unknown; action?: unknown; hostname?: unknown };
+    return (
+      data.success === true &&
+      data.action === expected.action &&
+      typeof data.hostname === 'string' &&
+      expected.hostnames.includes(data.hostname.toLowerCase())
+    );
   } catch {
     return false;
   }

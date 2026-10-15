@@ -8,10 +8,10 @@ import LogoMark from './brand/LogoMark.astro';
 const locale = getLocale(Astro.currentLocale);
 const t = useStrings(locale);
 
-// Cloudflare's documented always-pass Turnstile test key, used only in local dev. Production builds
-// must set PUBLIC_TURNSTILE_SITE_KEY (the Worker's TURNSTILE_SECRET rejects test tokens).
-const TEST_SITE_KEY = '1x00000000000000000000AA';
-const siteKey = import.meta.env.PUBLIC_TURNSTILE_SITE_KEY ?? (import.meta.env.DEV ? TEST_SITE_KEY : '');
+// Turnstile site keys are public by design. PUBLIC_TURNSTILE_SITE_KEY can override it per build.
+// Local dev uses the same widget on localhost (its secret goes in .dev.vars, never in the repo).
+const SITE_KEY = '0x4AAAAAAFXMST0WMhwPPQv6';
+const siteKey = import.meta.env.PUBLIC_TURNSTILE_SITE_KEY ?? SITE_KEY;
 
 const config = { locale, siteKey, strings: t.hercules, privacyHref: privacyPaths[locale], phone: shared.phone };
 ---

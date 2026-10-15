@@ -1,5 +1,7 @@
 # Copy to .dev.vars (git-ignored) for `wrangler dev`. Never commit real values.
 # Production: `wrangler secret put ANTHROPIC_API_KEY` and `wrangler secret put TURNSTILE_SECRET`.
 ANTHROPIC_API_KEY=sk-ant-api03-REPLACE_ME
-# Cloudflare's documented always-pass Turnstile test secret (local dev only).
-TURNSTILE_SECRET=1x0000000000000000000000000000000AA
+# Secret of the Hercules Turnstile widget (site key 0x4AAAAAAFXMST0WMhwPPQv6).
+TURNSTILE_SECRET=REPLACE_ME
+# Local only: the widget must list localhost among its domains for dev tokens to verify.
+TURNSTILE_HOSTNAMES=localhost,127.0.0.1

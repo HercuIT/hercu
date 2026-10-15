@@ -4,6 +4,8 @@ import {
   MAX_BODY_BYTES,
   MAX_MESSAGES,
   parseHerculesRequest,
+  parseHostnames,
+  TURNSTILE_ACTION,
   validateBody,
   validateHistory,
   verifyTurnstile,
@@ -99,22 +101,62 @@ describe('validateHistory', () => {
   });
 });
 
-describe('verifyTurnstile', () => {
-  const reply = (status: number, json: unknown) => vi.fn(async () => new Response(JSON.stringify(json), { status }));
+describe('parseHostnames', () => {
+  it('splits, trims, lowercases and drops empties', () => {
+    expect(parseHostnames(' Hercuit.com, www.hercuit.com ,,')).toEqual(['hercuit.com', 'www.hercuit.com']);
+  });
+  it.each([undefined, '', ' , '])('returns [] for %j', (value) => {
+    expect(parseHostnames(value)).toEqual([]);
+  });
+});
 
-  it('returns true when siteverify reports success and sends secret, token and IP', async () => {
-    const fetchImpl = reply(200, { success: true });
-    expect(await verifyTurnstile('tok', 'sec', '1.2.3.4', fetchImpl as unknown as typeof fetch)).toBe(true);
+describe('verifyTurnstile', () => {
+  const expected = { action: TURNSTILE_ACTION, hostnames: ['hercuit.com', 'www.hercuit.com'] };
+  const ok = { success: true, action: TURNSTILE_ACTION, hostname: 'hercuit.com' };
+  const reply = (status: number, json: unknown) => vi.fn(async () => new Response(JSON.stringify(json), { status }));
+  const check = (fetchImpl: unknown, overrides: Partial<{ token: string; secret: string; hostnames: string[] }> = {}) =>
+    verifyTurnstile(
+      overrides.token ?? 'tok',
+      overrides.secret ?? 'sec',
+      '1.2.3.4',
+      { ...expected, ...(overrides.hostnames ? { hostnames: overrides.hostnames } : {}) },
+      fetchImpl as typeof fetch,
+    );
+
+  it('accepts success with the expected action and an allowed hostname, sending secret, token and IP', async () => {
+    const fetchImpl = reply(200, ok);
+    expect(await check(fetchImpl)).toBe(true);
     const form = (fetchImpl.mock.calls[0] as unknown as [string, RequestInit])[1].body as FormData;
     expect([form.get('secret'), form.get('response'), form.get('remoteip')]).toEqual(['sec', 'tok', '1.2.3.4']);
   });
 
+  it('matches the hostname case-insensitively', async () => {
+    expect(await check(reply(200, { ...ok, hostname: 'WWW.Hercuit.com' }))).toBe(true);
+  });
+
   it.each([
-    ['success false', reply(200, { success: false })],
-    ['a non-boolean success', reply(200, { success: 'true' })],
-    ['an HTTP error', reply(500, { success: true })],
+    ['success false', reply(200, { ...ok, success: false })],
+    ['a non-boolean success', reply(200, { ...ok, success: 'true' })],
+    ['a different action', reply(200, { ...ok, action: 'contact-form' })],
+    ['a missing action', reply(200, { success: true, hostname: 'hercuit.com' })],
+    ['a hostname outside the allowlist', reply(200, { ...ok, hostname: 'evil.example' })],
+    ['localhost in production', reply(200, { ...ok, hostname: 'localhost' })],
+    ['a missing hostname', reply(200, { success: true, action: TURNSTILE_ACTION })],
+    ['an HTTP error', reply(500, ok)],
     ['a network failure', vi.fn(async () => { throw new Error('offline'); })],
-  ])('returns false on %s', async (_label, fetchImpl) => {
-    expect(await verifyTurnstile('tok', 'sec', null, fetchImpl as unknown as typeof fetch)).toBe(false);
+    ['an unparsable body', vi.fn(async () => new Response('not json', { status: 200 }))],
+  ])('fails closed on %s', async (_label, fetchImpl) => {
+    expect(await check(fetchImpl)).toBe(false);
+  });
+
+  it.each([
+    ['an empty token', { token: '' }],
+    ['an over-long token', { token: 'x'.repeat(2049) }],
+    ['an empty secret', { secret: '' }],
+    ['an empty hostname allowlist', { hostnames: [] }],
+  ])('rejects %s without calling siteverify', async (_label, overrides) => {
+    const fetchImpl = reply(200, ok);
+    expect(await check(fetchImpl, overrides)).toBe(false);
+    expect(fetchImpl).not.toHaveBeenCalled();
   });
 });

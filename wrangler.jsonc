@@ -20,7 +20,9 @@
   "vars": {
     "HERCULES_MODEL": "claude-opus-5-5",
     "LEAD_FROM": "hercules@hercuit.com",
-    "LEAD_TO": "info@hercuit.com"
+    "LEAD_TO": "info@hercuit.com",
+    // Hostnames a Turnstile token may come from. Production only: never localhost here.
+    "TURNSTILE_HOSTNAMES": "hercuit.com,www.hercuit.com,hercu.ramirezgjennyg.workers.dev"
   },
   // Email Routing: this binding can ONLY send to info@hercuit.com, whatever the code asks.
   "send_email": [{ "name": "LEADS_EMAIL", "destination_address": "info@hercuit.com" }],

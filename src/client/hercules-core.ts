@@ -1,8 +1,8 @@
 // Pure helpers for the Hercules widget (specs/hercules-assistant/03): SSE parsing and the
 // conversation "temporary variable" mirrored to sessionStorage. No DOM, so they are unit-tested.
-import { MAX_ASSISTANT_CHARS, MAX_MESSAGES, MAX_USER_CHARS, type ChatMessage } from '../../worker/guards';
+import { MAX_ASSISTANT_CHARS, MAX_MESSAGES, MAX_USER_CHARS, TURNSTILE_ACTION, type ChatMessage } from '../../worker/guards';
 
-export { MAX_USER_CHARS, type ChatMessage };
+export { MAX_USER_CHARS, TURNSTILE_ACTION, type ChatMessage };
 export const STORAGE_KEY = 'hercules:v1';
 
 export type ServerEvent =

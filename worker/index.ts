@@ -1,14 +1,17 @@
 // Worker entry: POST /api/hercules runs the assistant; everything else is the static site.
 // `run_worker_first: ["/api/*"]` in wrangler.jsonc means static pages never reach this code.
 import Anthropic from '@anthropic-ai/sdk';
-import { GuardError, parseHerculesRequest, verifyTurnstile } from './guards';
+import { GuardError, parseHerculesRequest, parseHostnames, TURNSTILE_ACTION, verifyTurnstile } from './guards';
 import { formatSse, runConversation, type ModelStream, type SseEvent, type StreamParams } from './hercules';
 import type { LeadEmail } from './lead';
 
 export interface Env {
   ASSETS: Fetcher;
-  ANTHROPIC_API_KEY: string;
-  TURNSTILE_SECRET: string;
+  // Account-level Cloudflare Secrets Store bindings (wrangler.jsonc → secrets_store_secrets): read with await .get().
+  ANTHROPIC_API_KEY: SecretsStoreSecret;
+  TURNSTILE_SECRET: SecretsStoreSecret;
+  /** Comma-separated hostnames the widget may run on (production must not include localhost). */
+  TURNSTILE_HOSTNAMES: string;
   HERCULES_MODEL: string;
   LEAD_FROM: string;
   LEAD_TO: string;
@@ -23,7 +26,7 @@ const SSE_HEADERS = {
 };
 
 /** A complete SSE response for errors that happen before the conversation starts. */
-function sseError(code: 'invalid_request' | 'rate_limited', status: number): Response {
+function sseError(code: 'invalid_request' | 'rate_limited' | 'unavailable', status: number): Response {
   const body = `event: error\ndata: ${JSON.stringify({ code })}\n\nevent: done\ndata: {}\n\n`;
   return new Response(body, { status, headers: SSE_HEADERS });
 }
@@ -50,12 +53,23 @@ async function handleHercules(request: Request, env: Env, ctx: ExecutionContext)
     throw err;
   }
 
-  if (!(await verifyTurnstile(parsed.turnstileToken, env.TURNSTILE_SECRET, ip))) {
+  // Fail closed if a secret is missing or the store is unreachable; never log the values.
+  let turnstileSecret: string;
+  let apiKey: string;
+  try {
+    [turnstileSecret, apiKey] = await Promise.all([env.TURNSTILE_SECRET.get(), env.ANTHROPIC_API_KEY.get()]);
+  } catch {
+    log({ event: 'secret_unavailable' });
+    return sseError('unavailable', 503);
+  }
+
+  const expected = { action: TURNSTILE_ACTION, hostnames: parseHostnames(env.TURNSTILE_HOSTNAMES) };
+  if (!(await verifyTurnstile(parsed.turnstileToken, turnstileSecret, ip, expected))) {
     log({ event: 'rejected', reason: 'turnstile' });
     return sseError('invalid_request', 403);
   }
 
-  const client = new Anthropic({ apiKey: env.ANTHROPIC_API_KEY });
+  const client = new Anthropic({ apiKey });
   const { readable, writable } = new TransformStream<Uint8Array, Uint8Array>();
   const writer = writable.getWriter();
   const encoder = new TextEncoder();

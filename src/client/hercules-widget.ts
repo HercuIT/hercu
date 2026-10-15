@@ -8,6 +8,7 @@ import {
   isConversationFull,
   loadConversation,
   MAX_USER_CHARS,
+  TURNSTILE_ACTION,
   parseSse,
   prepareUserMessage,
   saveConversation,
@@ -221,6 +222,7 @@ class HerculesPanel {
     if (!window.turnstile || this.turnstileId) return;
     this.turnstileId = window.turnstile.render(this.turnstileBox, {
       sitekey: this.config.siteKey,
+      action: TURNSTILE_ACTION, // the Worker rejects tokens without this exact action
       execution: 'execute',
       appearance: 'interaction-only',
       callback: (token: string) => this.tokenWaiter?.resolve(token),
