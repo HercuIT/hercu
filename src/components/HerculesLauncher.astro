@@ -42,7 +42,11 @@ const config = { locale, siteKey, strings: t.hercules, privacyHref: privacyPaths
       if (loading) return;
       loading = true;
       try {
-        const mod = await (widget ??= import('../client/hercules-widget'));
+        // A failed download (offline, deploy in progress) must not be cached, or every later click fails.
+        const mod = await (widget ??= import('../client/hercules-widget').catch((err) => {
+          widget = null;
+          throw err;
+        }));
         if (action === 'toggle') mod.toggleHercules(config, launcher);
         else mod.openHercules(config, launcher);
       } finally {

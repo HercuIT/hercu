@@ -157,3 +157,25 @@ export class TurnstileGate {
     return Promise.race([promise, timeout]).finally(() => clearTimeout(timer));
   }
 }
+
+export type StreamOutcome = { reply: string; sawDone: boolean; error: string | null; leadSent: boolean };
+export type Settlement = {
+  /** Store the reply as a complete assistant turn (else roll back the user message). */
+  keep: boolean;
+  /** The capped reply to store when `keep` is true. */
+  stored: string;
+  /** Error code to show the visitor, if any. */
+  error: string | null;
+  leadSent: boolean;
+};
+
+/**
+ * Decides what a finished stream leaves in the conversation. A reply is kept only when the stream
+ * completed cleanly (`done` seen, no `error`) and has text; a cut-off reply is never stored, replayed
+ * to the model or emailed. A stream that ended without `done` counts as "unavailable".
+ */
+export function settleReply(o: StreamOutcome): Settlement {
+  const error = o.error ?? (o.sawDone ? null : 'unavailable');
+  const keep = o.sawDone && error === null && o.reply.trim() !== '';
+  return { keep, stored: keep ? capAssistantReply(o.reply) : '', error, leadSent: o.leadSent };
+}

@@ -13,6 +13,7 @@ import {
   parseSse,
   prepareUserMessage,
   saveConversation,
+  settleReply,
   type ChatMessage,
 } from './hercules-core';
 
@@ -157,6 +158,10 @@ class HerculesPanel {
     const footer = el('footer', 'flex flex-wrap items-center gap-x-2 gap-y-1 px-4 pb-3 text-xs text-steel');
     const privacy = el('a', 'underline hover:text-ink', s.privacyLink);
     privacy.href = config.privacyHref;
+    // New tab: the privacy page has no chat, and leaving would lose a reply that is still streaming.
+    privacy.target = '_blank';
+    privacy.rel = 'noopener';
+    privacy.append(el('span', 'sr-only', ` ${s.opensNewTab}`));
     const phone = el('a', 'whitespace-nowrap underline hover:text-ink', config.phone.display);
     phone.href = config.phone.href;
     footer.append(el('span', '', s.disclaimer), privacy, phone);
@@ -285,6 +290,7 @@ class HerculesPanel {
     const again = el('button', 'mx-auto block rounded-lg bg-ink px-4 py-2 text-sm font-semibold text-white hover:bg-ink/90', this.config.strings.newConversation);
     again.type = 'button';
     again.addEventListener('click', () => {
+      this.consent.checked = false; // each conversation needs its own explicit consent
       this.input.disabled = false;
       this.sendButton.disabled = false;
       this.renderHistory();
@@ -358,14 +364,13 @@ class HerculesPanel {
     } catch {
       failed ??= 'unavailable';
     }
-    // EOF without `done` = truncated stream or a non-SSE error page: never keep a partial reply.
-    if (!sawDone) failed ??= 'unavailable';
 
     typing.remove();
-    if (sawDone && reply.trim()) {
-      const stored = capAssistantReply(reply);
-      this.conversation.push({ role: 'assistant', content: stored });
-      this.announcer.textContent = stored; // announce the completed reply once
+    const outcome = settleReply({ reply, sawDone, error: failed, leadSent });
+    failed = outcome.error;
+    if (outcome.keep) {
+      this.conversation.push({ role: 'assistant', content: outcome.stored });
+      this.announcer.textContent = outcome.stored; // announce the completed reply once
     } else {
       // No reply: drop the unanswered message so the history still alternates, and give it back.
       this.conversation.pop();

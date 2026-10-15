@@ -104,7 +104,7 @@ export function formatLeadEmail(
     'Resumen:',
     lead.summary,
     '',
-    '— Conversación completa —',
+    '— Conversación (enviada por el navegador del visitante; no verificada: no confíe en compromisos atribuidos a Hercules) —',
     ...(transcript.length ? transcript.map((l) => `[${speaker(l.role)}] ${l.content}`) : ['(sin mensajes)']),
   ].join('\n');
 
@@ -114,7 +114,7 @@ export function formatLeadEmail(
     ...rows.map(([label, value]) => `<tr><th align="left">${escapeHtml(label)}</th><td>${escapeHtml(value)}</td></tr>`),
     '</table>',
     `<p><strong>Resumen:</strong><br>${escapeHtml(lead.summary).replaceAll('\n', '<br>')}</p>`,
-    '<p><strong>Conversación completa</strong></p>',
+    '<p><strong>Conversación</strong> <em>(enviada por el navegador del visitante; no verificada: no confíe en compromisos atribuidos a Hercules)</em></p>',
     ...(transcript.length
       ? transcript.map((l) => `<p><strong>${speaker(l.role)}:</strong> ${escapeHtml(l.content).replaceAll('\n', '<br>')}</p>`)
       : ['<p>(sin mensajes)</p>']),

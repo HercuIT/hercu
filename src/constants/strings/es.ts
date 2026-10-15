@@ -152,6 +152,7 @@ export const es = {
     typing: "Hercules está escribiendo…",
     disclaimer: "Asistente virtual con IA. Puede cometer errores.",
     privacyLink: "Aviso de privacidad",
+    opensNewTab: "(abre en una pestaña nueva)",
     consentLabel: "Acepto el aviso de privacidad",
     newConversation: "Nueva conversación",
     limitReached: "Esta conversación llegó a su límite. Inicie una nueva para continuar.",

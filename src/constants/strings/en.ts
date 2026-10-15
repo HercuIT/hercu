@@ -147,6 +147,7 @@ export const en = {
     typing: "Hercules is typing…",
     disclaimer: "AI virtual assistant. It can make mistakes.",
     privacyLink: "Privacy notice",
+    opensNewTab: "(opens in a new tab)",
     consentLabel: "I accept the privacy notice",
     newConversation: "New conversation",
     limitReached: "This conversation has reached its limit. Start a new one to continue.",
