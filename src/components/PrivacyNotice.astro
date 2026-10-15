@@ -1,0 +1,58 @@
+---
+// Aviso de Privacidad Integral conforme a la LFPDPPP y sus Lineamientos (México).
+import Layout from '../layouts/Layout.astro';
+import { shared } from '../constants/strings';
+import { useStrings } from '../i18n/utils';
+import Footer from './Footer.astro';
+import Header from './Header.astro';
+
+const t = useStrings(Astro.currentLocale);
+---
+
+<Layout title={`${t.privacy.title} · ${shared.brand.name}`} alternates={false}>
+  <Header />
+  <main class="container mx-auto max-w-4xl px-4 py-16">
+    <div class="mb-4 inline-flex items-center gap-2 rounded-full border border-brand-500/20 bg-brand-500/10 px-3.5 py-1 text-xs font-semibold uppercase tracking-wider text-brand-600">
+      <span class="inline-block h-1.5 w-1.5 rounded-full bg-brand-500" aria-hidden="true"></span>
+      {t.privacy.lawReference}
+    </div>
+    <h1 class="mb-3 font-display text-3xl font-bold tracking-wordmark text-ink sm:text-4xl">{t.privacy.title}</h1>
+    <p class="mb-8 text-sm text-steel">{t.privacy.updated}</p>
+
+    <div class="mb-10 rounded-2xl border border-brand-500/20 bg-brand-500/5 p-6 text-base leading-relaxed text-steel">
+      <p>{t.privacy.introduction}</p>
+    </div>
+
+    <div class="space-y-8">
+      {t.privacy.sections.map((section) => (
+        <section class="rounded-2xl border border-ink/10 bg-white p-6 shadow-sm sm:p-8">
+          <h2 class="mb-4 font-display text-xl font-bold text-ink sm:text-2xl">{section.heading}</h2>
+          {section.blocks.map((block) =>
+            typeof block === 'string' ? (
+              <p class="mb-3 text-base leading-relaxed text-steel last:mb-0">{block}</p>
+            ) : (
+              <ul class="mb-4 mt-1 list-disc space-y-2 pl-6 text-steel last:mb-0">
+                {block.map((item) => (
+                  <li class="leading-relaxed">{item}</li>
+                ))}
+              </ul>
+            ),
+          )}
+        </section>
+      ))}
+
+      <section class="rounded-2xl border-2 border-brand-500/30 bg-white p-6 shadow-sm sm:p-8">
+        <h2 class="mb-2 font-display text-xl font-bold text-ink sm:text-2xl">{t.privacy.simplifiedNotice.heading}</h2>
+        <p class="mb-4 text-xs font-bold uppercase tracking-wider text-brand-600">{t.privacy.simplifiedNotice.subheading}</p>
+        <div class="space-y-3">
+          {t.privacy.simplifiedNotice.paragraphs.map((para, index) => (
+            <p class:list={["text-sm leading-relaxed text-steel", index % 2 === 1 && "rounded-lg border border-ink/10 bg-ink/5 p-4 italic text-ink"]}>
+              {para}
+            </p>
+          ))}
+        </div>
+      </section>
+    </div>
+  </main>
+  <Footer />
+</Layout>

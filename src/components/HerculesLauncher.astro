@@ -1,0 +1,51 @@
+---
+// Floating button that opens Hercules. The chat code is a separate chunk imported on the first click,
+// so pages load 0 KB of widget JS until a visitor asks for it (specs/hercules-assistant/03).
+import { shared } from '../constants/strings';
+import { getLocale, privacyPaths, useStrings } from '../i18n/utils';
+import LogoMark from './brand/LogoMark.astro';
+
+const locale = getLocale(Astro.currentLocale);
+const t = useStrings(locale);
+
+// Turnstile site keys are public by design. PUBLIC_TURNSTILE_SITE_KEY can override it per build;
+// `||` (not `??`) so an empty CI variable still falls back. The secret lives in the Cloudflare Secrets
+// Store (TURNSTILE_SECRET binding, see wrangler.jsonc), never in the repo or in .dev.vars.
+const SITE_KEY = '0x4AAAAAAFXMST0WMhwPPQv6';
+const siteKey: string = import.meta.env.PUBLIC_TURNSTILE_SITE_KEY || SITE_KEY;
+if (!siteKey.trim()) {
+  throw new Error('HerculesLauncher: the Turnstile site key is empty; the chat could not verify visitors.');
+}
+
+const config = { locale, siteKey, strings: t.hercules, privacyHref: privacyPaths[locale], phone: shared.phone };
+---
+
+<button
+  type="button"
+  id="hercules-launcher"
+  data-config={JSON.stringify(config)}
+  aria-label={t.hercules.open}
+  aria-expanded="false"
+  aria-controls="hercules-panel"
+  class="fixed bottom-4 right-4 z-50 flex size-14 items-center justify-center rounded-full bg-ink shadow-lg shadow-ink/30 transition-colors hover:bg-ink/90"
+>
+  <LogoMark decorative size={36} />
+</button>
+
+<script>
+  import { createWidgetLoader } from '../client/widget-loader';
+
+  const launcher = document.getElementById('hercules-launcher');
+  if (launcher) {
+    const config = JSON.parse(launcher.dataset.config ?? '{}');
+    config.logoHtml = launcher.querySelector('svg')?.outerHTML ?? '';
+    // Download once, ignore clicks while loading, retry after a failed download (see widget-loader.ts).
+    const run = createWidgetLoader(() => import('../client/hercules-widget'));
+    launcher.addEventListener('click', () => void run((mod) => mod.toggleHercules(config, launcher)));
+    // Secondary entry points (e.g. the hero link) only appear once this script runs, and only open.
+    for (const trigger of document.querySelectorAll<HTMLElement>('[data-hercules-open]')) {
+      trigger.hidden = false;
+      trigger.addEventListener('click', () => void run((mod) => mod.openHercules(config, launcher)));
+    }
+  }
+</script>

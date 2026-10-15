@@ -3,15 +3,37 @@
   // Must match the Worker name in the Cloudflare dashboard (defaults to the GitHub repo name).
   "name": "hercu",
   "compatibility_date": "2026-09-01",
+  // The Worker only handles POST /api/hercules (the Hercules assistant); see worker/index.ts.
+  "main": "./worker/index.ts",
   // Wrangler runs the Astro build before deploy/preview, so deploys work even when the
   // dashboard's "Build command" is empty.
   "build": {
     "command": "npm run build"
   },
-  // Static site: serve Astro's build output directly; no Worker script.
+  // Static site: Astro's build output is served directly. Only /api/* reaches the Worker first,
+  // so static pages never run Worker code.
   "assets": {
-    "directory": "./dist"
+    "directory": "./dist",
+    "binding": "ASSETS",
+    "run_worker_first": ["/api/*"]
   },
+  "vars": {
+    "HERCULES_MODEL": "claude-opus-5-5",
+    "LEAD_FROM": "hercules@hercuit.com",
+    "LEAD_TO": "info@hercuit.com",
+    // Hostnames a Turnstile token may come from. Production only: never localhost here.
+    "TURNSTILE_HOSTNAMES": "hercuit.com,www.hercuit.com,hercu.ramirezgjennyg.workers.dev"
+  },
+  // Email Routing: this binding can ONLY send to info@hercuit.com, whatever the code asks.
+  "send_email": [{ "name": "LEADS_EMAIL", "destination_address": "info@hercuit.com" }],
+  // 20 requests per minute per visitor IP for /api/hercules.
+  "ratelimits": [{ "name": "CHAT_LIMITER", "namespace_id": "1001", "simple": { "limit": 20, "period": 60 } }],
+  // Secrets live in the account-level Cloudflare Secrets Store (never in the repo). The Worker reads
+  // them with `await env.<BINDING>.get()`; the store ID is an identifier, not a secret.
+  "secrets_store_secrets": [
+    { "binding": "ANTHROPIC_API_KEY", "store_id": "0086f10401674b139c72e268df0bd4a0", "secret_name": "ANTHROPIC_API_KEY" },
+    { "binding": "TURNSTILE_SECRET", "store_id": "0086f10401674b139c72e268df0bd4a0", "secret_name": "TURNSTILE_SECRET" }
+  ],
   // Required by `wrangler preview` (Cloudflare's preview-branch deploy command). Empty = defaults.
   "previews": {}
 }

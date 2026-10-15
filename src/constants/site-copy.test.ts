@@ -106,3 +106,33 @@ describe('Spanish register', () => {
     expect(offenders).toEqual([]);
   });
 });
+
+describe('assistant name spelling', () => {
+  const allSpanish = allStrings(strings.es).join('\n');
+
+  it('is "Hércules" everywhere in the Spanish copy, never the unaccented form', () => {
+    expect(allSpanish).toContain('Hércules');
+    expect(allSpanish).not.toMatch(/\bHercules\b/);
+  });
+
+  it('stays "Hercules" in the English copy', () => {
+    expect(strings.en.hercules.title).toBe('Hercules');
+    expect(allStrings(strings.en).join('\n')).not.toContain('Hércules');
+  });
+});
+
+describe('consent wording is identical in the checkbox and the short privacy notice', () => {
+  it.each(['es', 'en'] as const)('"%s": the short notice quotes hercules.consentLabel word for word', (locale) => {
+    const label = strings[locale].hercules.consentLabel;
+    // Section 10 (simplified and short notices) lives in privacy.simplifiedNotice.
+    const notice = strings[locale].privacy.simplifiedNotice.paragraphs.join('\n');
+    expect(label.length).toBeGreaterThan(20);
+    expect(notice).toContain(locale === 'es' ? `«${label}».` : `"${label}".`);
+  });
+
+  it.each(['es', 'en'] as const)('"%s": the label names the privacy notice and email reporting', (locale) => {
+    const label = strings[locale].hercules.consentLabel;
+    expect(label).toMatch(locale === 'es' ? /aviso de privacidad/ : /privacy notice/);
+    expect(label).toMatch(locale === 'es' ? /correo electrónico/ : /email/);
+  });
+});

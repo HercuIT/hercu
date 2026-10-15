@@ -5,6 +5,9 @@ import LanguageSwitcher from './LanguageSwitcher.astro';
 import { getLocale, useStrings } from '../i18n/utils';
 
 const locale = getLocale(Astro.currentLocale);
+// Section anchors point at the home page so they also work from other pages (e.g. the privacy notice);
+// on the home page itself "/#servicios" is a same-document jump, not a reload.
+const home = getRelativeLocaleUrl(locale, '/');
 const t = useStrings(locale);
 ---
 
@@ -14,11 +17,11 @@ const t = useStrings(locale);
       <Logo variant="compact" href={getRelativeLocaleUrl(locale, '/')} class="text-2xl" />
 
       <nav class="hidden md:flex items-center gap-8">
-        <a href={`#${t.nav.services.id}`} class="text-sm font-medium text-steel hover:text-brand-500 transition-colors">{t.nav.services.label}</a>
-        <a href={`#${t.nav.projects.id}`} class="text-sm font-medium text-steel hover:text-brand-500 transition-colors">{t.nav.projects.label}</a>
-        <a href={`#${t.nav.about.id}`} class="text-sm font-medium text-steel hover:text-brand-500 transition-colors">{t.nav.about.label}</a>
+        <a href={`${home}#${t.nav.services.id}`} class="text-sm font-medium text-steel hover:text-brand-500 transition-colors">{t.nav.services.label}</a>
+        <a href={`${home}#${t.nav.projects.id}`} class="text-sm font-medium text-steel hover:text-brand-500 transition-colors">{t.nav.projects.label}</a>
+        <a href={`${home}#${t.nav.about.id}`} class="text-sm font-medium text-steel hover:text-brand-500 transition-colors">{t.nav.about.label}</a>
         <LanguageSwitcher />
-        <a href={`#${t.nav.contact.id}`} class="px-5 py-2.5 bg-ink text-white hover:text-white text-sm font-bold rounded-lg hover:bg-ink/90 transition-colors">
+        <a href={`${home}#${t.nav.contact.id}`} class="px-5 py-2.5 bg-ink text-white hover:text-white text-sm font-bold rounded-lg hover:bg-ink/90 transition-colors">
           {t.nav.contact.label}
         </a>
       </nav>
