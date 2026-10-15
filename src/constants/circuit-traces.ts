@@ -117,6 +117,8 @@ export function validateTraces(list: readonly Trace[]): void {
     seen.add(t.id);
 
     const points = pathPoints(t.d, t.id);
+    // The first point is the M; anything less than two points draws nothing on screen.
+    if (points.length < 2) throw new Error(`Trace "${t.id}" needs at least one drawing segment after M`);
     for (const [px, py] of points) {
       if (px < 0 || py < 0 || px > VIEWBOX.width || py > VIEWBOX.height) {
         throw new Error(`Trace "${t.id}" leaves the viewBox at (${px}, ${py})`);
