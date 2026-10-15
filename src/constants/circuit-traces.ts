@@ -55,6 +55,10 @@ export function totalMotionMs(list: readonly Trace[]): number {
 
 const ID = /^[a-z][a-z0-9]*(-[a-z0-9]+)*$/;
 const SEGMENT = /([A-Za-z])([^A-Za-z]*)/g;
+// SVG number list: numbers separated by ONE comma (optionally padded by spaces) or by whitespace.
+// Integers and decimals only; exponents are not needed for this geometry and are not supported.
+const NUMBER = String.raw`[+-]?(?:\d+(?:\.\d*)?|\.\d+)`;
+const NUMBER_LIST = new RegExp(String.raw`^\s*(?:${NUMBER}(?:(?:\s*,\s*|\s+)${NUMBER})*)?\s*$`);
 
 /** Parses a path into its points, enforcing PCB style. Throws on anything else. */
 export function pathPoints(d: string, id = 'trace'): [number, number][] {
@@ -66,8 +70,13 @@ export function pathPoints(d: string, id = 'trace'): [number, number][] {
   const consumed = segments.map((s) => s[0]).join('');
   if (consumed.replace(/\s/g, '') !== d.replace(/\s/g, '')) throw new Error(`Trace "${id}" has unparsable path data`);
 
+  // Check every command letter first, so a stray letter (e.g. the "e" of "6e2") is reported as itself.
+  const unsupported = segments.find(([, cmd]) => !'MHVL'.includes(cmd));
+  if (unsupported) throw new Error(`Trace "${id}" uses "${unsupported[1]}"; only absolute M, H, V, L are allowed`);
+
   segments.forEach(([, cmd, args], index) => {
-    const nums = args.trim() === '' ? [] : args.trim().split(/[\s,]+/).map(Number);
+    if (!NUMBER_LIST.test(args)) throw new Error(`Trace "${id}" has a malformed number list after ${cmd}`);
+    const nums = args.trim() === '' ? [] : args.trim().split(/\s*,\s*|\s+/).map(Number);
     if (nums.some((n) => !Number.isFinite(n))) throw new Error(`Trace "${id}" has a non-numeric coordinate`);
     const want = cmd === 'M' || cmd === 'L' ? 2 : 1;
     if (!'MHVL'.includes(cmd)) {
