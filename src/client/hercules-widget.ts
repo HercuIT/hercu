@@ -57,22 +57,22 @@ function el<K extends keyof HTMLElementTagNameMap>(tag: K, className = '', text?
 function renderReply(node: HTMLElement, text: string): void {
   node.replaceChildren(
     ...parseChatText(text).map((block, index) => {
-      const spacing = index > 0 ? mt-2 : ;
+      const spacing = index > 0 ? 'mt-2' : '';
       const fill = (target: HTMLElement, line: { text: string; bold: boolean }[]) => {
-        for (const piece of line) target.append(piece.bold ? el(strong, font-semibold, piece.text) : document.createTextNode(piece.text));
+        for (const piece of line) target.append(piece.bold ? el('strong', 'font-semibold', piece.text) : document.createTextNode(piece.text));
       };
-      if (block.kind === list) {
-        const list = el(ul, `list-disc space-y-1 pl-5 ${spacing}`.trim());
+      if (block.kind === 'list') {
+        const list = el('ul', `list-disc space-y-1 pl-5 ${spacing}`.trim());
         for (const item of block.items) {
-          const li = el(li);
+          const li = el('li');
           fill(li, item);
           list.append(li);
         }
         return list;
       }
-      const paragraph = el(p, spacing);
+      const paragraph = el('p', spacing);
       block.lines.forEach((line, i) => {
-        if (i > 0) paragraph.append(el(br));
+        if (i > 0) paragraph.append(el('br'));
         fill(paragraph, line);
       });
       return paragraph;
