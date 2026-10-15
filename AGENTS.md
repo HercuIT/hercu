@@ -33,7 +33,7 @@ Full standards: [GEMINI.md](GEMINI.md). The essentials:
 
 ## Testing
 
-After adding or modifying code, always add unit tests with **all possible coverage**: every positive, negative and edge scenario the code can meet, not just a sample. Each new function, branch and rule gets tests for:
+After adding or modifying code, always add unit tests covering all meaningful positive, negative and edge scenarios. Each new function, branch and rule gets tests for applicable behaviors and representative boundaries:
 
 - **Positive (happy path):** the expected, valid behavior.
 - **Negative:** invalid input, missing or unknown values, and failure paths. Assert that the code rejects them or falls back as intended.
