@@ -2,7 +2,7 @@
 // email, clock, logger), so the whole tool loop is unit-testable without network.
 import Anthropic from '@anthropic-ai/sdk';
 import type { ChatMessage } from './guards';
-import { formatLeadEmail, headerSafe, validateLead, type LeadEmail } from './lead';
+import { formatLeadEmail, headerSafe, validateLead, type Lead, type LeadEmail } from './lead';
 import { buildSystemPrompt } from './prompt';
 import { SUBMIT_LEAD, submitLeadTool } from './tool';
 
@@ -167,7 +167,7 @@ async function handleToolUse(
   try {
     await deps.sendEmail(email);
   } catch (err) {
-    deps.log(emailFailureLog(err));
+    deps.log(emailFailureLog(err, validation.lead));
     return result('Could not send the email. Apologize and give the visitor the phone number and the contact form.', true);
   }
   deps.log({ event: 'lead_sent' });
@@ -178,14 +178,31 @@ async function handleToolUse(
 /** Longest error message kept in the `email_failed` log. */
 export const EMAIL_ERROR_MAX = 300;
 
+export const REDACTED = '[redacted]';
+
+const escapeRegExp = (value: string) => value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+
 /**
  * Log entry for a failed send. Keeps Cloudflare's reason (e.g. "destination address not verified"),
- * which names only our own addresses, never the visitor's: the lead isn't passed in here. The
- * message is still single-lined, stripped of control characters and capped.
+ * but the binding received the visitor's Reply-To, name and summary, and its error may echo any of
+ * them. So the message is redacted before logging: every value the visitor gave (when the lead is
+ * known), then every email address not on hercuit.com. It is also single-lined, stripped of control
+ * characters and capped, in that order, so a cap can't cut a value in half before it's redacted.
  */
-export function emailFailureLog(err: unknown): { event: 'email_failed'; kind: string; message: string } {
+export function emailFailureLog(err: unknown, lead?: Lead): { event: 'email_failed'; kind: string; message: string } {
   if (!(err instanceof Error)) return { event: 'email_failed', kind: 'unknown', message: '' };
-  return { event: 'email_failed', kind: err.name, message: headerSafe(err.message, EMAIL_ERROR_MAX) };
+  let message = headerSafe(err.message, Infinity);
+  const visitorValues = [lead?.summary, lead?.email, lead?.name, lead?.company, lead?.phone]
+    .map((value) => headerSafe(value ?? '', Infinity))
+    .filter((value) => value.length >= 2)
+    .sort((a, b) => b.length - a.length);
+  for (const value of visitorValues) {
+    message = message.replace(new RegExp(escapeRegExp(value), 'giu'), REDACTED);
+  }
+  message = message.replace(/[^\s@<>"'(),;:]+@[^\s@<>"'(),;:]+/gu, (address) =>
+    /@hercuit\.com\.?$/i.test(address) ? address : REDACTED,
+  );
+  return { event: 'email_failed', kind: err.name, message: message.slice(0, EMAIL_ERROR_MAX) };
 }
 
 /** SSE wire format: one event per message, JSON data on a single line. */
