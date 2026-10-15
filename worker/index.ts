@@ -80,11 +80,10 @@ export async function handleHercules(
 
   // Fail closed if a secret is missing or the store is unreachable; never log the values.
   let turnstileSecret: string;
-  let apiKey: string;
   try {
-    [turnstileSecret, apiKey] = await Promise.all([env.TURNSTILE_SECRET.get(), env.ANTHROPIC_API_KEY.get()]);
+    turnstileSecret = await env.TURNSTILE_SECRET.get();
   } catch {
-    log({ event: 'secret_unavailable' });
+    log({ event: 'secret_unavailable', secret: 'TURNSTILE_SECRET' });
     return sseError('unavailable', 503);
   }
 
@@ -92,6 +91,15 @@ export async function handleHercules(
   if (!(await verifyTurnstile(parsed.turnstileToken, turnstileSecret, ip, expected, deps.fetch))) {
     log({ event: 'rejected', reason: 'turnstile' });
     return sseError('invalid_request', 403);
+  }
+
+  // The privileged model key is read only for requests that passed Turnstile.
+  let apiKey: string;
+  try {
+    apiKey = await env.ANTHROPIC_API_KEY.get();
+  } catch {
+    log({ event: 'secret_unavailable', secret: 'ANTHROPIC_API_KEY' });
+    return sseError('unavailable', 503);
   }
 
   const { readable, writable } = new TransformStream<Uint8Array, Uint8Array>();

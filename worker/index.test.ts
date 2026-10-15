@@ -12,6 +12,7 @@ type Turn = { text?: string; stop_reason: string; content?: unknown[] };
 function setup(opts: {
   rateLimited?: boolean;
   secretFails?: boolean;
+  apiKeyFails?: boolean;
   turnstile?: Record<string, unknown> | 'network-error';
   turns?: Turn[];
 } = {}) {
@@ -19,12 +20,14 @@ function setup(opts: {
   const ctx = { waitUntil: (p: Promise<unknown>) => void pending.push(p), passThroughOnException() {} } as unknown as ExecutionContext;
   const limiter = vi.fn(async () => ({ success: !opts.rateLimited }));
   const assets = vi.fn(async () => new Response('static page'));
-  const secret = (value: string) => ({ get: vi.fn(async () => (opts.secretFails ? Promise.reject(new Error('missing')) : value)) });
+  const secret = (value: string, fails = false) => ({ get: vi.fn(async () => (fails ? Promise.reject(new Error('missing')) : value)) });
+  const apiKeySecret = secret('sk-test', opts.apiKeyFails);
+  const turnstileSecret = secret('ts-secret', opts.secretFails);
   const send = vi.fn(async () => ({}));
   const env = {
     ASSETS: { fetch: assets },
-    ANTHROPIC_API_KEY: secret('sk-test'),
-    TURNSTILE_SECRET: secret('ts-secret'),
+    ANTHROPIC_API_KEY: apiKeySecret,
+    TURNSTILE_SECRET: turnstileSecret,
     TURNSTILE_HOSTNAMES: 'hercuit.com',
     HERCULES_MODEL: 'claude-opus-5-5',
     LEAD_FROM: 'hercules@hercuit.com',
@@ -73,7 +76,7 @@ function setup(opts: {
     const [body] = await Promise.all([res.text(), ...pending]);
     return { status: res.status, type: res.headers.get('Content-Type'), body };
   };
-  return { env, ctx, deps, call, post, limiter, assets, send, turnstileFetch, streamCalls, apiKeys };
+  return { env, ctx, deps, call, post, limiter, assets, send, turnstileFetch, streamCalls, apiKeys, apiKeySecret };
 }
 
 describe('default export routing', () => {
@@ -120,12 +123,29 @@ describe('handleHercules', () => {
     expect(s.limiter).not.toHaveBeenCalled();
   });
 
-  it('returns 503 unavailable when a secret cannot be read', async () => {
+  it('returns 503 unavailable when the Turnstile secret cannot be read, before calling siteverify', async () => {
     const s = setup({ secretFails: true });
     const r = await s.call();
     expect(r.status).toBe(503);
     expect(r.body).toContain('"code":"unavailable"');
+    expect(s.turnstileFetch).not.toHaveBeenCalled();
     expect(s.streamCalls).toHaveLength(0);
+  });
+
+  it('returns 503 unavailable when the Anthropic key cannot be read after Turnstile passes', async () => {
+    const s = setup({ apiKeyFails: true });
+    const r = await s.call();
+    expect(r.status).toBe(503);
+    expect(r.body).toContain('"code":"unavailable"');
+    expect(s.turnstileFetch).toHaveBeenCalledOnce();
+    expect(s.streamCalls).toHaveLength(0);
+  });
+
+  it('never reads the Anthropic key for a request that fails Turnstile', async () => {
+    const s = setup({ turnstile: { success: false, action: TURNSTILE_ACTION, hostname: 'hercuit.com' } });
+    const r = await s.call();
+    expect(r.status).toBe(403);
+    expect(s.apiKeySecret.get).not.toHaveBeenCalled();
   });
 
   it.each([
