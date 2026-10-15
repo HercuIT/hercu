@@ -4,7 +4,8 @@ import { serviceIds } from '../src/constants/contact-services';
 import { shared, strings } from '../src/constants/strings';
 
 export const LEAD_SERVICES = [...serviceIds, 'undecided'] as const;
-export const CONTACT_CHANNELS = ['email', 'phone', 'whatsapp'] as const;
+// 'any' = the visitor has no preference (the field stays required so the model states it explicitly).
+export const CONTACT_CHANNELS = ['email', 'phone', 'whatsapp', 'any'] as const;
 
 // No ASCII control characters (CR/LF included): protects email headers and keeps names single-line.
 const NO_CONTROL = /^[^\u0000-\u001f\u007f]*$/;
@@ -18,7 +19,12 @@ export const leadSchema = z
       .max(254)
       .pipe(z.email())
       .transform((value) => value.toLowerCase()),
-    phone: z.string().trim().regex(/^\+?[0-9 ()-]{7,20}$/, 'phone must be digits').optional(),
+    phone: z
+      .string()
+      .trim()
+      .regex(/^\+?[0-9 ()-]{7,20}$/, 'phone may only contain digits, spaces, (), - and a leading +')
+      .refine((value) => (value.match(/\d/g) ?? []).length >= 7, 'phone needs at least 7 digits')
+      .optional(),
     company: z.string().trim().max(120).regex(NO_CONTROL, 'company has control characters').optional(),
     service: z.enum(LEAD_SERVICES),
     summary: z.string().trim().min(10).max(1500),
@@ -41,6 +47,7 @@ const CHANNEL_LABEL: Record<Lead['preferredContact'], string> = {
   email: 'Correo electrónico',
   phone: 'Teléfono',
   whatsapp: 'WhatsApp',
+  any: 'Sin preferencia',
 };
 
 /** Single-line, control-free, length-capped: safe for an email header. */

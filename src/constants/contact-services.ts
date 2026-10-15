@@ -11,8 +11,12 @@ export const serviceGroups = [
 export type ServiceGroupId = (typeof serviceGroups)[number]['id'];
 export type ServiceId = (typeof serviceGroups)[number]['services'][number];
 
-/** Every service slug, in catalogue order (the dropdown, the Services section and Hercules all use it). */
-export const serviceIds = serviceGroups.flatMap((group) => [...group.services]) as ServiceId[];
+/**
+ * Every service slug, in catalogue order. Consumed by Hercules (worker/lead.ts → the submit_lead
+ * `service` enum and leadSchema). The contact dropdown and the Services section read `serviceGroups`
+ * through buildServiceOptions() instead.
+ */
+export const serviceIds: readonly ServiceId[] = Object.freeze(serviceGroups.flatMap((group) => [...group.services]));
 
 export type ServiceLabels = {
   groups: Record<ServiceGroupId, string>;

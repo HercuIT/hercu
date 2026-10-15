@@ -28,7 +28,11 @@ export const submitLeadTool: Anthropic.Beta.Messages.BetaTool = {
         type: 'string',
         description: '2–5 sentences: the need, context and goals, in the conversation language',
       },
-      preferredContact: { type: 'string', enum: [...CONTACT_CHANNELS] },
+      preferredContact: {
+        type: 'string',
+        enum: [...CONTACT_CHANNELS],
+        description: 'Channel the visitor prefers; "any" if they have no preference',
+      },
       consent: {
         type: 'boolean',
         description: 'true only if the visitor explicitly accepted the privacy notice',
