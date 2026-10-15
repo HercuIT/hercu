@@ -10,8 +10,9 @@ export type Block = { kind: 'paragraph'; lines: Line[] } | { kind: 'list'; items
 const LIST_ITEM = /^(?:[-*•]|\d{1,3}[.)])\s+(\S.*)$/;
 const HEADING = /^#{1,6}\s+(\S.*)$/;
 const QUOTE = /^>\s?(.*)$/;
-/** "---", "***", "___" on their own line: a separator, read as a paragraph break. */
-const RULE = /^(?:-{3,}|\*{3,}|_{3,})$/;
+/** "---" or "___" on its own line: a separator, read as a paragraph break. A run of "*" stays text
+ *  ("****" is shown as written). */
+const RULE = /^(?:-{3,}|_{3,})$/;
 const TABLE_SEPARATOR = /^\|?\s*:?-{3,}:?\s*(?:\|\s*:?-{3,}:?\s*)*\|?$/;
 const TABLE_ROW = /^\|(.*)\|$/;
 

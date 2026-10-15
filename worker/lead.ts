@@ -1,5 +1,6 @@
 // Lead validation and email formatting for Hercules (specs/hercules-assistant/02 + 04). Pure: no I/O.
 import { z } from 'zod';
+import { chatToPlainText, parseChatText, type Block } from '../src/client/chat-format';
 import { serviceIds } from '../src/constants/contact-services';
 import { shared, strings } from '../src/constants/strings';
 
@@ -73,6 +74,26 @@ export function serviceLabel(service: Lead['service']): string {
   return service === 'undecided' ? 'Por definir' : strings.es.contact.service.options[service];
 }
 
+/**
+ * Model-written text (Hércules' replies, the lead summary) as escaped HTML: bold, bullet lists and
+ * paragraphs from chat-format.ts, every text piece escaped, no links. `prefix` (trusted HTML, e.g.
+ * the speaker label) opens the first paragraph, or gets its own paragraph when the text starts with a list.
+ */
+export function chatToHtml(blocks: Block[], prefix = ''): string {
+  const inline = (line: { text: string; bold: boolean }[]) =>
+    line.map((piece) => (piece.bold ? `<strong>${escapeHtml(piece.text)}</strong>` : escapeHtml(piece.text))).join('');
+  const parts = blocks.map((block, i) => {
+    if (block.kind === 'list') return `<ul>${block.items.map((item) => `<li>${inline(item)}</li>`).join('')}</ul>`;
+    const lead = i === 0 && prefix ? `${prefix} ` : '';
+    return `<p>${lead}${block.lines.map(inline).join('<br>')}</p>`;
+  });
+  if (prefix && blocks[0]?.kind !== 'paragraph') parts.unshift(`<p>${prefix}</p>`);
+  return parts.join('');
+}
+
+/** Model-written text without Markdown markers, for the plain-text part. A blank result keeps the original. */
+const modelPlain = (text: string) => chatToPlainText(parseChatText(text)) || text;
+
 export type LeadEmail = { subject: string; text: string; html: string; replyTo: string };
 
 /**
@@ -102,10 +123,10 @@ export function formatLeadEmail(
     ...rows.map(([label, value]) => `${`${label}:`.padEnd(20)}${value}`),
     '',
     'Resumen:',
-    lead.summary,
+    modelPlain(lead.summary),
     '',
     '— Conversación (enviada por el navegador del visitante; no verificada: no confíe en compromisos atribuidos a Hércules) —',
-    ...(transcript.length ? transcript.map((l) => `[${speaker(l.role)}] ${l.content}`) : ['(sin mensajes)']),
+    ...(transcript.length ? transcript.map((l) => `[${speaker(l.role)}] ${l.role === 'assistant' ? modelPlain(l.content) : l.content}`) : ['(sin mensajes)']),
   ].join('\n');
 
   const html = [
@@ -113,10 +134,15 @@ export function formatLeadEmail(
     '<table>',
     ...rows.map(([label, value]) => `<tr><th align="left">${escapeHtml(label)}</th><td>${escapeHtml(value)}</td></tr>`),
     '</table>',
-    `<p><strong>Resumen:</strong><br>${escapeHtml(lead.summary).replaceAll('\n', '<br>')}</p>`,
+    chatToHtml(parseChatText(lead.summary), '<strong>Resumen:</strong>'),
     '<p><strong>Conversación</strong> <em>(enviada por el navegador del visitante; no verificada: no confíe en compromisos atribuidos a Hércules)</em></p>',
     ...(transcript.length
-      ? transcript.map((l) => `<p><strong>${speaker(l.role)}:</strong> ${escapeHtml(l.content).replaceAll('\n', '<br>')}</p>`)
+      ? transcript.map((l) =>
+          // Visitor lines stay exactly as typed (as in the chat); Hércules' replies keep their formatting.
+          l.role === 'assistant'
+            ? chatToHtml(parseChatText(l.content), `<strong>${speaker(l.role)}:</strong>`)
+            : `<p><strong>${speaker(l.role)}:</strong> ${escapeHtml(l.content).replaceAll('\n', '<br>')}</p>`,
+        )
       : ['<p>(sin mensajes)</p>']),
   ].join('\n');
 
