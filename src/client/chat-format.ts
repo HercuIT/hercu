@@ -25,13 +25,19 @@ const ITALIC_UNDERSCORE = /(^|[^\p{L}\p{N}_])_(?![\s_])([^_\n]*?[^\s_])_(?![\p{L
 
 const stripItalics = (text: string) => text.replace(ITALIC_STAR, '$1$2').replace(ITALIC_UNDERSCORE, '$1$2');
 
+/** ***x*** / ___x___ (bold italic) → **x** / __x__: italics are dropped, so no stray marker is left. */
+const BOLD_ITALIC = /(\*\*\*|___)(?=[^\s*_])([^*_\n]*?[^\s*_])\1/g;
+
 /**
  * Splits a line into plain and bold pieces. `**x**` / `__x__` is bold when the opener is followed
  * by a non-space and the closer preceded by one. An unclosed opener (e.g. mid-stream) stays literal.
  * One pass over the delimiter tokens: linear, even for thousands of asterisks.
  */
 export function parseInline(raw: string): Line {
-  const text = raw.replace(LINK, '$1').replace(CODE, '$1');
+  const text = raw
+    .replace(LINK, '$1')
+    .replace(CODE, '$1')
+    .replace(BOLD_ITALIC, (_m, marker: string, inner: string) => `${marker.slice(1)}${inner}${marker.slice(1)}`);
   const tokens = text.split(/(\*\*|__)/);
   const bold = new Array<boolean>(tokens.length).fill(false);
   const literal = new Array<boolean>(tokens.length).fill(true);
