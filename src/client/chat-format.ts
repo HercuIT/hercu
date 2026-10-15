@@ -16,9 +16,48 @@ const RULE = /^(?:-{3,}|_{3,})$/;
 const TABLE_SEPARATOR = /^\|?\s*:?-{3,}:?\s*(?:\|\s*:?-{3,}:?\s*)*\|?$/;
 const TABLE_ROW = /^\|(.*)\|$/;
 
-/** [label](url) → label. Links are never kept: a model-written URL must not become clickable. */
-const LINK = /\[([^\]\n]+)\]\((?:[^()\s]|\([^()\s]*\))+\)/g;
 const CODE = /`([^`\n]+)`/g;
+
+/** Stand-ins for "*" and "_" inside code spans, so bold/italic parsing can't see them. */
+const CODE_STAR = '';
+const CODE_UNDERSCORE = '';
+const protectCode = (text: string) =>
+  text
+    .replace(/[]/g, '')
+    .replace(CODE, (_m, code: string) => code.replaceAll('*', CODE_STAR).replaceAll('_', CODE_UNDERSCORE));
+const restoreCode = (text: string) => text.replaceAll(CODE_STAR, '*').replaceAll(CODE_UNDERSCORE, '_');
+
+/** Longest link destination scanned for its closing ")" (keeps the scan linear on hostile input). */
+const MAX_LINK_DESTINATION = 2048;
+
+/**
+ * [label](destination) → label. Links are never kept: a model-written URL must not become clickable,
+ * nor leak into the email. The destination is scanned with balanced parentheses (URLs may contain
+ * "(…)", even nested); an unclosed one is dropped up to the next whitespace.
+ */
+export function stripLinks(text: string): string {
+  const opener = /\[([^\]\n]+)\]\(/g;
+  let out = '';
+  let from = 0;
+  for (let match = opener.exec(text); match; match = opener.exec(text)) {
+    let end = opener.lastIndex;
+    let depth = 1;
+    const limit = Math.min(text.length, end + MAX_LINK_DESTINATION);
+    while (end < limit && depth > 0 && text[end] !== '\n') {
+      if (text[end] === '(') depth++;
+      else if (text[end] === ')') depth--;
+      end++;
+    }
+    if (depth > 0) {
+      const space = text.slice(opener.lastIndex).search(/\s/);
+      end = space === -1 ? text.length : opener.lastIndex + space;
+    }
+    out += text.slice(from, match.index) + match[1];
+    from = end;
+    opener.lastIndex = end;
+  }
+  return out + text.slice(from);
+}
 /** *italic* / _italic_ → text, only when the markers hug a word (so "2*3*4" and snake_case stay). */
 const ITALIC_STAR = /(^|[^\p{L}\p{N}*])\*(?![\s*])([^*\n]*?[^\s*])\*(?![\p{L}\p{N}*])/gu;
 const ITALIC_UNDERSCORE = /(^|[^\p{L}\p{N}_])_(?![\s_])([^_\n]*?[^\s_])_(?![\p{L}\p{N}_])/gu;
@@ -34,10 +73,7 @@ const BOLD_ITALIC = /(\*\*\*|___)(?=[^\s*_])([^*_\n]*?[^\s*_])\1/g;
  * One pass over the delimiter tokens: linear, even for thousands of asterisks.
  */
 export function parseInline(raw: string): Line {
-  const text = raw
-    .replace(LINK, '$1')
-    .replace(CODE, '$1')
-    .replace(BOLD_ITALIC, (_m, marker: string, inner: string) => `${marker.slice(1)}${inner}${marker.slice(1)}`);
+  const text = stripLinks(protectCode(raw)).replace(BOLD_ITALIC, (_m, marker: string, inner: string) => `${marker.slice(1)}${inner}${marker.slice(1)}`);
   const tokens = text.split(/(\*\*|__)/);
   const bold = new Array<boolean>(tokens.length).fill(false);
   const literal = new Array<boolean>(tokens.length).fill(true);
@@ -59,7 +95,8 @@ export function parseInline(raw: string): Line {
   tokens.forEach((token, i) => {
     const isDelimiter = i % 2 === 1;
     if (isDelimiter && !literal[i]) return;
-    const piece = isDelimiter ? token : stripItalics(token);
+    // Italics are stripped first, then code-span markers come back as the literal "*" / "_".
+    const piece = restoreCode(isDelimiter ? token : stripItalics(token));
     if (piece === '') return;
     const last = line.at(-1);
     if (last && last.bold === bold[i]) last.text += piece;
