@@ -208,11 +208,14 @@ describe('Privacy Notice (LFPDPPP Compliance)', () => {
 });
 
 describe('privacy notice structure: lists follow their lead-ins, in order', () => {
-  it.each(['es', 'en'] as const)('"%s": every paragraph ending in ":" is immediately followed by a list', (locale) => {
+  it.each(['es', 'en'] as const)('"%s": every paragraph ending in ":" is followed by its list (or by a nested lead-in)', (locale) => {
+    const isLeadIn = (b: unknown): b is string => typeof b === 'string' && b.trimEnd().endsWith(':');
     for (const s of strings[locale].privacy.sections) {
       s.blocks.forEach((block, i) => {
-        if (typeof block === 'string' && block.trimEnd().endsWith(':')) {
-          expect(Array.isArray(s.blocks[i + 1]), `${s.heading}: "${block.slice(-40)}" needs a list right after it`).toBe(true);
+        if (isLeadIn(block)) {
+          // e.g. §3: "…distinguiendo…:" introduces two categories, each with its own lead-in and list.
+          const next = s.blocks[i + 1];
+          expect(Array.isArray(next) || isLeadIn(next), `${s.heading}: "${block.slice(-40)}" needs a list right after it`).toBe(true);
         }
       });
     }
