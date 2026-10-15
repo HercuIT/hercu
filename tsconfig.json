@@ -3,5 +3,6 @@
   "include": [".astro/types.d.ts", "**/*"],
   // mcp-specs-server is a separate package with its own package.json, node_modules and tsconfig;
   // the site's CI only installs the root dependencies, so it must not be type-checked here.
-  "exclude": ["dist", "mcp-specs-server", ".wrangler"]
+  // worker/ runs on Cloudflare's runtime and has its own tsconfig (checked by `npm run check`).
+  "exclude": ["dist", "mcp-specs-server", ".wrangler", "worker"]
 }
