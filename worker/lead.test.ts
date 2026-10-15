@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { serviceIds } from '../src/constants/contact-services';
-import { escapeHtml, formatLeadEmail, headerSafe, LEAD_SENDER_NAME, serviceLabel, validateLead, type Lead } from './lead';
+import { chatToHtml, escapeHtml, formatLeadEmail, headerSafe, LEAD_SENDER_NAME, serviceLabel, validateLead, type Lead } from './lead';
 
 const valid = {
   name: 'Juana Pérez',
@@ -190,5 +190,81 @@ describe('team email uses the Spanish name', () => {
     expect(email.text).toContain('[Hércules] Hola');
     expect(email.text + email.html).not.toMatch(/\bHercules\b/);
     expect(LEAD_SENDER_NAME).toBe('Hércules');
+  });
+});
+
+describe('lead email formatting (specs/hercules-chat-formatting)', () => {
+  const ok = (patch: Record<string, unknown> = {}) => {
+    const r = lead(patch);
+    if (!r.ok) throw new Error(r.issues.join());
+    return r.lead as Lead;
+  };
+  const sentAt = new Date('2026-10-15T12:00:00Z');
+  const catalogue = 'Ofrecemos:\n- **Inteligencia artificial:** bots con IA.\n- **Capacitación y equipos:** team building.';
+
+  it("renders Hércules' list with bold labels as HTML, with the speaker label first", () => {
+    const { html } = formatLeadEmail(ok(), [{ role: 'assistant', content: catalogue }], { locale: 'es', sentAt });
+    expect(html).toContain('<p><strong>Hércules:</strong> Ofrecemos:</p>');
+    expect(html).toContain(
+      '<ul><li><strong>Inteligencia artificial:</strong> bots con IA.</li><li><strong>Capacitación y equipos:</strong> team building.</li></ul>',
+    );
+    expect(html).not.toContain('**');
+  });
+
+  it('gives the speaker label its own paragraph when the reply starts with a list', () => {
+    const { html } = formatLeadEmail(ok(), [{ role: 'assistant', content: '- **QA:** pruebas' }], { locale: 'es', sentAt });
+    expect(html).toContain('<p><strong>Hércules:</strong></p><ul><li><strong>QA:</strong> pruebas</li></ul>');
+  });
+
+  it('keeps "- " list lines in the plain-text part, with no ** markers', () => {
+    const { text } = formatLeadEmail(ok(), [{ role: 'assistant', content: catalogue }], { locale: 'es', sentAt });
+    expect(text).toContain('[Hércules] Ofrecemos:\n\n- Inteligencia artificial: bots con IA.\n- Capacitación y equipos: team building.');
+    expect(text).not.toContain('**');
+  });
+
+  it('formats the summary too (written by Hércules through submit_lead)', () => {
+    const email = formatLeadEmail(ok({ summary: 'Necesita **QA** para su app:\n- pruebas web\n- pruebas móviles' }), [], { locale: 'es', sentAt });
+    expect(email.html).toContain('<p><strong>Resumen:</strong> Necesita <strong>QA</strong> para su app:</p><ul><li>pruebas web</li><li>pruebas móviles</li></ul>');
+    expect(email.text).toContain('Resumen:\nNecesita QA para su app:\n\n- pruebas web\n- pruebas móviles');
+  });
+
+  it('escapes HTML inside bold text and list items', () => {
+    const content = '- **<script>alert(1)</script> & Cía:** <img src=x onerror=alert(1)>';
+    const { html } = formatLeadEmail(ok(), [{ role: 'assistant', content }], { locale: 'es', sentAt });
+    expect(html).toContain('<li><strong>&lt;script&gt;alert(1)&lt;/script&gt; &amp; Cía:</strong> &lt;img src=x onerror=alert(1)&gt;</li>');
+    expect(html).not.toContain('<script>');
+    expect(html).not.toContain('<img');
+  });
+
+  it('keeps only the label of a Markdown link, in both parts, and never an <a>', () => {
+    const content = 'Pague en [este enlace](https://evil.example/pay) hoy.';
+    const email = formatLeadEmail(ok(), [{ role: 'assistant', content }], { locale: 'es', sentAt });
+    for (const part of [email.html, email.text]) {
+      expect(part).toContain('Pague en este enlace hoy.');
+      expect(part).not.toContain('evil.example');
+    }
+    expect(email.html).not.toContain('<a');
+  });
+
+  it("leaves the visitor's own text exactly as typed (as in the chat), escaped", () => {
+    const email = formatLeadEmail(ok(), [{ role: 'user', content: 'Mi marca es **Ñandú**' }], { locale: 'es', sentAt });
+    expect(email.text).toContain('[Visitante] Mi marca es **Ñandú**');
+    expect(email.html).toContain('<p><strong>Visitante:</strong> Mi marca es **Ñandú**</p>');
+  });
+
+  it('keeps an assistant line that parses to nothing (whitespace only) as it was in the text part', () => {
+    const { text } = formatLeadEmail(ok(), [{ role: 'assistant', content: '   ' }], { locale: 'es', sentAt });
+    expect(text).toContain('[Hércules]    ');
+  });
+});
+
+describe('chatToHtml', () => {
+  it('returns an empty string for no blocks, and the prefix alone when there is one', () => {
+    expect(chatToHtml([])).toBe('');
+    expect(chatToHtml([], '<strong>X:</strong>')).toBe('<p><strong>X:</strong></p>');
+  });
+
+  it('joins lines of a paragraph with <br>', () => {
+    expect(chatToHtml([{ kind: 'paragraph', lines: [[{ text: 'a', bold: false }], [{ text: 'b', bold: true }]] }])).toBe('<p>a<br><strong>b</strong></p>');
   });
 });
