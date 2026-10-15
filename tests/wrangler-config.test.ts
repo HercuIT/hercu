@@ -4,6 +4,8 @@ import { describe, expect, it } from 'vitest';
 
 /**
  * Removes // and /* *\/ comments from JSONC, leaving string contents (e.g. "https://…") untouched.
+ * A block comment becomes a space, so it still separates tokens (`1/**\/2` stays invalid), and an
+ * unterminated one throws, so an invalid file can't parse here while Wrangler rejects it.
  * wrangler.jsonc has no trailing commas, so JSON.parse handles the rest.
  */
 function stripJsonComments(text: string): string {
@@ -20,7 +22,9 @@ function stripJsonComments(text: string): string {
       out += '\n';
     } else if (c === '/' && text[i + 1] === '*') {
       const end = text.indexOf('*/', i + 2);
-      i = end === -1 ? text.length : end + 1;
+      if (end === -1) throw new SyntaxError(`Unterminated block comment at offset ${i}`);
+      out += ' ';
+      i = end + 1;
     } else {
       out += c;
     }
@@ -56,6 +60,29 @@ describe('stripJsonComments', () => {
 
   it('keeps accents and emoji', () => {
     expect(JSON.parse(stripJsonComments('{"n": "Hércules 🚀"} // ñ'))).toEqual({ n: 'Hércules 🚀' });
+  });
+
+  it('rejects an unterminated block comment instead of dropping the rest of the file', () => {
+    expect(() => stripJsonComments('{"a": 1} /* never closed')).toThrow(/Unterminated block comment/);
+    expect(() => stripJsonComments('{"a": 1 /* never closed\n}')).toThrow(/Unterminated block comment/);
+    expect(() => stripJsonComments('/*')).toThrow(/Unterminated block comment/);
+  });
+
+  it('replaces a block comment with whitespace, so it still separates tokens', () => {
+    expect(stripJsonComments('1/**/2')).toBe('1 2');
+    expect(() => JSON.parse(stripJsonComments('{"a": 1/**/2}'))).toThrow(SyntaxError);
+  });
+
+  it('accepts a closed comment that contains * and /', () => {
+    expect(JSON.parse(stripJsonComments('{"a": /* 2 * 3 / 4 **/ 1}'))).toEqual({ a: 1 });
+  });
+
+  it('accepts a line comment on the last line without a newline', () => {
+    expect(JSON.parse(stripJsonComments('{"a": 1} // end'))).toEqual({ a: 1 });
+  });
+
+  it('keeps an unterminated string for JSON.parse to reject', () => {
+    expect(() => JSON.parse(stripJsonComments('{"a": "open /* x */'))).toThrow(SyntaxError);
   });
 
   it('returns empty input unchanged', () => {
