@@ -2,7 +2,7 @@
 // email, clock, logger), so the whole tool loop is unit-testable without network.
 import Anthropic from '@anthropic-ai/sdk';
 import type { ChatMessage } from './guards';
-import { formatLeadEmail, validateLead, type LeadEmail } from './lead';
+import { formatLeadEmail, headerSafe, validateLead, type LeadEmail } from './lead';
 import { buildSystemPrompt } from './prompt';
 import { SUBMIT_LEAD, submitLeadTool } from './tool';
 
@@ -167,12 +167,25 @@ async function handleToolUse(
   try {
     await deps.sendEmail(email);
   } catch (err) {
-    deps.log({ event: 'email_failed', kind: err instanceof Error ? err.name : 'unknown' });
+    deps.log(emailFailureLog(err));
     return result('Could not send the email. Apologize and give the visitor the phone number and the contact form.', true);
   }
   deps.log({ event: 'lead_sent' });
   emit({ event: 'lead_sent', data: { ok: true } });
   return result('sent');
+}
+
+/** Longest error message kept in the `email_failed` log. */
+export const EMAIL_ERROR_MAX = 300;
+
+/**
+ * Log entry for a failed send. Keeps Cloudflare's reason (e.g. "destination address not verified"),
+ * which names only our own addresses, never the visitor's: the lead isn't passed in here. The
+ * message is still single-lined, stripped of control characters and capped.
+ */
+export function emailFailureLog(err: unknown): { event: 'email_failed'; kind: string; message: string } {
+  if (!(err instanceof Error)) return { event: 'email_failed', kind: 'unknown', message: '' };
+  return { event: 'email_failed', kind: err.name, message: headerSafe(err.message, EMAIL_ERROR_MAX) };
 }
 
 /** SSE wire format: one event per message, JSON data on a single line. */
