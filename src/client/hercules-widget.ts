@@ -9,6 +9,7 @@ import {
   loadConversation,
   MAX_USER_CHARS,
   TURNSTILE_ACTION,
+  TurnstileGate,
   parseSse,
   prepareUserMessage,
   saveConversation,
@@ -65,9 +66,7 @@ class HerculesPanel {
   private conversation: ChatMessage[];
   private busy = false;
   private turnstileId: string | null = null;
-  private tokenWaiter: { resolve(token: string): void; reject(err: Error): void } | null = null;
-  private markTurnstileReady!: () => void;
-  private readonly turnstileReady = new Promise<void>((resolve) => (this.markTurnstileReady = resolve));
+  private readonly gate = new TurnstileGate();
   private readonly consent: HTMLInputElement;
   private readonly small = window.matchMedia('(max-width: 639px)');
 
@@ -264,30 +263,10 @@ class HerculesPanel {
       action: TURNSTILE_ACTION, // the Worker rejects tokens without this exact action
       execution: 'execute',
       appearance: 'interaction-only',
-      callback: (token: string) => this.tokenWaiter?.resolve(token),
-      'error-callback': () => this.tokenWaiter?.reject(new Error('turnstile')),
+      callback: (token: string) => this.gate.resolveToken(token),
+      'error-callback': () => this.gate.rejectToken(),
     });
-    this.markTurnstileReady();
-  }
-
-  private async token(): Promise<string> {
-    // A quick reply can be clicked before the async Turnstile script has loaded: wait for it.
-    let readyTimer: ReturnType<typeof setTimeout> | undefined;
-    await Promise.race([
-      this.turnstileReady,
-      new Promise((_, reject) => (readyTimer = setTimeout(() => reject(new Error('turnstile not ready')), 15_000))),
-    ]).finally(() => clearTimeout(readyTimer));
-    return new Promise((resolve, reject) => {
-      const ts = window.turnstile;
-      if (!ts || !this.turnstileId) return reject(new Error('turnstile not ready'));
-      const timer = setTimeout(() => reject(new Error('turnstile timeout')), 15_000);
-      this.tokenWaiter = {
-        resolve: (t) => (clearTimeout(timer), resolve(t)),
-        reject: (e) => (clearTimeout(timer), reject(e)),
-      };
-      ts.reset(this.turnstileId); // tokens are single-use: get a fresh one per message
-      ts.execute(this.turnstileId);
-    });
+    this.gate.setReady(window.turnstile, this.turnstileId);
   }
 
   private notice(code: string): void {
@@ -339,7 +318,7 @@ class HerculesPanel {
     let sawDone = false;
 
     try {
-      const turnstileToken = await this.token();
+      const turnstileToken = await this.gate.token();
       const res = await fetch('/api/hercules', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
