@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import {
   STORAGE_KEY,
   capAssistantReply,
@@ -8,6 +8,7 @@ import {
   parseSse,
   prepareUserMessage,
   saveConversation,
+  TurnstileGate,
 } from './hercules-core';
 
 const memory = () => {
@@ -147,5 +148,86 @@ describe('message limits', () => {
     expect(isConversationFull(msgs(28))).toBe(false);
     expect(isConversationFull(msgs(29))).toBe(false);
     expect(isConversationFull(msgs(30))).toBe(true);
+  });
+});
+
+describe('TurnstileGate', () => {
+  const fakeApi = () => ({ reset: vi.fn(), execute: vi.fn() });
+
+  it('issues a token after the widget is ready, resetting and executing it each time', async () => {
+    const gate = new TurnstileGate(1000);
+    const api = fakeApi();
+    gate.setReady(api, 'w1');
+    const first = gate.token();
+    await Promise.resolve();
+    gate.resolveToken('t1');
+    expect(await first).toBe('t1');
+    const second = gate.token();
+    await Promise.resolve();
+    gate.resolveToken('t2');
+    expect(await second).toBe('t2');
+    expect(api.reset).toHaveBeenCalledTimes(2);
+    expect(api.execute).toHaveBeenCalledTimes(2);
+    expect(api.reset).toHaveBeenCalledWith('w1');
+  });
+
+  it('waits for the widget when a quick reply is sent before api.js has loaded', async () => {
+    vi.useFakeTimers();
+    try {
+      const gate = new TurnstileGate(15_000);
+      const api = fakeApi();
+      const token = gate.token();
+      await vi.advanceTimersByTimeAsync(5_000); // script still loading
+      expect(api.execute).not.toHaveBeenCalled();
+      gate.setReady(api, 'w1');
+      await vi.advanceTimersByTimeAsync(0);
+      expect(api.execute).toHaveBeenCalledOnce();
+      gate.resolveToken('late-but-fine');
+      expect(await token).toBe('late-but-fine');
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it('rejects with "turnstile not ready" if the widget never renders', async () => {
+    vi.useFakeTimers();
+    try {
+      const gate = new TurnstileGate(15_000);
+      const token = gate.token();
+      const assertion = expect(token).rejects.toThrow('turnstile not ready');
+      await vi.advanceTimersByTimeAsync(15_000);
+      await assertion;
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it('rejects with "turnstile timeout" if no token arrives', async () => {
+    vi.useFakeTimers();
+    try {
+      const gate = new TurnstileGate(15_000);
+      gate.setReady(fakeApi(), 'w1');
+      const token = gate.token();
+      const assertion = expect(token).rejects.toThrow('turnstile timeout');
+      await vi.advanceTimersByTimeAsync(15_000);
+      await assertion;
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it('rejects on the widget error callback', async () => {
+    const gate = new TurnstileGate(1000);
+    gate.setReady(fakeApi(), 'w1');
+    const token = gate.token();
+    await Promise.resolve();
+    gate.rejectToken(new Error('challenge failed'));
+    await expect(token).rejects.toThrow('challenge failed');
+  });
+
+  it('ignores a stray callback when no token was requested', () => {
+    const gate = new TurnstileGate(1000);
+    expect(() => gate.resolveToken('stray')).not.toThrow();
+    expect(() => gate.rejectToken()).not.toThrow();
   });
 });

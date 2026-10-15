@@ -275,3 +275,36 @@ describe('runConversation: reserved final turn', () => {
     expect(h.calls).toHaveLength(MAX_ITERATIONS);
   });
 });
+
+describe('runConversation: retry then success, and text across turns', () => {
+  it('sends the email when a retry on the second round is valid, then confirms on the reserved turn', async () => {
+    const h = harness([
+      { content: [toolUse({ ...validLead, email: 'bad' }, 'submit_lead', 'a')], stop_reason: 'tool_use' },
+      { content: [toolUse(validLead, 'submit_lead', 'b')], stop_reason: 'tool_use' },
+      { text: '¡Listo! Le contactaremos pronto.', stop_reason: 'end_turn' },
+    ]);
+    await h.run();
+    expect(h.emails).toHaveLength(1);
+    expect(h.kinds()).toContain('lead_sent');
+    expect(h.calls).toHaveLength(3);
+    expect(h.text()).toBe('¡Listo! Le contactaremos pronto.');
+    expect(h.kinds().at(-1)).toBe('done');
+  });
+
+  it('separates text from two different turns with a blank line', async () => {
+    const h = harness([
+      { content: [{ type: 'text', text: 'Un momento.' }, toolUse(validLead)], text: 'Un momento.', stop_reason: 'tool_use' },
+      { text: 'Listo.', stop_reason: 'end_turn' },
+    ]);
+    await h.run();
+    const deltas = h.events.flatMap((e) => (e.event === 'text' ? [e.data.delta] : []));
+    expect(deltas.join('')).toBe('Un momento. \n\nListo. ');
+  });
+
+  it('adds no separator before the first text of the response', async () => {
+    const h = harness([{ content: [toolUse(validLead)], stop_reason: 'tool_use' }, { text: 'Listo.', stop_reason: 'end_turn' }]);
+    await h.run();
+    const first = h.events.find((e) => e.event === 'text');
+    expect(first && first.event === 'text' && first.data.delta.startsWith('\n')).toBe(false);
+  });
+});
