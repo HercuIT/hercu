@@ -131,14 +131,18 @@ describe('parseChatText: edge cases', () => {
     expect(parseChatText('- a\r\n- b')).toEqual(parseChatText('- a\n- b'));
   });
 
-  it('parses a very long reply and 10,000 asterisks in linear time', () => {
+  it('parses a very long reply and 100,000 asterisks in linear time', () => {
+    // 100,000 characters: linear parsing takes milliseconds, a quadratic one ~10^10 steps. The 1 s
+    // limit tells them apart without failing on a busy CI machine running the suites in parallel.
     const long = Array.from({ length: 400 }, (_, i) => `- **Punto ${i}:** texto de prueba con acentos y ñ.`).join('\n');
-    const stars = '*'.repeat(10_000);
+    const stars = '*'.repeat(100_000);
+    const underscores = `a${'_'.repeat(100_000)}b`;
     const start = performance.now();
     expect((parseChatText(long)[0] as Extract<Block, { kind: 'list' }>).items).toHaveLength(400);
     expect(visible(parseChatText(stars))).toBe(stars);
-    expect(visible(parseChatText(`a${'_'.repeat(10_000)}b`))).toBe(`a${'_'.repeat(10_000)}b`);
-    expect(performance.now() - start).toBeLessThan(50);
+    expect(visible(parseChatText(underscores))).toBe(underscores);
+    expect(visible(parseChatText(`**a ${'** '.repeat(30_000)}`))).toContain('**a');
+    expect(performance.now() - start).toBeLessThan(1000);
   });
 
   it('gives the same structure for the same layout in Spanish and English', () => {
