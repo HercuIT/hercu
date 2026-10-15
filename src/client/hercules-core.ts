@@ -100,3 +100,60 @@ export function prepareUserMessage(text: string): string | null {
 export function capAssistantReply(text: string): string {
   return text.trim().slice(0, MAX_ASSISTANT_CHARS);
 }
+
+/** The two Turnstile calls the gate needs (window.turnstile in the browser, a fake in tests). */
+export type TurnstileApi = { reset(widgetId: string): void; execute(widgetId: string): void };
+
+export const TURNSTILE_TIMEOUT_MS = 15_000;
+
+/**
+ * Hands out one fresh Turnstile token per message. `token()` waits until the widget has been
+ * rendered (the api.js script loads asynchronously, so a quick reply can come first), then resets
+ * and executes it and waits for the callback; each wait is bounded by `timeoutMs`.
+ */
+export class TurnstileGate {
+  private api: TurnstileApi | null = null;
+  private widgetId: string | null = null;
+  private markReady!: () => void;
+  private readonly ready = new Promise<void>((resolve) => (this.markReady = resolve));
+  private pending: { resolve(token: string): void; reject(err: Error): void } | null = null;
+
+  constructor(private readonly timeoutMs = TURNSTILE_TIMEOUT_MS) {}
+
+  /** Call once the widget is rendered; releases every token() that was waiting for it. */
+  setReady(api: TurnstileApi, widgetId: string): void {
+    this.api = api;
+    this.widgetId = widgetId;
+    this.markReady();
+  }
+
+  /** Wire to the widget's `callback`. */
+  resolveToken(token: string): void {
+    this.pending?.resolve(token);
+  }
+
+  /** Wire to the widget's `error-callback`. */
+  rejectToken(err = new Error('turnstile error')): void {
+    this.pending?.reject(err);
+  }
+
+  async token(): Promise<string> {
+    await this.within(this.ready, 'turnstile not ready');
+    const api = this.api!;
+    const widgetId = this.widgetId!;
+    const callback = new Promise<string>((resolve, reject) => (this.pending = { resolve, reject }));
+    api.reset(widgetId); // tokens are single-use
+    api.execute(widgetId);
+    try {
+      return await this.within(callback, 'turnstile timeout');
+    } finally {
+      this.pending = null;
+    }
+  }
+
+  private within<T>(promise: Promise<T>, message: string): Promise<T> {
+    let timer: ReturnType<typeof setTimeout> | undefined;
+    const timeout = new Promise<never>((_, reject) => (timer = setTimeout(() => reject(new Error(message)), this.timeoutMs)));
+    return Promise.race([promise, timeout]).finally(() => clearTimeout(timer));
+  }
+}
