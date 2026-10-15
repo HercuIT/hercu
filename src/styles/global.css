@@ -54,3 +54,36 @@
     color: #fff;
   }
 }
+
+/* Hero aura angle (CircuitPulse.astro): registering it makes the conic gradient animatable. */
+@property --aura-angle {
+  syntax: '<angle>';
+  inherits: false;
+  initial-value: 0deg;
+}
+
+/* Scroll reveal for cards: native scroll-driven animation, progressive enhancement only.
+   Browsers without animation-timeline, and reduced-motion users, always see the cards. */
+@supports (animation-timeline: view()) {
+  @media (prefers-reduced-motion: no-preference) {
+    .reveal {
+      /* 1ms: Firefox skips scroll-timeline animations whose duration is the 0s default.
+         Chromium ignores time-based durations once a view() timeline drives progress.
+         animation-timeline must come AFTER the shorthand, which resets it to auto. */
+      animation: reveal-up 1ms linear both;
+      animation-timeline: view();
+      animation-range: entry 0% cover 25%;
+    }
+  }
+}
+
+@keyframes reveal-up {
+  from {
+    opacity: 0;
+    transform: translateY(24px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
