@@ -1,5 +1,9 @@
 import type { Dictionary } from './es';
 
+/** The consent sentence for the chat checkbox and the short privacy notice (see es.ts). */
+const CONSENT_LABEL =
+  "I accept the privacy notice for the processing and reporting of my data via email pursuant to the terms available at hercuit.com/en/privacy-notice";
+
 /** English. `satisfies Dictionary` turns any missing, extra or mis-sized entry into a type error. */
 export const en = {
   meta: {
@@ -148,7 +152,7 @@ export const en = {
     disclaimer: "AI virtual assistant. It can make mistakes.",
     privacyLink: "Privacy notice",
     opensNewTab: "(opens in a new tab)",
-    consentLabel: "I accept the privacy notice",
+    consentLabel: CONSENT_LABEL,
     newConversation: "New conversation",
     limitReached: "This conversation has reached its limit. Start a new one to continue.",
     sent: "Done! We received your request and the HércuIT team will contact you soon.",
@@ -293,7 +297,7 @@ export const en = {
         "Pursuant to Guidelines 27 through 31 issued by the INAI, when personal data collection occurs within space-constrained channels, mobile interfaces, or through our interactive assistant (\"Hercules bot\"), the Simplified Privacy Notice format is made available:",
         "\"HércuIT, S. de R.L. de C.V., based in Torreón, Coahuila, Mexico, is responsible for processing the identification, contact, and project requirements data you provide through this medium. Your data will be used to respond to your inquiries, prepare software and quality assurance proposals, and provide guidance via our interactive assistant, consolidating your request for direct transmission via corporate email to info@hercuit.com, without persistent database storage on web servers. You may state your refusal for secondary purposes or exercise your ARCO rights by emailing info@hercuit.com. The comprehensive privacy notice is available at: https://hercuit.com/en/privacy-notice\".",
         "Furthermore, within the consent checkbox displayed by the virtual assistant and in brief forms, the Short Privacy Notice format is utilized:",
-        "\"I accept the privacy notice for the processing and reporting of my data via email pursuant to the terms available at hercuit.com/en/privacy-notice\"."
+        `"${CONSENT_LABEL}".`
       ]
     }
   },

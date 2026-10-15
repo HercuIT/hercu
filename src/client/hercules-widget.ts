@@ -12,6 +12,7 @@ import {
   parseSse,
   prepareUserMessage,
   saveConversation,
+  errorNotice,
   settleReply,
   type ChatMessage,
 } from './hercules-core';
@@ -57,6 +58,7 @@ class HerculesPanel {
   readonly root: HTMLElement;
   private readonly log: HTMLElement;
   private readonly announcer: HTMLElement;
+  private readonly alerter: HTMLElement;
   private readonly form: HTMLFormElement;
   private readonly input: HTMLTextAreaElement;
   private readonly sendButton: HTMLButtonElement;
@@ -110,6 +112,9 @@ class HerculesPanel {
     this.log.setAttribute('aria-live', 'off');
     this.announcer = el('div', 'sr-only');
     this.announcer.setAttribute('aria-live', 'polite');
+    // Errors interrupt (assertive); replies and status notices wait their turn (polite).
+    this.alerter = el('div', 'sr-only');
+    this.alerter.setAttribute('role', 'alert');
 
     this.chips = el('div', 'flex flex-wrap gap-2 px-4 pb-2');
     for (const reply of s.quickReplies) {
@@ -175,7 +180,7 @@ class HerculesPanel {
     // Visible container: in interaction-only mode Turnstile stays invisible unless it needs the
     // visitor to solve a challenge, which must be able to render here (never display:none).
     this.turnstileBox = el('div', 'px-4');
-    this.root.append(header, this.log, this.announcer, this.chips, this.turnstileBox, this.form, consentRow, footer);
+    this.root.append(header, this.log, this.announcer, this.alerter, this.chips, this.turnstileBox, this.form, consentRow, footer);
     this.root.addEventListener('keydown', (e) => {
       if (e.key === 'Escape') this.close();
       else if (e.key === 'Tab') this.trapFocus(e);
@@ -273,17 +278,31 @@ class HerculesPanel {
     this.gate.setReady(window.turnstile, this.turnstileId);
   }
 
+  /**
+   * Speaks `text` through a live region. Cleared first so an identical message (e.g. two rate-limit
+   * notices in a row) is announced again.
+   */
+  private say(text: string, urgent = false): void {
+    const region = urgent ? this.alerter : this.announcer;
+    region.textContent = '';
+    requestAnimationFrame(() => (region.textContent = text));
+  }
+
+  /** A notice bubble in the log (which is aria-live="off") that is also announced. */
+  private status(text: string, urgent = false): void {
+    this.bubble('notice', text);
+    this.say(text, urgent);
+  }
+
   private notice(code: string): void {
-    const e = this.config.strings.errors;
-    const message =
-      code === 'rate_limited' ? e.rateLimited : code === 'refused' ? e.refused : code === 'invalid_request' ? e.invalid : e.unavailable;
-    this.bubble('notice', `${message} ${e.fallback} ${this.config.phone.display}.`);
+    const { text, urgent } = errorNotice(code, this.config.strings.errors, this.config.phone.display);
+    this.status(text, urgent);
   }
 
   private finished(): void {
     clearConversation(session());
     this.conversation = [];
-    this.bubble('notice', this.config.strings.sent);
+    this.status(this.config.strings.sent);
     this.input.disabled = true;
     this.sendButton.disabled = true;
     const again = el('button', 'mx-auto block rounded-lg bg-ink px-4 py-2 text-sm font-semibold text-white hover:bg-ink/90', this.config.strings.newConversation);
@@ -296,13 +315,15 @@ class HerculesPanel {
       this.input.focus();
     });
     this.log.append(again);
+    // The focused textarea was just disabled; without this, focus would fall back to <body>.
+    again.focus();
   }
 
   async send(raw: string): Promise<void> {
     const text = prepareUserMessage(raw);
     if (!text || this.busy) return;
     if (isConversationFull(this.conversation)) {
-      this.bubble('notice', this.config.strings.limitReached);
+      this.status(this.config.strings.limitReached);
       return;
     }
 
@@ -369,7 +390,7 @@ class HerculesPanel {
     failed = outcome.error;
     if (outcome.keep) {
       this.conversation.push({ role: 'assistant', content: outcome.stored });
-      this.announcer.textContent = outcome.stored; // announce the completed reply once
+      this.say(outcome.stored); // announce the completed reply once
     } else {
       // No reply: drop the unanswered message so the history still alternates, and give it back.
       this.conversation.pop();

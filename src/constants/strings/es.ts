@@ -5,6 +5,14 @@ type Item = { title: string; description: string };
 type Stat = { value: string; label: string };
 type NavLink = { label: string; id: string };
 
+/**
+ * The consent sentence shown next to the chat's checkbox. Defined once so the checkbox label
+ * (hercules.consentLabel), the short privacy notice (privacy, section 10) and the system prompt
+ * always quote the exact same words.
+ */
+const CONSENT_LABEL =
+  "Acepto el aviso de privacidad para el tratamiento y reporte de mis datos por correo electrónico conforme a los términos disponibles en hercuit.com/aviso-de-privacidad";
+
 /** Spanish (default locale). Its shape defines `Dictionary`; every other locale must match it. */
 export const es = {
   meta: {
@@ -153,7 +161,7 @@ export const es = {
     disclaimer: "Asistente virtual con IA. Puede cometer errores.",
     privacyLink: "Aviso de privacidad",
     opensNewTab: "(abre en una pestaña nueva)",
-    consentLabel: "Acepto el aviso de privacidad",
+    consentLabel: CONSENT_LABEL,
     newConversation: "Nueva conversación",
     limitReached: "Esta conversación llegó a su límite. Inicie una nueva para continuar.",
     sent: "¡Listo! Recibimos su solicitud y el equipo de HércuIT le contactará pronto.",
@@ -298,7 +306,7 @@ export const es = {
         "En cumplimiento de los Lineamientos Vigésimo Séptimo a Trigésimo Primero expedidos por el INAI, cuando la captura de datos se efectúe en espacios reducidos, interfaces móviles o mediante el asistente interactivo («bot Hércules»), se pone a disposición del titular el formato de Aviso de Privacidad Simplificado:",
         "«HércuIT, S. de R.L. de C.V., con domicilio en Torreón, Coahuila, México, es responsable del tratamiento de los datos personales de identificación, contacto y requerimientos que usted proporciona mediante este medio. Sus datos se utilizarán para la atención de sus consultas, elaboración de propuestas de servicios de software y calidad, y orientación mediante nuestro asistente interactivo, consolidando su solicitud para su envío directo por correo electrónico institucional a info@hercuit.com, sin almacenamiento en bases de datos del servidor web. Usted puede manifestar su negativa para finalidades secundarias o ejercer sus derechos ARCO enviando un correo a info@hercuit.com. El aviso de privacidad integral se encuentra disponible en: https://hercuit.com/aviso-de-privacidad».",
         "Asimismo, en la casilla de verificación de consentimiento (checkbox) desplegada por el asistente virtual y en formularios breves, se emplea el formato de Aviso de Privacidad Corto:",
-        "«Acepto el aviso de privacidad para el tratamiento y reporte de mis datos por correo electrónico conforme a los términos disponibles en hercuit.com/aviso-de-privacidad»."
+        `«${CONSENT_LABEL}».`
       ]
     }
   },

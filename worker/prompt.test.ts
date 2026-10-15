@@ -41,10 +41,12 @@ describe.each(locales)('buildSystemPrompt("%s")', (locale) => {
     expect(rule).toBeDefined();
     if (locale === 'es') {
       expect(rule).toMatch(/confirmación explícita/);
-      expect(rule).toMatch(/marcar la casilla "Acepto el aviso de privacidad"/);
+      expect(rule).toMatch(/marcar la casilla de consentimiento/);
+      expect(rule).toContain(strings.es.hercules.consentLabel);
     } else {
       expect(rule).toMatch(/explicit confirmation/);
-      expect(rule).toMatch(/tick the "I accept the privacy notice" checkbox/);
+      expect(rule).toMatch(/tick the consent checkbox/);
+      expect(rule).toContain(strings.en.hercules.consentLabel);
     }
   });
 

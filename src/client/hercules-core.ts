@@ -179,3 +179,15 @@ export function settleReply(o: StreamOutcome): Settlement {
   const keep = o.sawDone && error === null && o.reply.trim() !== '';
   return { keep, stored: keep ? capAssistantReply(o.reply) : '', error, leadSent: o.leadSent };
 }
+
+export type NoticeStrings = { rateLimited: string; unavailable: string; refused: string; invalid: string; fallback: string };
+
+/**
+ * Visible + spoken text for a server error code. Errors are `urgent` (announced assertively);
+ * unknown codes fall back to "unavailable". Always ends with the phone fallback.
+ */
+export function errorNotice(code: string, e: NoticeStrings, phone: string): { text: string; urgent: true } {
+  const message =
+    code === 'rate_limited' ? e.rateLimited : code === 'refused' ? e.refused : code === 'invalid_request' ? e.invalid : e.unavailable;
+  return { text: `${message} ${e.fallback} ${phone}.`, urgent: true };
+}
