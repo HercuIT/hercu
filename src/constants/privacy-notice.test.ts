@@ -356,8 +356,13 @@ describe('privacy notice §4: only the Hercules assistant sends email (the conta
   });
 
   it.each(locales)('"%s": the paragraph after the list describes the assistant\'s confirm-then-send flow', (locale) => {
+    const blocks = strings[locale].privacy.sections[3].blocks;
     const paragraphs = paragraphsOf(strings[locale].privacy.sections[3]).filter((p) => /Gmail/.test(p));
     expect(paragraphs).toHaveLength(1);
     expect(paragraphs[0]).toMatch(locale === 'es' ? /revisa el resumen de su solicitud/ : /reviews the summary of their request/);
+    // Its position, not just its presence: the block right after §4's only list.
+    const listIndexes = blocks.flatMap((b, i) => (Array.isArray(b) ? [i] : []));
+    expect(listIndexes).toHaveLength(1);
+    expect(blocks.indexOf(paragraphs[0])).toBe(listIndexes[0] + 1);
   });
 });
