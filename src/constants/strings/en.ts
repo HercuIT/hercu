@@ -133,6 +133,61 @@ export const en = {
     },
     submit: "Send my idea"
   },
+  hercules: {
+    open: "Chat with Hercules",
+    heroLink: "or chat with Hercules, our virtual assistant",
+    title: "Hercules",
+    subtitle: "HércuIT's virtual assistant",
+    greeting: "Hi, I'm Hercules, HércuIT's virtual assistant. How can I help you?",
+    quickReplies: ["Explore the services", "I have an app idea", "I need QA for my product"],
+    inputLabel: "Type your message",
+    placeholder: "Type your message…",
+    send: "Send message",
+    close: "Close assistant",
+    typing: "Hercules is typing…",
+    disclaimer: "AI virtual assistant. It can make mistakes.",
+    privacyLink: "Privacy notice",
+    newConversation: "New conversation",
+    sent: "Done! We received your request and the HércuIT team will contact you soon.",
+    errors: {
+      rateLimited: "Too many messages in a short time. Please wait a moment and try again.",
+      unavailable: "Hercules is not available right now.",
+      refused: "I can't help with that request.",
+      invalid: "We couldn't verify your request. Please reload the page and try again.",
+      fallback: "You can call us at"
+    }
+  },
+  privacy: {
+    title: "Privacy Notice",
+    draftNotice: "DRAFT: this notice is pending legal review and is not final.",
+    updated: "Last updated: October 14, 2026",
+    sections: [
+      {
+        heading: "Data controller",
+        body: "HércuIT, S. de R.L. de C.V., based in Torreón, Coahuila, Mexico, is responsible for processing your personal data."
+      },
+      {
+        heading: "Data we collect",
+        body: "Your name, email and, if you provide them, phone, company and the content of your conversation with our virtual assistant Hercules or the contact form. We do not request sensitive data."
+      },
+      {
+        heading: "Purpose",
+        body: "To answer your request for information or a quote and contact you through the channel you choose."
+      },
+      {
+        heading: "Processors and transfers",
+        body: "Hercules's replies are generated with an artificial-intelligence provider (Anthropic), which processes the conversation text on HércuIT's behalf. We do not sell or share your data for commercial purposes."
+      },
+      {
+        heading: "Retention",
+        body: "The conversation is not stored on our servers: it is only emailed to the HércuIT team when you confirm your request."
+      },
+      {
+        heading: "ARCO rights",
+        body: "You can exercise your rights of access, rectification, cancellation or opposition, or withdraw your consent, by writing to info@hercuit.com."
+      }
+    ]
+  },
   footer: {
     rights: "All rights reserved."
   }

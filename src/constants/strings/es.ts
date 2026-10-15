@@ -138,6 +138,61 @@ export const es = {
     },
     submit: "Enviar mi idea"
   },
+  hercules: {
+    open: "Hablar con Hercules",
+    heroLink: "o hable con Hercules, nuestro asistente virtual",
+    title: "Hercules",
+    subtitle: "Asistente virtual de HércuIT",
+    greeting: "Hola, soy Hercules, el asistente virtual de HércuIT. ¿En qué le puedo ayudar?",
+    quickReplies: ["Conocer los servicios", "Tengo una idea de app", "Necesito QA para mi producto"] as [string, string, string],
+    inputLabel: "Escriba su mensaje",
+    placeholder: "Escriba su mensaje…",
+    send: "Enviar mensaje",
+    close: "Cerrar asistente",
+    typing: "Hercules está escribiendo…",
+    disclaimer: "Asistente virtual con IA. Puede cometer errores.",
+    privacyLink: "Aviso de privacidad",
+    newConversation: "Nueva conversación",
+    sent: "¡Listo! Recibimos su solicitud y el equipo de HércuIT le contactará pronto.",
+    errors: {
+      rateLimited: "Demasiados mensajes en poco tiempo. Espere un momento e intente de nuevo.",
+      unavailable: "Hercules no está disponible en este momento.",
+      refused: "No puedo ayudar con esa solicitud.",
+      invalid: "No pudimos verificar su solicitud. Recargue la página e intente de nuevo.",
+      fallback: "Puede llamarnos al"
+    }
+  },
+  privacy: {
+    title: "Aviso de Privacidad",
+    draftNotice: "BORRADOR: este aviso está pendiente de revisión legal y no es definitivo.",
+    updated: "Última actualización: 14 de octubre de 2026",
+    sections: [
+      {
+        heading: "Responsable",
+        body: "HércuIT, S. de R.L. de C.V., con domicilio en Torreón, Coahuila, México, es responsable del tratamiento de sus datos personales."
+      },
+      {
+        heading: "Datos que recabamos",
+        body: "Nombre, correo electrónico y, si usted lo proporciona, teléfono, empresa y el contenido de su conversación con nuestro asistente virtual Hercules o del formulario de contacto. No solicitamos datos sensibles."
+      },
+      {
+        heading: "Finalidad",
+        body: "Atender su solicitud de información o cotización y contactarle por el medio que usted elija."
+      },
+      {
+        heading: "Encargados y transferencias",
+        body: "Las respuestas de Hercules se generan con un proveedor de inteligencia artificial (Anthropic), que procesa el texto de la conversación por cuenta de HércuIT. No vendemos ni compartimos sus datos con fines comerciales."
+      },
+      {
+        heading: "Conservación",
+        body: "La conversación no se almacena en nuestros servidores: solo se envía por correo electrónico al equipo de HércuIT cuando usted confirma su solicitud."
+      },
+      {
+        heading: "Derechos ARCO",
+        body: "Puede ejercer sus derechos de acceso, rectificación, cancelación u oposición, o revocar su consentimiento, escribiendo a info@hercuit.com."
+      }
+    ] as { heading: string; body: string }[]
+  },
   footer: {
     rights: "Todos los derechos reservados."
   }

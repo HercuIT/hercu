@@ -11,6 +11,9 @@ export const serviceGroups = [
 export type ServiceGroupId = (typeof serviceGroups)[number]['id'];
 export type ServiceId = (typeof serviceGroups)[number]['services'][number];
 
+/** Every service slug, in catalogue order (the dropdown, the Services section and Hercules all use it). */
+export const serviceIds = serviceGroups.flatMap((group) => [...group.services]) as ServiceId[];
+
 export type ServiceLabels = {
   groups: Record<ServiceGroupId, string>;
   options: Record<ServiceId, string>;
