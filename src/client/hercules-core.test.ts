@@ -3,6 +3,7 @@ import {
   STORAGE_KEY,
   capAssistantReply,
   clearConversation,
+  errorNotice,
   isConversationFull,
   loadConversation,
   parseSse,
@@ -268,5 +269,26 @@ describe('settleReply (keep or roll back after a stream)', () => {
 
   it('caps a kept reply at 4000 characters', () => {
     expect(settleReply({ ...base, reply: 'x'.repeat(5000) }).stored).toHaveLength(4000);
+  });
+});
+
+describe('errorNotice (spoken + visible error text)', () => {
+  const e = { rateLimited: 'RL', unavailable: 'UN', refused: 'RF', invalid: 'IV', fallback: 'Llámenos al' };
+
+  it.each([
+    ['rate_limited', 'RL'],
+    ['unavailable', 'UN'],
+    ['refused', 'RF'],
+    ['invalid_request', 'IV'],
+  ])('maps %s to its message, ending with the phone fallback', (code, message) => {
+    expect(errorNotice(code, e, '+52 33 1713 3469')).toEqual({ text: `${message} Llámenos al +52 33 1713 3469.`, urgent: true });
+  });
+
+  it.each(['', 'unknown_code', 'RATE_LIMITED'])('falls back to "unavailable" for %j', (code) => {
+    expect(errorNotice(code, e, 'x').text.startsWith('UN ')).toBe(true);
+  });
+
+  it('marks every error as urgent (announced assertively)', () => {
+    expect(errorNotice('refused', e, 'x').urgent).toBe(true);
   });
 });
