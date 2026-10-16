@@ -1,4 +1,5 @@
 import { expect, test } from '@playwright/test';
+import { gotoReady } from './helpers';
 
 // Weekend & holiday monitoring section and its entry points (specs/weekend-monitoring), in a real browser.
 const locales = [
@@ -74,7 +75,7 @@ test('an unknown service in the address leaves the dropdown on its placeholder',
 
 test('the page never scrolls sideways', async ({ page }) => {
   for (const path of ['/', '/en/']) {
-    await page.goto(path);
+    await gotoReady(page, path);
     const overflow = await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
     expect(overflow, path).toBeLessThanOrEqual(0);
   }

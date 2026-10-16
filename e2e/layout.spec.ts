@@ -1,4 +1,5 @@
 import { expect, test, type Page } from '@playwright/test';
+import { gotoReady } from './helpers';
 
 // Layout at the narrowest desktop width: the header nav appears at Tailwind's md breakpoint (768 px),
 // with 5 links, the language switcher and the contact button. Spanish labels are the longest.
@@ -26,7 +27,7 @@ for (const path of ['/', '/en/']) {
   test(`header fits on one row at ${MD.width} px (${path})`, async ({ page }, testInfo) => {
     test.skip(testInfo.project.name !== 'desktop', 'one viewport is enough; the size is set here');
     await page.setViewportSize(MD);
-    await page.goto(path);
+    await gotoReady(page, path); // measure with the real fonts, not fallback metrics
     const layout = await headerLayout(page);
 
     expect(layout.overflow, 'page scrolls sideways').toBeLessThanOrEqual(0);

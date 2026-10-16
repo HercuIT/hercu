@@ -1,5 +1,6 @@
 import { expect, test } from '@playwright/test';
 import { FULL, teaserStartsAt, TEASER_VISIBLE_MS } from '../src/client/launcher-intro';
+import { gotoReady } from './helpers';
 
 // Hércules launcher intro and teaser (specs/hercules-launcher-intro), in a real browser. Timers run on
 // Playwright's clock, so the 3 s / 8 s waits are instant and deterministic.
@@ -99,7 +100,7 @@ test.describe('phone layout', () => {
   test.skip(({ viewport }) => (viewport?.width ?? 0) > 640, 'phone only');
 
   test('the teaser sits above the launcher and does not cover the hero call to action', async ({ page }) => {
-    await page.goto('/');
+    await gotoReady(page, '/');
     await page.clock.runFor(TEASER_IN + 500);
     const bubble = await teaser(page).boundingBox();
     const button = await launcher(page).boundingBox();
