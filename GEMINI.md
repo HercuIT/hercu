@@ -45,7 +45,7 @@ Rules:
 - A bug fix starts with a failing test that reproduces the bug.
 - If something is genuinely hard to unit-test (for example pure Astro markup), extract the logic into a plain TypeScript function and test that; note any remaining gap in the PR.
 - After every code change, add Playwright regression tests when applicable: whenever the change affects what a visitor sees or does in the page (layout, links and navigation, forms, focus and keyboard, animations, anything at a specific screen width).
-  Put them in `e2e/*.spec.ts`. They run in Chromium at desktop (1280 px) and phone (360 px) sizes; set other widths in the test when they matter (e.g. 768 px, where the header nav appears). A bug found in the browser gets a failing Playwright test first. Run them with `npm run test:e2e`.
+  Put them in `e2e/*.spec.ts`. They run in Chromium at desktop (1280 px) and phone (360 px) sizes; set other widths in the test when they matter (e.g. 768 px, where the header nav appears). A bug found in the browser gets a failing Playwright test first. Tests that measure layout (sizes, positions, wrapping) navigate with `gotoReady` from `e2e/helpers.ts`, which waits for the web fonts, so they never measure fallback-font widths. Run them with `npm run test:e2e`.
 - Tests, `npm run check`, `npm run build` and `npm run test:e2e` must all pass before a change is considered done.
 
 ## Keeping these instructions current
