@@ -16,7 +16,7 @@ const t = useStrings(locale);
     <div class="flex items-center justify-between h-20">
       <Logo variant="compact" href={getRelativeLocaleUrl(locale, '/')} class="text-2xl" />
 
-      <nav class="hidden md:flex items-center gap-8">
+      <nav class="hidden md:flex items-center gap-5 lg:gap-8">
         <a href={`${home}#${t.nav.services.id}`} class="text-sm font-medium text-steel hover:text-brand-500 transition-colors">{t.nav.services.label}</a>
         <a href={`${home}#${t.nav.monitoring.id}`} class="text-sm font-medium text-steel hover:text-brand-500 transition-colors">{t.nav.monitoring.label}</a>
         <a href={`${home}#${t.nav.projects.id}`} class="text-sm font-medium text-steel hover:text-brand-500 transition-colors">{t.nav.projects.label}</a>
