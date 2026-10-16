@@ -76,6 +76,8 @@ npm run dev        # http://localhost:4321
 Before a change is done, `npm test`, `npm run check`, `npm run build` and `npm run test:e2e` must all
 pass. CI runs the first three on Node 22 and 24, then the browser tests on Node 24
 (`.github/workflows/ci.yml`). The first time, install the browser with `npx playwright install chromium`.
+The browser tests always start their own server on port 4322; set `PW_REUSE_SERVER=1` to reuse one
+that is already running.
 
 ## Hércules (AI assistant)
 
