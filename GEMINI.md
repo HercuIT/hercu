@@ -12,13 +12,14 @@
 - **Assistant backend:** Cloudflare Worker in `worker/` (POST `/api/hercules`), configured in `wrangler.jsonc`.
 - **Directory Structure:**
   - `src/components/`: Reusable UI components.
-  - `src/client/`: Browser-side TypeScript (Hércules widget, launcher intro, reply formatting). Keep logic in plain, DOM-free modules so it can be unit-tested; components only wire it to the DOM.
+  - `src/client/`: Browser-side TypeScript (Hércules widget, launcher intro, reply formatting, contact-form service preselection in `contact-preselect.ts`). Keep logic in plain, DOM-free modules so it can be unit-tested; components only wire it to the DOM.
   - `src/layouts/`: Page layouts.
   - `src/pages/`: Route-based pages.
   - `src/constants/`: Centralized strings and configuration.
   - `src/styles/`: Global CSS and Tailwind directives.
   - `worker/`: Worker code and its tests (own `tsconfig.json`).
   - `tests/`: Cross-cutting tests (config, theme, markup checks).
+  - `e2e/`: Playwright browser tests (`*.spec.ts`, Chromium at desktop and phone sizes) and their helpers (`helpers.ts`, e.g. `gotoReady`).
 
 ## Naming Conventions
 - **Components:** PascalCase (e.g., `HeroSection.astro`).

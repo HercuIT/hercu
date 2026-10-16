@@ -28,7 +28,8 @@ with the visitor's consent, emails their request to the team.
 /
 ├── src/
 │   ├── client/        # Browser code for Hércules: chat widget (loaded on first click), launcher
-│   │                  # intro, safe reply formatting (chat-format.ts / chat-render.ts)
+│   │                  # intro, safe reply formatting (chat-format.ts / chat-render.ts),
+│   │                  # contact-form service preselection (contact-preselect.ts)
 │   ├── components/    # Astro components (Hero, Services, Contact, HerculesLauncher, …)
 │   ├── constants/     # Shared data and copy: strings/es.ts + en.ts, services, projects
 │   ├── i18n/          # Locale helpers (useStrings, paths)
