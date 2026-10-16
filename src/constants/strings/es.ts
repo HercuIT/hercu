@@ -364,7 +364,7 @@ export const es = {
   },
   footer: {
     rights: "Todos los derechos reservados.",
-    monitoring: "Monitoreo de fin de semana"
+    monitoring: "Monitoreo en fines de semana y días festivos"
   }
 };
 

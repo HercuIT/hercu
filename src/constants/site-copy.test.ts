@@ -273,6 +273,19 @@ describe('weekend monitoring copy (specs/weekend-monitoring)', () => {
     expect(usesTu('Su equipo descansa')).toBe(false);
   });
 
+  it.each([
+    ['es', /fin(es)? de semana/i, /d[ií]as festivos/i],
+    ['en', /weekend/i, /holiday/i],
+  ] as const)('"%s": the footer link names both weekends and holidays, like the section', (locale, weekend, holiday) => {
+    const label = strings[locale].footer.monitoring;
+    expect(label).toMatch(weekend);
+    expect(label).toMatch(holiday);
+  });
+
+  it.each(['es', 'en'] as const)('"%s": the footer link label stays short enough for the footer row (≤ 45 characters)', (locale) => {
+    expect(charLength(strings[locale].footer.monitoring)).toBeLessThanOrEqual(45);
+  });
+
   it('spells the assistant correctly in each locale', () => {
     expect(strings.es.monitoring.askHercules).toContain('Hércules');
     expect(strings.en.monitoring.askHercules).toContain('Hercules');

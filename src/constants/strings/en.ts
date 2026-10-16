@@ -349,6 +349,6 @@ export const en = {
   },
   footer: {
     rights: "All rights reserved.",
-    monitoring: "Weekend monitoring"
+    monitoring: "Weekend & holiday monitoring"
   }
 } satisfies Dictionary;
