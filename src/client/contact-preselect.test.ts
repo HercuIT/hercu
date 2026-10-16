@@ -59,8 +59,13 @@ describe('contactLinkFor', () => {
     expect(contactLinkFor(home, t.contact.service.param, SLUG, t.nav.contact.id)).toBe(expected);
   });
 
-  it('encodes unusual characters, so the link stays valid', () => {
-    expect(contactLinkFor('/', 'sérvicio', 'a b&c', 'x')).toBe('/?s%C3%A9rvicio=a%20b%26c#x');
+  it('encodes unusual characters in the parameter name, so the link stays valid', () => {
+    expect(contactLinkFor('/', 'sérvicio & más', SLUG, 'x')).toBe(`/?s%C3%A9rvicio%20%26%20m%C3%A1s=${SLUG}#x`);
+  });
+
+  it('only accepts catalogue slugs (a renamed or mistyped slug is a type error, checked by npm run check)', () => {
+    // @ts-expect-error 'weekend-monitoring' is not a ServiceId
+    expect(contactLinkFor('/', 'servicio', 'weekend-monitoring', 'contacto')).toBe('/?servicio=weekend-monitoring#contacto');
   });
 
   it('round-trips through preselectedService', () => {
