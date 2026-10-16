@@ -30,3 +30,7 @@ website-strategy.md
 .wrangler/
 # Local Worker secrets (ANTHROPIC_API_KEY, TURNSTILE_SECRET)
 .dev.vars
+
+# Playwright (browser tests) output
+test-results/
+playwright-report/

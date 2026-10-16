@@ -17,6 +17,7 @@ export const en = {
   },
   nav: {
     services: { label: "Services", id: "services" },
+    monitoring: { label: "Monitoring", id: "monitoring" },
     projects: { label: "Projects", id: "projects" },
     about: { label: "About", id: "about" },
     contact: { label: "Contact Us", id: "contact" }
@@ -28,18 +29,49 @@ export const en = {
     title: "Engineering Excellence with a Focus on Quality",
     subtitle: "We build apps, put AI to work and assure the quality of your software, so it doesn't just work: it excels.",
     cta: "Share your idea",
-    ctaSupport: "We want to hear your idea and help make it happen."
+    ctaSupport: "We want to hear your idea and help make it happen.",
+    monitoringLink: "Does your team need weekends off? See our system monitoring"
   },
   services: {
     title: "Our Services",
     intro: "From idea to production: artificial intelligence, software quality, app development and training for your team.",
     cta: "Let's talk about this",
+    monitoringCta: "See how it works",
     groupDescriptions: {
       ai: "We help you find where AI adds value, design the right architecture and take reliable bots to production, including automated customer service on WhatsApp Business and AI data extraction that builds Excel or CSV reports and dashboards automatically.",
       qa: "Our specialty: testing and automation for web, mobile and AI-generated apps, so they reach production without surprises.",
       development: "We build your app from scratch, or adapt a proven booking platform, like BinKleaner or Nopalito Limpio, to your business.",
-      training: "Hands-on AI and QA training, plus team building designed for remote teams."
+      training: "Hands-on AI and QA training, plus team building designed for remote teams.",
+      monitoring: "We watch your platform while your team rests: automated monitoring, an engineer on standby and a report every Monday."
     }
+  },
+  monitoring: {
+    title: "Your platform, watched while your team rests",
+    intro: "Your team deserves weekends and holidays off, but your B2B platform or SaaS can't stop. We watch it for you.",
+    benefits: [
+      { title: "Reliability", description: "Continuous automated checks of your services' availability and response time." },
+      { title: "Responsiveness", description: "An engineer on standby handles every alert within the response time agreed in your contract (SLA)." },
+      { title: "Your team rests", description: "Your CTO and developers stop doing weekend on-call duty, without putting availability at risk." }
+    ],
+    stepsTitle: "How it works",
+    steps: [
+      "We monitor your services and key endpoints automatically.",
+      "If something fails or slows down, the alert reaches our engineer on standby.",
+      "We diagnose and resolve the incident, or escalate it to your team as agreed.",
+      "Every Monday you get a report on system health, availability and the incidents handled."
+    ],
+    coverageTitle: "Coverage",
+    coverage: "From Friday 6:00 p.m. to Monday 8:00 a.m. (Mexico City time), plus the official holidays of Mexico and the United States.",
+    pricingTitle: "Pricing",
+    pricing: "Tailored proposal: we'll send you a proposal for your systems and schedule.",
+    faqTitle: "Frequently asked questions",
+    faq: [
+      { question: "Do you need access to our systems?", answer: "Only what monitoring requires, under a confidentiality and access agreement." },
+      { question: "Can you cover only some weekends or holidays?", answer: "Yes. The proposal is tailored to the days and hours you need." },
+      { question: "What do we get on Monday?", answer: "A short report on system health, availability and the incidents handled during coverage." }
+    ],
+    cta: "Request a proposal",
+    askHercules: "or ask Hercules"
   },
   projects: {
     title: "Projects",
@@ -109,12 +141,14 @@ export const en = {
     formEmail: "Email",
     service: {
       label: "Which service are you interested in?",
+      param: "service",
       placeholder: "Select a service",
       groups: {
         ai: "Artificial intelligence",
         qa: "Software quality (QA)",
         development: "Development",
-        training: "Training & teams"
+        training: "Training & teams",
+        monitoring: "Monitoring and support"
       },
       options: {
         "ai-consultancy": "AI Consultancy",
@@ -131,7 +165,8 @@ export const en = {
         "ai-training": "AI Training",
         "qa-training": "QA Training",
         "other-training": "Other Training",
-        "remote-team-building": "Team Building for Remote Teams"
+        "remote-team-building": "Team Building for Remote Teams",
+        "weekend-holiday-monitoring": "Weekend and Holiday System Monitoring"
       }
     },
     formMessage: "Your idea",
@@ -313,6 +348,7 @@ export const en = {
     }
   },
   footer: {
-    rights: "All rights reserved."
+    rights: "All rights reserved.",
+    monitoring: "Weekend & holiday monitoring"
   }
 } satisfies Dictionary;

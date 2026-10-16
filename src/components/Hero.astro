@@ -20,6 +20,10 @@ const t = useStrings(Astro.currentLocale);
           {t.hero.cta}
         </a>
         <p class="mt-3 text-sm text-steel">{t.hero.ctaSupport}</p>
+        <!-- Phones have no header menu: this is how they reach the monitoring section (specs/weekend-monitoring). -->
+        <a href={`#${t.nav.monitoring.id}`} class="mt-2 text-sm font-semibold text-brand-500 underline-offset-4 hover:text-brand-600 hover:underline">
+          {t.hero.monitoringLink} <span aria-hidden="true">→</span>
+        </a>
         <button type="button" data-hercules-open hidden class="mt-2 text-sm font-semibold text-brand-500 underline-offset-4 hover:text-brand-600 hover:underline">
           {t.hercules.heroLink}
         </button>

@@ -28,7 +28,8 @@ with the visitor's consent, emails their request to the team.
 /
 ├── src/
 │   ├── client/        # Browser code for Hércules: chat widget (loaded on first click), launcher
-│   │                  # intro, safe reply formatting (chat-format.ts / chat-render.ts)
+│   │                  # intro, safe reply formatting (chat-format.ts / chat-render.ts),
+│   │                  # contact-form service preselection (contact-preselect.ts)
 │   ├── components/    # Astro components (Hero, Services, Contact, HerculesLauncher, …)
 │   ├── constants/     # Shared data and copy: strings/es.ts + en.ts, services, projects
 │   ├── i18n/          # Locale helpers (useStrings, paths)
@@ -37,6 +38,7 @@ with the visitor's consent, emails their request to the team.
 │   └── styles/        # Tailwind entry and brand tokens
 ├── worker/            # Cloudflare Worker: POST /api/hercules (guards, prompt, tool, lead email)
 ├── tests/             # Cross-cutting tests (config, theme, launcher markup, Node engines)
+├── e2e/               # Browser tests (Playwright, Chromium): launcher, monitoring section, layout
 ├── wrangler.jsonc     # Worker config: assets, vars, email binding, rate limit, secrets
 └── AGENTS.md          # Project rules for contributors and AI agents (CLAUDE.md links to it)
 ```
@@ -70,9 +72,13 @@ npm run dev        # http://localhost:4321
 | `npm run preview` | Serve the built site |
 | `npm test` | All unit tests (Vitest) |
 | `npm run check` | Type checks: `astro check` for the site, `tsc -p worker` for the Worker |
+| `npm run test:e2e` | Builds the site, then runs the browser tests (`e2e/`, Playwright in Chromium, desktop + 360 px phone) |
 
-Before a change is done, `npm test`, `npm run check` and `npm run build` must all pass. CI runs
-them on Node 22 and 24 (`.github/workflows/ci.yml`).
+Before a change is done, `npm test`, `npm run check`, `npm run build` and `npm run test:e2e` must all
+pass. CI runs the first three on Node 22 and 24, then the browser tests on Node 24
+(`.github/workflows/ci.yml`). The first time, install the browser with `npx playwright install chromium`.
+The browser tests always start their own server on port 4322; set `PW_REUSE_SERVER=1` to reuse one
+that is already running.
 
 ## Hércules (AI assistant)
 

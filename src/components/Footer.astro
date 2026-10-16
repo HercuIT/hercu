@@ -1,4 +1,5 @@
 ---
+import { getRelativeLocaleUrl } from 'astro:i18n';
 import { shared } from '../constants/strings';
 import { getLocale, privacyPaths, useStrings } from '../i18n/utils';
 import { whatsappAriaLabel, whatsappHref } from '../constants/whatsapp';
@@ -19,6 +20,7 @@ const currentYear = new Date().getFullYear();
       <p class="text-sm text-steel">
         &copy; {currentYear} {shared.companyName} {t.footer.rights}
         <a href={privacyPaths[locale]} class="ml-1 underline-offset-4 hover:text-ink hover:underline">{t.hercules.privacyLink}</a>
+        <a href={`${getRelativeLocaleUrl(locale, '/')}#${t.nav.monitoring.id}`} class="ml-1 underline-offset-4 hover:text-ink hover:underline">{t.footer.monitoring}</a>
       </p>
       
       <div class="text-sm text-steel flex flex-col items-center md:items-end gap-1">

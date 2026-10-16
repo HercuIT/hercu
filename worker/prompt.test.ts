@@ -96,3 +96,73 @@ describe('formatting rule (specs/hercules-chat-formatting)', () => {
     expect(prompt.split(locale === 'es' ? '- Formato:' : '- Formatting:')).toHaveLength(2);
   });
 });
+
+describe('weekend monitoring brief (specs/weekend-monitoring)', () => {
+  /** The prompt's monitoring section: from its heading to the next "## " heading. */
+  const brief = (locale: 'es' | 'en') => {
+    const prompt = buildSystemPrompt(locale);
+    const start = prompt.indexOf('[weekend-holiday-monitoring]:');
+    expect(start).toBeGreaterThan(-1);
+    const end = prompt.indexOf('\n## ', start);
+    expect(end, 'the monitoring brief must be followed by another section').toBeGreaterThan(start);
+    return prompt.slice(start, end);
+  };
+
+  it.each(locales)('"%s": describes what is included, the coverage and the tailored proposal, from the site copy', (locale) => {
+    const m = strings[locale].monitoring;
+    const text = brief(locale);
+    for (const part of [m.intro, ...m.benefits.map((b) => b.description), ...m.steps, m.coverage, m.pricing]) {
+      expect(text).toContain(part);
+    }
+    expect(text).toMatch(locale === 'es' ? /México y Estados Unidos/ : /Mexico and the United States/);
+  });
+
+  it.each(locales)('"%s": includes every FAQ question with its answer, as on the site', (locale) => {
+    const m = strings[locale].monitoring;
+    const lines = brief(locale).split('\n');
+    expect(m.faq.length).toBeGreaterThan(0);
+    for (const item of m.faq) {
+      expect(lines).toContain(`- ${m.faqTitle}: ${item.question} ${item.answer}`);
+    }
+  });
+
+  it.each(locales)('"%s": keeps the no-numbers rule as the last line of the brief, after the FAQ', (locale) => {
+    const lines = brief(locale).trimEnd().split('\n');
+    expect(lines.at(-1)).toMatch(locale === 'es' ? /^- No des montos/ : /^- Do not give amounts/);
+  });
+
+  it.each(locales)('"%s": tells Hércules not to give amounts, rates, included hours or response times', (locale) => {
+    expect(brief(locale)).toMatch(
+      locale === 'es' ? /No des montos, tarifas, horas incluidas ni tiempos de respuesta/ : /Do not give amounts, rates, included hours or response times/,
+    );
+  });
+
+  it.each(locales)('"%s": contains no internal tools, portfolio terms or amounts', (locale) => {
+    expect(brief(locale)).not.toMatch(/PagerDuty|UptimeRobot|Supabase|butterfl|true friend|retainer|\$|MXN|USD|\d+\s?(minutos?|minutes?)/i);
+  });
+
+  it.each(locales)('"%s": lists the service slug in the catalogue for submit_lead (not just in the brief heading)', (locale) => {
+    const prompt = buildSystemPrompt(locale);
+    // The catalogue section only: from its heading to the next "## " heading.
+    const start = prompt.indexOf(locale === 'es' ? '## Catálogo de servicios' : '## Service catalogue');
+    expect(start).toBeGreaterThan(-1);
+    // The catalogue must be followed by another section; otherwise the slice would run to the end of
+    // the prompt and the check below could pass on a line from a later section.
+    const end = prompt.indexOf('\n## ', start + 1);
+    expect(end).toBeGreaterThan(start);
+    const catalogue = prompt.slice(start, end);
+    const label = strings[locale].contact.service.options['weekend-holiday-monitoring'];
+    expect(catalogue.split('\n')).toContain(`  - [weekend-holiday-monitoring] ${label}`);
+  });
+
+  it('the catalogue check fails when the slug is missing from the catalogue (guards the test above)', () => {
+    const withoutCatalogueLine = buildSystemPrompt('es')
+      .split('\n')
+      .filter((line) => !line.startsWith('  - [weekend-holiday-monitoring]'))
+      .join('\n');
+    expect(withoutCatalogueLine).toContain('[weekend-holiday-monitoring]: detalle'); // still in the brief heading
+    expect(withoutCatalogueLine.split('\n')).not.toContain(
+      `  - [weekend-holiday-monitoring] ${strings.es.contact.service.options['weekend-holiday-monitoring']}`,
+    );
+  });
+});

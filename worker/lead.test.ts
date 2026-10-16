@@ -299,3 +299,18 @@ describe('lead email: model text that parses oddly', () => {
     expect(html).not.toContain('<script>');
   });
 });
+
+describe('weekend monitoring lead (specs/weekend-monitoring)', () => {
+  it('accepts the new service slug', () => {
+    const r = lead({ service: 'weekend-holiday-monitoring' });
+    expect(r.ok).toBe(true);
+  });
+
+  it.each(['weekend-monitoring', 'Weekend-Holiday-Monitoring', 'weekend-holiday-monitoring '])('rejects a near-miss slug %j', (service) => {
+    expect(lead({ service }).ok).toBe(false);
+  });
+
+  it('labels it in Spanish in the lead email', () => {
+    expect(serviceLabel('weekend-holiday-monitoring')).toBe('Monitoreo de sistemas en fines de semana y días festivos');
+  });
+});

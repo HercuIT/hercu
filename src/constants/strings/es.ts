@@ -4,6 +4,7 @@ import type { ProjectCopy, ProjectId } from '../projects';
 type Item = { title: string; description: string };
 type Stat = { value: string; label: string };
 type NavLink = { label: string; id: string };
+type Faq = { question: string; answer: string };
 
 /**
  * The consent sentence shown next to the chat's checkbox. Defined once so the checkbox label
@@ -26,6 +27,7 @@ export const es = {
   },
   nav: {
     services: { label: "Servicios", id: "servicios" } as NavLink,
+    monitoring: { label: "Monitoreo", id: "monitoreo" } as NavLink,
     projects: { label: "Proyectos", id: "proyectos" } as NavLink,
     about: { label: "Nosotros", id: "nosotros" } as NavLink,
     contact: { label: "Contáctenos", id: "contacto" } as NavLink
@@ -37,18 +39,50 @@ export const es = {
     title: "Excelencia en ingeniería con enfoque en la calidad",
     subtitle: "Desarrollamos aplicaciones, integramos inteligencia artificial y aseguramos la calidad de su software, para que no solo funcione: sobresalga.",
     cta: "Compártanos su idea",
-    ctaSupport: "Queremos conocer su idea y ayudarle a hacerla realidad."
+    ctaSupport: "Queremos conocer su idea y ayudarle a hacerla realidad.",
+    monitoringLink: "¿Su equipo necesita descansar el fin de semana? Conozca nuestro monitoreo de sistemas"
   },
   services: {
     title: "Nuestros servicios",
     intro: "De la idea a producción: inteligencia artificial, calidad de software, desarrollo de aplicaciones y capacitación para su equipo.",
     cta: "Platiquemos de esto",
+    monitoringCta: "Conozca cómo funciona",
     groupDescriptions: {
       ai: "Le ayudamos a identificar dónde la IA aporta valor, a diseñar la arquitectura correcta y a llevar a producción bots confiables, incluida la atención automatizada por WhatsApp Business y la extracción de datos con IA para generar automáticamente reportes y dashboards en Excel o CSV.",
       qa: "Nuestra especialidad: pruebas y automatización para apps web, móviles y generadas con IA, para que lleguen a producción sin sorpresas.",
       development: "Construimos su aplicación desde cero, o adaptamos a su negocio una plataforma de reservas probada, como BinKleaner o Nopalito Limpio.",
-      training: "Capacitación práctica en IA y QA, y dinámicas de team building pensadas para equipos remotos."
+      training: "Capacitación práctica en IA y QA, y dinámicas de team building pensadas para equipos remotos.",
+      monitoring: "Vigilamos su plataforma cuando su equipo descansa: monitoreo automatizado, un ingeniero de guardia y un reporte cada lunes."
     } as Record<ServiceGroupId, string>
+  },
+  /** Weekend & holiday monitoring section (specs/weekend-monitoring). No prices, fees or response-time numbers. */
+  monitoring: {
+    title: "Su plataforma, vigilada mientras su equipo descansa",
+    intro: "Su equipo merece descansar los fines de semana y días festivos, pero su plataforma B2B o SaaS no puede detenerse. Nosotros la vigilamos por usted.",
+    benefits: [
+      { title: "Confiabilidad", description: "Revisiones automáticas y continuas de la disponibilidad y el tiempo de respuesta de sus servicios." },
+      { title: "Respuesta", description: "Un ingeniero de guardia atiende cada alerta dentro del tiempo de respuesta acordado en su contrato (SLA)." },
+      { title: "Su equipo descansa", description: "Su CTO y sus desarrolladores dejan las guardias de fin de semana, sin poner en riesgo la disponibilidad." }
+    ] as [Item, Item, Item],
+    stepsTitle: "Cómo funciona",
+    steps: [
+      "Monitoreamos de forma automatizada sus servicios y endpoints clave.",
+      "Si algo falla o se vuelve lento, la alerta llega a nuestro ingeniero de guardia.",
+      "Diagnosticamos y resolvemos el incidente, o lo escalamos a su equipo según lo acordado.",
+      "Cada lunes recibe un reporte con la salud del sistema, la disponibilidad y los incidentes atendidos."
+    ] as [string, string, string, string],
+    coverageTitle: "Cobertura",
+    coverage: "De viernes 6:00 p. m. a lunes 8:00 a. m. (hora de la Ciudad de México), además de los días festivos oficiales de México y Estados Unidos.",
+    pricingTitle: "Precio",
+    pricing: "Propuesta a la medida: le enviamos una propuesta según sus sistemas y horarios.",
+    faqTitle: "Preguntas frecuentes",
+    faq: [
+      { question: "¿Necesitan acceso a nuestros sistemas?", answer: "Solo el necesario para monitorearlos, bajo un acuerdo de confidencialidad y acceso." },
+      { question: "¿Pueden cubrir solo algunos fines de semana o días festivos?", answer: "Sí. La propuesta se ajusta a los días y horarios que usted necesite." },
+      { question: "¿Qué recibimos el lunes?", answer: "Un reporte breve con la salud del sistema, la disponibilidad y los incidentes atendidos durante la cobertura." }
+    ] as [Faq, Faq, Faq],
+    cta: "Solicitar propuesta",
+    askHercules: "o pregúntele a Hércules"
   },
   projects: {
     title: "Proyectos",
@@ -120,12 +154,15 @@ export const es = {
     formEmail: "Correo electrónico",
     service: {
       label: "¿Qué servicio le interesa?",
+      /** Query parameter that preselects a service, e.g. /?servicio=weekend-holiday-monitoring#contacto */
+      param: "servicio",
       placeholder: "Seleccione un servicio",
       groups: {
         ai: "Inteligencia artificial",
         qa: "Calidad de software (QA)",
         development: "Desarrollo",
-        training: "Capacitación y equipos"
+        training: "Capacitación y equipos",
+        monitoring: "Monitoreo y soporte"
       },
       options: {
         "ai-consultancy": "Consultoría en IA",
@@ -142,9 +179,10 @@ export const es = {
         "ai-training": "Capacitación en IA",
         "qa-training": "Capacitación en QA",
         "other-training": "Otra capacitación",
-        "remote-team-building": "Team building para equipos remotos"
+        "remote-team-building": "Team building para equipos remotos",
+        "weekend-holiday-monitoring": "Monitoreo de sistemas en fines de semana y días festivos"
       }
-    } as { label: string; placeholder: string } & ServiceLabels,
+    } as { label: string; param: string; placeholder: string } & ServiceLabels,
     formMessage: "Su idea",
     placeholders: {
       name: "Juana Pérez",
@@ -325,7 +363,8 @@ export const es = {
     }
   },
   footer: {
-    rights: "Todos los derechos reservados."
+    rights: "Todos los derechos reservados.",
+    monitoring: "Monitoreo en fines de semana y días festivos"
   }
 };
 

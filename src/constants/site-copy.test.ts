@@ -159,3 +159,135 @@ describe('launcher teaser copy (specs/hercules-launcher-intro)', () => {
     expect(usesTu(strings.es.hercules.teaserDismiss)).toBe(false);
   });
 });
+
+describe('weekend monitoring copy (specs/weekend-monitoring)', () => {
+  const monitoringStrings = (locale: 'es' | 'en') => {
+    const t = strings[locale];
+    return [
+      t.nav.monitoring.label,
+      t.hero.monitoringLink,
+      t.services.monitoringCta,
+      t.services.groupDescriptions.monitoring,
+      t.footer.monitoring,
+      t.contact.service.groups.monitoring,
+      t.contact.service.options['weekend-holiday-monitoring'],
+      ...allStrings(t.monitoring),
+    ];
+  };
+
+  it.each(['es', 'en'] as const)('"%s": every monitoring string is non-blank', (locale) => {
+    for (const text of monitoringStrings(locale)) expect(text.trim()).not.toBe('');
+  });
+
+  it('has the same number of benefits, steps and FAQ items in both locales', () => {
+    for (const key of ['benefits', 'steps', 'faq'] as const) {
+      expect(strings.en.monitoring[key].length).toBe(strings.es.monitoring[key].length);
+    }
+    expect(strings.es.monitoring.benefits).toHaveLength(3);
+    expect(strings.es.monitoring.steps).toHaveLength(4);
+    expect(strings.es.monitoring.faq).toHaveLength(3);
+  });
+
+  it.each([
+    ['es', /viernes 6:00 p\. m\./, /lunes 8:00 a\. m\./, /Ciudad de México/, /México y Estados Unidos/],
+    ['en', /Friday 6:00 p\.m\./, /Monday 8:00 a\.m\./, /Mexico City/, /Mexico and the United States/],
+  ] as const)('"%s": coverage names the window, the time zone and both countries\' holidays', (locale, ...patterns) => {
+    for (const pattern of patterns) expect(strings[locale].monitoring.coverage).toMatch(pattern);
+  });
+
+  it.each([
+    ['es', /^Propuesta a la medida/],
+    ['en', /^Tailored proposal/],
+  ] as const)('"%s": the only pricing text is the tailored-proposal line', (locale, pattern) => {
+    expect(strings[locale].monitoring.pricing).toMatch(pattern);
+  });
+
+  it.each([
+    ['es', /tiempo de respuesta acordado en su contrato \(SLA\)/],
+    ['en', /response time agreed in your contract \(SLA\)/],
+  ] as const)('"%s": response is "the agreed SLA", with no number', (locale, pattern) => {
+    expect(allStrings(strings[locale].monitoring).join(' ')).toMatch(pattern);
+  });
+
+  // Decisions 3, 4 and 5, and the "only client-facing content" rule.
+  const forbidden: [string, RegExp][] = [
+    ['internal tools', /PagerDuty|UptimeRobot|Supabase|Cloudflare/i],
+    ['internal portfolio terms', /butterfl|true friend|mariposa/i],
+    ['internal pay or rotation', /retainer|rotaci[oó]n|rotation|compensa/i],
+    ['citation markers', /\[\d+(,\s*\d+)*\]/],
+    ['amounts or currency', /[$€£¥]|\b(MXN|USD|EUR|GBP|CAD)\b|\d+\s?(pesos|d[oó]lares|dollars|euros?)\b/i],
+    ['a pricing model', /cuota|tarifa|por hora|horas incluidas|\bfee\b|\brates?\b|per hour|hours included/i],
+    ['a response-time number', /\d+\s?(minutos?|minutes?|mins?|horas?|hours?|hrs?|h)\b/i],
+    ['a guarantee', /garantiza|garantía|guarantee/i],
+  ];
+  it.each(['es', 'en'] as const)('"%s": publishes nothing internal, no pricing and no response-time number', (locale) => {
+    const text = monitoringStrings(locale).join('\n');
+    for (const [label, pattern] of forbidden) expect(text, label).not.toMatch(pattern);
+  });
+
+  it('the forbidden-content checks really catch what they guard against', () => {
+    const samples: Record<string, string[]> = {
+      'internal tools': ['Usamos PagerDuty', 'vía Supabase'],
+      'internal portfolio terms': ['True Friends', 'Butterflies'],
+      'internal pay or rotation': ['retainer pool', 'rotación de guardias'],
+      'citation markers': ['[1, 2]', '[10]'],
+      'amounts or currency': ['$500', '500 MXN', 'USD 99', '€500', 'EUR 500', '£500', '¥1000', '300 pesos', '20 euros'],
+      'a pricing model': ['tarifa por hora', 'base fee', 'weekend rate'],
+      'a response-time number': ['en 15 minutos', 'within 15 minutes', '15 min', '15 mins', '1 hr', '2 hrs', '24h', '2 horas', '1 hour'],
+      'a guarantee': ['garantizamos', 'guaranteed uptime'],
+    };
+    for (const [label, pattern] of forbidden) {
+      expect(samples[label], `samples for ${label}`).toBeDefined();
+      for (const sample of samples[label]) expect(sample, label).toMatch(pattern);
+    }
+  });
+
+  it('the forbidden-content checks leave the real coverage and SLA wording alone', () => {
+    const allowed = [
+      strings.es.monitoring.coverage, // "viernes 6:00 p. m. a lunes 8:00 a. m."
+      strings.en.monitoring.coverage, // "Friday 6:00 p.m. to Monday 8:00 a.m."
+      'tiempo de respuesta acordado en su contrato (SLA)',
+      'Monitoring and support',
+    ];
+    for (const text of allowed) {
+      for (const [label, pattern] of forbidden) expect(text, label).not.toMatch(pattern);
+    }
+  });
+
+  it('uses unique section ids that do not clash with the other nav anchors', () => {
+    for (const locale of ['es', 'en'] as const) {
+      const ids = Object.values(strings[locale].nav).map((link) => link.id);
+      expect(new Set(ids).size).toBe(ids.length);
+      expect(strings[locale].nav.monitoring.id).toBe(locale === 'es' ? 'monitoreo' : 'monitoring');
+    }
+  });
+
+  it('uses the formal "usted" register in every Spanish monitoring string', () => {
+    const offenders = monitoringStrings('es').filter(usesTu);
+    expect(offenders).toEqual([]);
+  });
+
+  it('the usted check catches informal monitoring copy (guards the test above)', () => {
+    expect(usesTu('Tu equipo descansa')).toBe(true);
+    expect(usesTu('Vigilamos tu plataforma')).toBe(true);
+    expect(usesTu('Su equipo descansa')).toBe(false);
+  });
+
+  it.each([
+    ['es', /fin(es)? de semana/i, /d[ií]as festivos/i],
+    ['en', /weekend/i, /holiday/i],
+  ] as const)('"%s": the footer link names both weekends and holidays, like the section', (locale, weekend, holiday) => {
+    const label = strings[locale].footer.monitoring;
+    expect(label).toMatch(weekend);
+    expect(label).toMatch(holiday);
+  });
+
+  it.each(['es', 'en'] as const)('"%s": the footer link label stays short enough for the footer row (≤ 45 characters)', (locale) => {
+    expect(charLength(strings[locale].footer.monitoring)).toBeLessThanOrEqual(45);
+  });
+
+  it('spells the assistant correctly in each locale', () => {
+    expect(strings.es.monitoring.askHercules).toContain('Hércules');
+    expect(strings.en.monitoring.askHercules).toContain('Hercules');
+  });
+});
