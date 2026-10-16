@@ -116,6 +116,20 @@ describe('weekend monitoring brief (specs/weekend-monitoring)', () => {
     expect(text).toMatch(locale === 'es' ? /México y Estados Unidos/ : /Mexico and the United States/);
   });
 
+  it.each(locales)('"%s": includes every FAQ question with its answer, as on the site', (locale) => {
+    const m = strings[locale].monitoring;
+    const lines = brief(locale).split('\n');
+    expect(m.faq.length).toBeGreaterThan(0);
+    for (const item of m.faq) {
+      expect(lines).toContain(`- ${m.faqTitle}: ${item.question} ${item.answer}`);
+    }
+  });
+
+  it.each(locales)('"%s": keeps the no-numbers rule as the last line of the brief, after the FAQ', (locale) => {
+    const lines = brief(locale).trimEnd().split('\n');
+    expect(lines.at(-1)).toMatch(locale === 'es' ? /^- No des montos/ : /^- Do not give amounts/);
+  });
+
   it.each(locales)('"%s": tells Hércules not to give amounts, rates, included hours or response times', (locale) => {
     expect(brief(locale)).toMatch(
       locale === 'es' ? /No des montos, tarifas, horas incluidas ni tiempos de respuesta/ : /Do not give amounts, rates, included hours or response times/,

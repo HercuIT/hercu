@@ -78,6 +78,7 @@ export function buildSystemPrompt(locale: Locale): string {
     ...m.steps.map((step, i) => `- ${m.stepsTitle} ${i + 1}: ${step}`),
     `- ${m.coverageTitle}: ${m.coverage}`,
     `- ${m.pricingTitle}: ${m.pricing}`,
+    ...m.faq.map((item) => `- ${m.faqTitle}: ${item.question} ${item.answer}`),
     `- ${h.monitoringRule}`,
   ];
 

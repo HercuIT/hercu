@@ -215,9 +215,9 @@ describe('weekend monitoring copy (specs/weekend-monitoring)', () => {
     ['internal portfolio terms', /butterfl|true friend|mariposa/i],
     ['internal pay or rotation', /retainer|rotaci[oó]n|rotation|compensa/i],
     ['citation markers', /\[\d+(,\s*\d+)*\]/],
-    ['amounts or currency', /\$|MXN|USD|\d+\s?(pesos|d[oó]lares|dollars)/i],
+    ['amounts or currency', /[$€£¥]|\b(MXN|USD|EUR|GBP|CAD)\b|\d+\s?(pesos|d[oó]lares|dollars|euros?)\b/i],
     ['a pricing model', /cuota|tarifa|por hora|horas incluidas|\bfee\b|\brates?\b|per hour|hours included/i],
-    ['a response-time number', /\d+\s?(minutos?|minutes?|horas?|hours?)\b/i],
+    ['a response-time number', /\d+\s?(minutos?|minutes?|mins?|horas?|hours?|hrs?|h)\b/i],
     ['a guarantee', /garantiza|garantía|guarantee/i],
   ];
   it.each(['es', 'en'] as const)('"%s": publishes nothing internal, no pricing and no response-time number', (locale) => {
@@ -226,8 +226,32 @@ describe('weekend monitoring copy (specs/weekend-monitoring)', () => {
   });
 
   it('the forbidden-content checks really catch what they guard against', () => {
-    const samples = ['Usamos PagerDuty', 'True Friends', 'retainer pool', '[1, 2]', '$500 MXN', 'tarifa por hora', 'en 15 minutos', 'garantizamos'];
-    samples.forEach((sample, i) => expect(sample).toMatch(forbidden[i][1]));
+    const samples: Record<string, string[]> = {
+      'internal tools': ['Usamos PagerDuty', 'vía Supabase'],
+      'internal portfolio terms': ['True Friends', 'Butterflies'],
+      'internal pay or rotation': ['retainer pool', 'rotación de guardias'],
+      'citation markers': ['[1, 2]', '[10]'],
+      'amounts or currency': ['$500', '500 MXN', 'USD 99', '€500', 'EUR 500', '£500', '¥1000', '300 pesos', '20 euros'],
+      'a pricing model': ['tarifa por hora', 'base fee', 'weekend rate'],
+      'a response-time number': ['en 15 minutos', 'within 15 minutes', '15 min', '15 mins', '1 hr', '2 hrs', '24h', '2 horas', '1 hour'],
+      'a guarantee': ['garantizamos', 'guaranteed uptime'],
+    };
+    for (const [label, pattern] of forbidden) {
+      expect(samples[label], `samples for ${label}`).toBeDefined();
+      for (const sample of samples[label]) expect(sample, label).toMatch(pattern);
+    }
+  });
+
+  it('the forbidden-content checks leave the real coverage and SLA wording alone', () => {
+    const allowed = [
+      strings.es.monitoring.coverage, // "viernes 6:00 p. m. a lunes 8:00 a. m."
+      strings.en.monitoring.coverage, // "Friday 6:00 p.m. to Monday 8:00 a.m."
+      'tiempo de respuesta acordado en su contrato (SLA)',
+      'Monitoring and support',
+    ];
+    for (const text of allowed) {
+      for (const [label, pattern] of forbidden) expect(text, label).not.toMatch(pattern);
+    }
   });
 
   it('uses unique section ids that do not clash with the other nav anchors', () => {

@@ -25,7 +25,24 @@ describe('monitoring entry points', () => {
 
   it('hero: a link to the section (how phones reach it, with no header menu)', () => {
     expect(hero).toMatch(/<a href=\{`#\$\{t\.nav\.monitoring\.id\}`\}[^>]*>\s*\{t\.hero\.monitoringLink\}/);
-    expect(hero).not.toMatch(/monitoringLink[^<]*<\/a>[\s\S]*hidden md:/);
+  });
+
+  /** Class list of the hero's monitoring link, read from its own opening tag. */
+  const heroLinkClass = (source: string) => /<a href=\{`#\$\{t\.nav\.monitoring\.id\}`\}[^>]*\bclass="([^"]*)"/.exec(source)?.[1];
+  /** Hidden on phones: `hidden` (any breakpoint prefix) or `max-md:hidden`-style classes. */
+  const hiddenOnPhones = (classes: string) => classes.split(/\s+/).some((c) => c === 'hidden' || c === 'invisible' || /^max-(sm|md):(hidden|invisible)$/.test(c));
+
+  it('hero: the monitoring link is not hidden on phones', () => {
+    const classes = heroLinkClass(hero);
+    expect(classes).toBeDefined();
+    expect(hiddenOnPhones(classes!)).toBe(false);
+  });
+
+  it('the phone-visibility check catches a hidden link (guards the test above)', () => {
+    const hidden = hero.replace('class="mt-2 text-sm', 'class="hidden md:inline mt-2 text-sm');
+    expect(hiddenOnPhones(heroLinkClass(hidden)!)).toBe(true);
+    expect(hiddenOnPhones('mt-2 max-md:hidden')).toBe(true);
+    expect(hiddenOnPhones('mt-2 md:hidden')).toBe(false); // hidden on desktop only: phones still see it
   });
 
   it('footer: a link to the section that works from any page', () => {
@@ -73,8 +90,12 @@ describe('monitoring section markup', () => {
 });
 
 describe('contact form preselection', () => {
-  it('passes the locale parameter to the select and applies preselectedService', () => {
+  it('passes the locale parameter to the select', () => {
     expect(contact).toContain('data-preselect-param={t.contact.service.param}');
-    expect(contact).toContain('preselectedService(window.location.search');
+  });
+
+  it('calls preselectedService with the page query, that locale parameter and the catalogue, and applies the result', () => {
+    expect(contact).toContain("preselectedService(window.location.search, select.dataset.preselectParam ?? '', serviceIds)");
+    expect(contact).toMatch(/if \(select && service\) select\.value = service;/);
   });
 });
