@@ -25,6 +25,12 @@ describe('preselectedService', () => {
     ['HTML', '?servicio=%3Cscript%3Ealert(1)%3C%2Fscript%3E'],
     ['the other locale\'s parameter', `?service=${SLUG}`],
     ['a slug with spaces around it', `?servicio=%20${SLUG}%20`],
+    ['a Spanish slug with accents (raw)', '?servicio=monitoreo-días-festivos'],
+    ['a Spanish slug with accents (percent-encoded)', '?servicio=monitoreo-d%C3%ADas-festivos'],
+    ['an accented look-alike of a real slug', '?servicio=weekend-hólíday-monitoring'],
+    ['an emoji', '?servicio=%F0%9F%9A%80'],
+    ['a real slug with an emoji appended', `?servicio=${SLUG}%F0%9F%9A%80`],
+    ['a real slug with a decomposed accent', `?servicio=${SLUG}e%CC%81`],
   ])('selects nothing for %s, without throwing', (_label, search) => {
     expect(preselectedService(search, 'servicio', serviceIds)).toBeNull();
   });

@@ -57,7 +57,7 @@ const proposalHref = contactLinkFor(getRelativeLocaleUrl(locale, '/'), t.contact
           <div class="divide-y divide-mist/15 rounded-xl border border-mist/15">
             {m.faq.map((item) => (
               <details class="group px-4 py-3">
-                <summary class="cursor-pointer list-none font-semibold flex items-center justify-between gap-4">
+                <summary class="cursor-pointer list-none [&::-webkit-details-marker]:hidden font-semibold flex items-center justify-between gap-4">
                   {item.question}
                   <span aria-hidden="true" class="text-signal transition-transform group-open:rotate-45">+</span>
                 </summary>

@@ -67,6 +67,12 @@ describe('monitoring section markup', () => {
     expect(section).toContain('id={t.nav.monitoring.id}');
   });
 
+  it('hides the native disclosure marker in every engine, so only the custom "+" shows', () => {
+    const summary = /<summary class="([^"]*)"/.exec(section)?.[1] ?? '';
+    expect(summary.split(/\s+/)).toContain('list-none'); // ::marker (Chromium, Firefox, current WebKit)
+    expect(summary.split(/\s+/)).toContain('[&::-webkit-details-marker]:hidden'); // older Safari ignores display on <summary>
+  });
+
   it('builds its FAQ from <details>/<summary>, readable without JS', () => {
     expect(section).toMatch(/<details[\s\S]*<summary[\s\S]*\{item\.question\}[\s\S]*\{item\.answer\}[\s\S]*<\/details>/);
   });
