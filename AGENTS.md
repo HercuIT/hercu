@@ -43,4 +43,15 @@ Rules:
 - Keep tests next to the code they cover or under `tests/`, named `*.test.ts`.
 - A bug fix starts with a failing test that reproduces the bug.
 - If something is genuinely hard to unit-test (for example pure Astro markup), extract the logic into a plain TypeScript function and test that; note any remaining gap in the PR.
-- Tests, `npm run check` and `npm run build` must all pass before a change is considered done.
+- Behaviour that only exists in a real page (animations, focus, links between sections, phone layout) gets a browser test in `e2e/*.spec.ts` (Playwright, Chromium, desktop and 360 px phone). Run them with `npm run test:e2e`.
+- Tests, `npm run check`, `npm run build` and `npm run test:e2e` must all pass before a change is considered done.
+
+## Keeping these instructions current
+
+After each code change, check whether `AGENTS.md`, `CLAUDE.md` (a symlink to `AGENTS.md`) and `GEMINI.md` need updates, and if so update them in the same change. For example:
+- a new folder, module or architectural pattern;
+- a new or changed command, script or CI step;
+- a new rule or convention (strings, locales, privacy, testing);
+- anything these files describe that no longer matches the code.
+
+Keep `AGENTS.md` and `GEMINI.md` consistent with each other: a rule added to one belongs in the other.
