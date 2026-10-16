@@ -40,6 +40,17 @@ for (const l of locales) {
       await expect(page.locator('#service')).toHaveValue('weekend-holiday-monitoring');
     });
 
+    test('an unknown service in the address leaves the dropdown on its placeholder', async ({ page }) => {
+      await page.goto(`${l.home}?${l.param}=nope#${l.contact}`);
+      await expect(page.locator('#service')).toHaveValue('');
+    });
+
+    test("the other locale's parameter name does not preselect anything", async ({ page }) => {
+      const other = l.param === 'servicio' ? 'service' : 'servicio';
+      await page.goto(`${l.home}?${other}=weekend-holiday-monitoring#${l.contact}`);
+      await expect(page.locator('#service')).toHaveValue('');
+    });
+
     test.describe('without JavaScript', () => {
       test.use({ javaScriptEnabled: false });
 
@@ -67,11 +78,6 @@ for (const l of locales) {
     });
   });
 }
-
-test('an unknown service in the address leaves the dropdown on its placeholder', async ({ page }) => {
-  await page.goto('/?servicio=nope#contacto');
-  await expect(page.locator('#service')).toHaveValue('');
-});
 
 test('the page never scrolls sideways', async ({ page }) => {
   for (const path of ['/', '/en/']) {
