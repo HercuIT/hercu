@@ -1,0 +1,81 @@
+---
+// Weekend & holiday system monitoring (specs/weekend-monitoring): what the service covers, how it
+// works, coverage, and how to ask for a proposal. No prices, fees or response-time numbers on purpose.
+import { getRelativeLocaleUrl } from 'astro:i18n';
+import { contactLinkFor } from '../client/contact-preselect';
+import { getLocale, useStrings } from '../i18n/utils';
+
+const locale = getLocale(Astro.currentLocale);
+const t = useStrings(locale);
+const m = t.monitoring;
+const proposalHref = contactLinkFor(getRelativeLocaleUrl(locale, '/'), t.contact.service.param, 'weekend-holiday-monitoring', t.nav.contact.id);
+---
+
+<section id={t.nav.monitoring.id} aria-labelledby="monitoring-title" class="py-24 bg-ink text-white">
+  <div class="container mx-auto px-4">
+    <div class="max-w-3xl mx-auto text-center mb-16">
+      <h2 id="monitoring-title" class="text-3xl md:text-4xl font-display font-bold tracking-wordmark mb-4">{m.title}</h2>
+      <p class="text-lg text-mist/80 leading-relaxed">{m.intro}</p>
+    </div>
+
+    <ul class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-16">
+      {m.benefits.map((benefit) => (
+        <li class="rounded-2xl border border-mist/15 bg-white/5 p-6">
+          <h3 class="text-lg font-bold mb-2">{benefit.title}</h3>
+          <p class="text-mist/80 leading-relaxed">{benefit.description}</p>
+        </li>
+      ))}
+    </ul>
+
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-12">
+      <div>
+        <h3 class="text-2xl font-display font-bold mb-6">{m.stepsTitle}</h3>
+        <ol class="space-y-5">
+          {m.steps.map((step, i) => (
+            <li class="flex items-start gap-4">
+              <!-- Cyan only on navy (8.7:1), never as text on a light background. -->
+              <span aria-hidden="true" class="flex size-8 flex-none items-center justify-center rounded-full border-2 border-signal font-mono text-sm font-bold text-signal">
+                {i + 1}
+              </span>
+              <span class="pt-1 text-mist/90 leading-relaxed">{step}</span>
+            </li>
+          ))}
+        </ol>
+      </div>
+
+      <div class="space-y-8">
+        <div>
+          <h3 class="text-xl font-bold mb-2">{m.coverageTitle}</h3>
+          <p class="text-mist/80 leading-relaxed">{m.coverage}</p>
+        </div>
+        <div>
+          <h3 class="text-xl font-bold mb-2">{m.pricingTitle}</h3>
+          <p class="text-mist/80 leading-relaxed">{m.pricing}</p>
+        </div>
+        <div>
+          <h3 class="text-xl font-bold mb-3">{m.faqTitle}</h3>
+          <div class="divide-y divide-mist/15 rounded-xl border border-mist/15">
+            {m.faq.map((item) => (
+              <details class="group px-4 py-3">
+                <summary class="cursor-pointer list-none font-semibold flex items-center justify-between gap-4">
+                  {item.question}
+                  <span aria-hidden="true" class="text-signal transition-transform group-open:rotate-45">+</span>
+                </summary>
+                <p class="mt-2 text-mist/80 leading-relaxed">{item.answer}</p>
+              </details>
+            ))}
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="mt-16 flex flex-col items-center gap-3">
+      <a href={proposalHref} class="px-8 py-4 bg-brand-500 text-white hover:text-white font-semibold rounded-lg hover:bg-brand-600 transition-colors">
+        {m.cta}
+      </a>
+      <button type="button" data-hercules-open hidden class="text-sm font-semibold text-mist underline-offset-4 hover:underline">
+        {m.askHercules}
+      </button>
+    </div>
+  </div>
+</section>

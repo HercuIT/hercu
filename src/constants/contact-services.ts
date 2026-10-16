@@ -6,6 +6,7 @@ export const serviceGroups = [
   { id: 'qa', services: ['qa-web-app', 'qa-mobile-app', 'qa-ai-automation', 'qa-ai-generated-app'] },
   { id: 'development', services: ['new-app', 'app-like-binkleaner'] },
   { id: 'training', services: ['ai-training', 'qa-training', 'other-training', 'remote-team-building'] },
+  { id: 'monitoring', services: ['weekend-holiday-monitoring'] },
 ] as const;
 
 export type ServiceGroupId = (typeof serviceGroups)[number]['id'];

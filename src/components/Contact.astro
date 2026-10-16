@@ -83,7 +83,7 @@ const serviceOptions = buildServiceOptions(t.contact.service);
             <div>
               <label for="service" class="block text-sm font-medium text-mist/80 mb-1">{t.contact.service.label}</label>
               <div class="relative">
-                <select id="service" name="service" class="w-full appearance-none px-4 py-3 pr-11 bg-white/5 border border-mist/15 rounded-lg focus:ring-2 focus:ring-brand-400 focus:border-transparent outline-none transition-all text-white [color-scheme:dark] has-[option[value='']:checked]:text-mist/60">
+                <select id="service" name="service" data-preselect-param={t.contact.service.param} class="w-full appearance-none px-4 py-3 pr-11 bg-white/5 border border-mist/15 rounded-lg focus:ring-2 focus:ring-brand-400 focus:border-transparent outline-none transition-all text-white [color-scheme:dark] has-[option[value='']:checked]:text-mist/60">
                   <option value="" selected>{t.contact.service.placeholder}</option>
                   {serviceOptions.map((group) => (
                     <optgroup label={group.label}>
@@ -109,3 +109,14 @@ const serviceOptions = buildServiceOptions(t.contact.service);
     </div>
   </div>
 </section>
+
+<script>
+  // Preselects the service named in the address (e.g. ?servicio=weekend-holiday-monitoring), so a
+  // "Request a proposal" link lands on the form with the right option (specs/weekend-monitoring).
+  import { preselectedService } from '../client/contact-preselect';
+  import { serviceIds } from '../constants/contact-services';
+
+  const select = document.querySelector<HTMLSelectElement>('#service[data-preselect-param]');
+  const service = select && preselectedService(window.location.search, select.dataset.preselectParam ?? '', serviceIds);
+  if (select && service) select.value = service;
+</script>

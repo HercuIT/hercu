@@ -6,8 +6,8 @@ const allServiceIds = serviceGroups.flatMap((group) => [...group.services]);
 const locales = ['es', 'en'] as const;
 
 describe('serviceGroups catalogue', () => {
-  it('has the 4 groups in display order', () => {
-    expect(serviceGroups.map((g) => g.id)).toEqual(['ai', 'qa', 'development', 'training']);
+  it('has the 5 groups in display order', () => {
+    expect(serviceGroups.map((g) => g.id)).toEqual(['ai', 'qa', 'development', 'training', 'monitoring']);
   });
 
   // Slugs are the values the form submits, so they are a contract with any backend or report.
@@ -18,11 +18,12 @@ describe('serviceGroups catalogue', () => {
       qa: ['qa-web-app', 'qa-mobile-app', 'qa-ai-automation', 'qa-ai-generated-app'],
       development: ['new-app', 'app-like-binkleaner'],
       training: ['ai-training', 'qa-training', 'other-training', 'remote-team-building'],
+      monitoring: ['weekend-holiday-monitoring'],
     });
   });
 
-  it('contains exactly the 15 offered services', () => {
-    expect(allServiceIds).toHaveLength(15);
+  it('contains exactly the 16 offered services', () => {
+    expect(allServiceIds).toHaveLength(16);
   });
 
   it('never repeats a service slug across groups', () => {
@@ -167,5 +168,31 @@ describe('serviceIds', () => {
   it('is frozen, so no consumer can mutate the shared list', () => {
     expect(Object.isFrozen(serviceIds)).toBe(true);
     expect(() => (serviceIds as string[]).push('ecommerce')).toThrow(TypeError);
+  });
+});
+
+describe('weekend and holiday monitoring (specs/weekend-monitoring)', () => {
+  it.each(locales)('"%s": labels the area and the service', (locale) => {
+    const groups = buildServiceOptions(strings[locale].contact.service);
+    const monitoring = groups.find((g) => g.id === 'monitoring');
+    expect(monitoring?.label).toBe(locale === 'es' ? 'Monitoreo y soporte' : 'Monitoring and support');
+    expect(monitoring?.options).toEqual([
+      {
+        value: 'weekend-holiday-monitoring',
+        label: locale === 'es' ? 'Monitoreo de sistemas en fines de semana y días festivos' : 'Weekend and Holiday System Monitoring',
+      },
+    ]);
+  });
+
+  it('throws when the new area or service label is missing or blank', () => {
+    const base = strings.es.contact.service;
+    expect(() => buildServiceOptions({ ...base, groups: { ...base.groups, monitoring: '' } })).toThrow(/group label for "monitoring"/);
+    expect(() => buildServiceOptions({ ...base, options: { ...base.options, 'weekend-holiday-monitoring': '  ' } })).toThrow(
+      /service label for "weekend-holiday-monitoring"/,
+    );
+  });
+
+  it('lists the new slug last, after the training services', () => {
+    expect(serviceIds.at(-1)).toBe('weekend-holiday-monitoring');
   });
 });
