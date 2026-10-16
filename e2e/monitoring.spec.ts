@@ -1,13 +1,21 @@
 import { expect, test } from '@playwright/test';
 
-// Weekend monitoring section and its entry points (specs/weekend-monitoring), in a real browser.
+// Weekend & holiday monitoring section and its entry points (specs/weekend-monitoring), in a real browser.
 const locales = [
-  { home: '/', id: 'monitoreo', nav: 'Monitoreo', param: 'servicio', contact: 'contacto', cta: 'Solicitar propuesta' },
-  { home: '/en/', id: 'monitoring', nav: 'Monitoring', param: 'service', contact: 'contact', cta: 'Request a proposal' },
+  { home: '/', id: 'monitoreo', nav: 'Monitoreo', param: 'servicio', contact: 'contacto', cta: 'Solicitar propuesta', footer: 'Monitoreo en fines de semana y días festivos' },
+  { home: '/en/', id: 'monitoring', nav: 'Monitoring', param: 'service', contact: 'contact', cta: 'Request a proposal', footer: 'Weekend & holiday monitoring' },
 ] as const;
 
 for (const l of locales) {
   test.describe(`monitoring (${l.home})`, () => {
+    test('the footer link names weekends and holidays, and lands on the section', async ({ page }) => {
+      await page.goto(l.home);
+      const link = page.locator('footer').getByRole('link', { name: l.footer, exact: true });
+      await expect(link).toBeVisible();
+      await link.click();
+      await expect(page.locator(`#${l.id}`)).toBeInViewport();
+    });
+
     test('the desktop header link jumps to the section', async ({ page, viewport }) => {
       test.skip((viewport?.width ?? 0) < 768, 'the header nav is desktop only');
       await page.goto(l.home);
