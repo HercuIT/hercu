@@ -12,7 +12,8 @@
     "astro": "astro",
     "check": "astro check && tsc -p worker",
     "test": "vitest run",
-    "test:ci": "vitest run --reporter=default --reporter=github-actions"
+    "test:ci": "vitest run --reporter=default --reporter=github-actions",
+    "test:e2e": "astro build && playwright test"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.134.0",
