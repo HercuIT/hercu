@@ -238,6 +238,17 @@ describe('weekend monitoring copy (specs/weekend-monitoring)', () => {
     }
   });
 
+  it('uses the formal "usted" register in every Spanish monitoring string', () => {
+    const offenders = monitoringStrings('es').filter(usesTu);
+    expect(offenders).toEqual([]);
+  });
+
+  it('the usted check catches informal monitoring copy (guards the test above)', () => {
+    expect(usesTu('Tu equipo descansa')).toBe(true);
+    expect(usesTu('Vigilamos tu plataforma')).toBe(true);
+    expect(usesTu('Su equipo descansa')).toBe(false);
+  });
+
   it('spells the assistant correctly in each locale', () => {
     expect(strings.es.monitoring.askHercules).toContain('Hércules');
     expect(strings.en.monitoring.askHercules).toContain('Hercules');

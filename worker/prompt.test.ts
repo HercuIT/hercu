@@ -126,7 +126,24 @@ describe('weekend monitoring brief (specs/weekend-monitoring)', () => {
     expect(brief(locale)).not.toMatch(/PagerDuty|UptimeRobot|Supabase|butterfl|true friend|retainer|\$|MXN|USD|\d+\s?(minutos?|minutes?)/i);
   });
 
-  it.each(locales)('"%s": lists the service slug in the catalogue for submit_lead', (locale) => {
-    expect(buildSystemPrompt(locale)).toContain('[weekend-holiday-monitoring]');
+  it.each(locales)('"%s": lists the service slug in the catalogue for submit_lead (not just in the brief heading)', (locale) => {
+    const prompt = buildSystemPrompt(locale);
+    // The catalogue section only: from its heading to the next "## " heading.
+    const start = prompt.indexOf(locale === 'es' ? '## Catálogo de servicios' : '## Service catalogue');
+    expect(start).toBeGreaterThan(-1);
+    const catalogue = prompt.slice(start, prompt.indexOf('\n## ', start + 1));
+    const label = strings[locale].contact.service.options['weekend-holiday-monitoring'];
+    expect(catalogue.split('\n')).toContain(`  - [weekend-holiday-monitoring] ${label}`);
+  });
+
+  it('the catalogue check fails when the slug is missing from the catalogue (guards the test above)', () => {
+    const withoutCatalogueLine = buildSystemPrompt('es')
+      .split('\n')
+      .filter((line) => !line.startsWith('  - [weekend-holiday-monitoring]'))
+      .join('\n');
+    expect(withoutCatalogueLine).toContain('[weekend-holiday-monitoring]: detalle'); // still in the brief heading
+    expect(withoutCatalogueLine.split('\n')).not.toContain(
+      `  - [weekend-holiday-monitoring] ${strings.es.contact.service.options['weekend-holiday-monitoring']}`,
+    );
   });
 });
