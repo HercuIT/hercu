@@ -104,6 +104,7 @@ describe('weekend monitoring brief (specs/weekend-monitoring)', () => {
     const start = prompt.indexOf('[weekend-holiday-monitoring]:');
     expect(start).toBeGreaterThan(-1);
     const end = prompt.indexOf('\n## ', start);
+    expect(end, 'the monitoring brief must be followed by another section').toBeGreaterThan(start);
     return prompt.slice(start, end);
   };
 
@@ -145,7 +146,11 @@ describe('weekend monitoring brief (specs/weekend-monitoring)', () => {
     // The catalogue section only: from its heading to the next "## " heading.
     const start = prompt.indexOf(locale === 'es' ? '## Catálogo de servicios' : '## Service catalogue');
     expect(start).toBeGreaterThan(-1);
-    const catalogue = prompt.slice(start, prompt.indexOf('\n## ', start + 1));
+    // The catalogue must be followed by another section; otherwise the slice would run to the end of
+    // the prompt and the check below could pass on a line from a later section.
+    const end = prompt.indexOf('\n## ', start + 1);
+    expect(end).toBeGreaterThan(start);
+    const catalogue = prompt.slice(start, end);
     const label = strings[locale].contact.service.options['weekend-holiday-monitoring'];
     expect(catalogue.split('\n')).toContain(`  - [weekend-holiday-monitoring] ${label}`);
   });

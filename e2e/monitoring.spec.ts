@@ -31,12 +31,24 @@ for (const l of locales) {
       await expect(page.locator('#service')).toHaveValue('weekend-holiday-monitoring');
     });
 
-    test('the FAQ opens without any script', async ({ page }) => {
-      await page.goto(l.home);
-      const first = page.locator(`#${l.id} details`).first();
-      await expect(first).not.toHaveAttribute('open', '');
-      await first.locator('summary').click();
-      await expect(first).toHaveAttribute('open', '');
+    test.describe('without JavaScript', () => {
+      test.use({ javaScriptEnabled: false });
+
+      test('the FAQ opens without any script', async ({ page }) => {
+        await page.goto(l.home);
+        const first = page.locator(`#${l.id} details`).first();
+        await expect(first).not.toHaveAttribute('open', '');
+        await first.locator('summary').click();
+        await expect(first).toHaveAttribute('open', '');
+        await expect(first.locator('p')).toBeVisible();
+      });
+
+      test('"Request a proposal" still lands on the contact form', async ({ page }) => {
+        await page.goto(l.home);
+        await page.locator(`#${l.id}`).getByRole('link', { name: l.cta }).click();
+        await expect(page).toHaveURL(new RegExp(`#${l.contact}$`));
+        await expect(page.locator(`#${l.contact}`)).toBeInViewport();
+      });
     });
 
     test('shows no prices or response-time numbers', async ({ page }) => {

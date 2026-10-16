@@ -24,7 +24,9 @@ export default defineConfig({
   webServer: {
     command: `npm run preview -- --host 127.0.0.1 --port ${PORT}`,
     url: `http://127.0.0.1:${PORT}`,
-    reuseExistingServer: !process.env.CI,
+    // Always start a fresh server on the build just made, so a server left over from an earlier
+    // build can't be tested by mistake. Opt in to reuse with PW_REUSE_SERVER=1 (e.g. while iterating).
+    reuseExistingServer: process.env.PW_REUSE_SERVER === '1',
     timeout: 60_000,
   },
 });
