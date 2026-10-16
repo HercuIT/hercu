@@ -3,8 +3,8 @@ import { gotoReady } from './helpers';
 
 // Weekend & holiday monitoring section and its entry points (specs/weekend-monitoring), in a real browser.
 const locales = [
-  { home: '/', id: 'monitoreo', nav: 'Monitoreo', param: 'servicio', contact: 'contacto', cta: 'Solicitar propuesta', footer: 'Monitoreo en fines de semana y días festivos' },
-  { home: '/en/', id: 'monitoring', nav: 'Monitoring', param: 'service', contact: 'contact', cta: 'Request a proposal', footer: 'Weekend & holiday monitoring' },
+  { home: '/', id: 'monitoreo', nav: 'Monitoreo', param: 'servicio', contact: 'contacto', cta: 'Solicitar propuesta', cardLink: 'Conozca cómo funciona', footer: 'Monitoreo en fines de semana y días festivos' },
+  { home: '/en/', id: 'monitoring', nav: 'Monitoring', param: 'service', contact: 'contact', cta: 'Request a proposal', cardLink: 'See how it works', footer: 'Weekend & holiday monitoring' },
 ] as const;
 
 for (const l of locales) {
@@ -38,6 +38,27 @@ for (const l of locales) {
       await page.locator(`#${l.id}`).getByRole('link', { name: l.cta }).click();
       await expect(page).toHaveURL(new RegExp(`\\?${l.param}=weekend-holiday-monitoring#${l.contact}$`));
       await expect(page.locator('#service')).toHaveValue('weekend-holiday-monitoring');
+    });
+
+    test('the FAQ shows only the custom "+", no native disclosure triangle (WebKit draws one by default)', async ({ page }) => {
+      await gotoReady(page, l.home);
+      // A native marker would sit before the question and push its text right; measure where the text starts.
+      const gap = await page.locator(`#${l.id} summary`).first().evaluate((summary) => {
+        const text = [...summary.childNodes].find((n) => n.nodeType === Node.TEXT_NODE && n.textContent!.trim());
+        const range = document.createRange();
+        range.selectNodeContents(text!);
+        const style = getComputedStyle(summary);
+        return range.getBoundingClientRect().left - (summary.getBoundingClientRect().left + parseFloat(style.paddingLeft) + parseFloat(style.borderLeftWidth));
+      });
+      expect(gap).toBeLessThan(1);
+    });
+
+    test('the Services card link reaches the section', async ({ page }) => {
+      await page.goto(l.home);
+      const card = page.locator('article', { has: page.locator('#service-area-monitoring') });
+      await card.getByRole('link', { name: l.cardLink }).click();
+      await expect(page).toHaveURL(new RegExp(`#${l.id}$`));
+      await expect(page.locator(`#${l.id}`)).toBeInViewport();
     });
 
     test('an unknown service in the address leaves the dropdown on its placeholder', async ({ page }) => {
