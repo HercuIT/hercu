@@ -96,3 +96,37 @@ describe('formatting rule (specs/hercules-chat-formatting)', () => {
     expect(prompt.split(locale === 'es' ? '- Formato:' : '- Formatting:')).toHaveLength(2);
   });
 });
+
+describe('weekend monitoring brief (specs/weekend-monitoring)', () => {
+  /** The prompt's monitoring section: from its heading to the next "## " heading. */
+  const brief = (locale: 'es' | 'en') => {
+    const prompt = buildSystemPrompt(locale);
+    const start = prompt.indexOf('[weekend-holiday-monitoring]:');
+    expect(start).toBeGreaterThan(-1);
+    const end = prompt.indexOf('\n## ', start);
+    return prompt.slice(start, end);
+  };
+
+  it.each(locales)('"%s": describes what is included, the coverage and the tailored proposal, from the site copy', (locale) => {
+    const m = strings[locale].monitoring;
+    const text = brief(locale);
+    for (const part of [m.intro, ...m.benefits.map((b) => b.description), ...m.steps, m.coverage, m.pricing]) {
+      expect(text).toContain(part);
+    }
+    expect(text).toMatch(locale === 'es' ? /México y Estados Unidos/ : /Mexico and the United States/);
+  });
+
+  it.each(locales)('"%s": tells Hércules not to give amounts, rates, included hours or response times', (locale) => {
+    expect(brief(locale)).toMatch(
+      locale === 'es' ? /No des montos, tarifas, horas incluidas ni tiempos de respuesta/ : /Do not give amounts, rates, included hours or response times/,
+    );
+  });
+
+  it.each(locales)('"%s": contains no internal tools, portfolio terms or amounts', (locale) => {
+    expect(brief(locale)).not.toMatch(/PagerDuty|UptimeRobot|Supabase|butterfl|true friend|retainer|\$|MXN|USD|\d+\s?(minutos?|minutes?)/i);
+  });
+
+  it.each(locales)('"%s": lists the service slug in the catalogue for submit_lead', (locale) => {
+    expect(buildSystemPrompt(locale)).toContain('[weekend-holiday-monitoring]');
+  });
+});

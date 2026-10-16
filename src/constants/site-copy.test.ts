@@ -159,3 +159,87 @@ describe('launcher teaser copy (specs/hercules-launcher-intro)', () => {
     expect(usesTu(strings.es.hercules.teaserDismiss)).toBe(false);
   });
 });
+
+describe('weekend monitoring copy (specs/weekend-monitoring)', () => {
+  const monitoringStrings = (locale: 'es' | 'en') => {
+    const t = strings[locale];
+    return [
+      t.nav.monitoring.label,
+      t.hero.monitoringLink,
+      t.services.monitoringCta,
+      t.services.groupDescriptions.monitoring,
+      t.footer.monitoring,
+      t.contact.service.groups.monitoring,
+      t.contact.service.options['weekend-holiday-monitoring'],
+      ...allStrings(t.monitoring),
+    ];
+  };
+
+  it.each(['es', 'en'] as const)('"%s": every monitoring string is non-blank', (locale) => {
+    for (const text of monitoringStrings(locale)) expect(text.trim()).not.toBe('');
+  });
+
+  it('has the same number of benefits, steps and FAQ items in both locales', () => {
+    for (const key of ['benefits', 'steps', 'faq'] as const) {
+      expect(strings.en.monitoring[key].length).toBe(strings.es.monitoring[key].length);
+    }
+    expect(strings.es.monitoring.benefits).toHaveLength(3);
+    expect(strings.es.monitoring.steps).toHaveLength(4);
+    expect(strings.es.monitoring.faq).toHaveLength(3);
+  });
+
+  it.each([
+    ['es', /viernes 6:00 p\. m\./, /lunes 8:00 a\. m\./, /Ciudad de México/, /México y Estados Unidos/],
+    ['en', /Friday 6:00 p\.m\./, /Monday 8:00 a\.m\./, /Mexico City/, /Mexico and the United States/],
+  ] as const)('"%s": coverage names the window, the time zone and both countries\' holidays', (locale, ...patterns) => {
+    for (const pattern of patterns) expect(strings[locale].monitoring.coverage).toMatch(pattern);
+  });
+
+  it.each([
+    ['es', /^Propuesta a la medida/],
+    ['en', /^Tailored proposal/],
+  ] as const)('"%s": the only pricing text is the tailored-proposal line', (locale, pattern) => {
+    expect(strings[locale].monitoring.pricing).toMatch(pattern);
+  });
+
+  it.each([
+    ['es', /tiempo de respuesta acordado en su contrato \(SLA\)/],
+    ['en', /response time agreed in your contract \(SLA\)/],
+  ] as const)('"%s": response is "the agreed SLA", with no number', (locale, pattern) => {
+    expect(allStrings(strings[locale].monitoring).join(' ')).toMatch(pattern);
+  });
+
+  // Decisions 3, 4 and 5, and the "only client-facing content" rule.
+  const forbidden: [string, RegExp][] = [
+    ['internal tools', /PagerDuty|UptimeRobot|Supabase|Cloudflare/i],
+    ['internal portfolio terms', /butterfl|true friend|mariposa/i],
+    ['internal pay or rotation', /retainer|rotaci[oó]n|rotation|compensa/i],
+    ['citation markers', /\[\d+(,\s*\d+)*\]/],
+    ['amounts or currency', /\$|MXN|USD|\d+\s?(pesos|d[oó]lares|dollars)/i],
+    ['a pricing model', /cuota|tarifa|por hora|horas incluidas|\bfee\b|\brates?\b|per hour|hours included/i],
+    ['a response-time number', /\d+\s?(minutos?|minutes?|horas?|hours?)\b/i],
+    ['a guarantee', /garantiza|garantía|guarantee/i],
+  ];
+  it.each(['es', 'en'] as const)('"%s": publishes nothing internal, no pricing and no response-time number', (locale) => {
+    const text = monitoringStrings(locale).join('\n');
+    for (const [label, pattern] of forbidden) expect(text, label).not.toMatch(pattern);
+  });
+
+  it('the forbidden-content checks really catch what they guard against', () => {
+    const samples = ['Usamos PagerDuty', 'True Friends', 'retainer pool', '[1, 2]', '$500 MXN', 'tarifa por hora', 'en 15 minutos', 'garantizamos'];
+    samples.forEach((sample, i) => expect(sample).toMatch(forbidden[i][1]));
+  });
+
+  it('uses unique section ids that do not clash with the other nav anchors', () => {
+    for (const locale of ['es', 'en'] as const) {
+      const ids = Object.values(strings[locale].nav).map((link) => link.id);
+      expect(new Set(ids).size).toBe(ids.length);
+      expect(strings[locale].nav.monitoring.id).toBe(locale === 'es' ? 'monitoreo' : 'monitoring');
+    }
+  });
+
+  it('spells the assistant correctly in each locale', () => {
+    expect(strings.es.monitoring.askHercules).toContain('Hércules');
+    expect(strings.en.monitoring.askHercules).toContain('Hercules');
+  });
+});
